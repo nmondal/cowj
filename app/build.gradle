@@ -15,11 +15,17 @@ plugins {
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
+    mavenLocal()
 }
 
 dependencies {
     // This dependency is used by the application.
     implementation 'com.google.guava:guava:31.1-jre'
+    // local libraries
+    implementation 'org.zoomba-lang:zoomba.lang.core:0.3-SNAPSHOT'
+    implementation 'com.sparkjava:spark-core:3-JDK17-SNAPSHOT'
+    // end of local libraries
+    // TODO cron
 }
 
 testing {
