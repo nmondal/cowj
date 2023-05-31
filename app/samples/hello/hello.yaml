@@ -16,9 +16,8 @@ threading:
 # path mapping
 routes:
   get:
-    /hello/z : _/hello.zm
     /hello/j: _/hello.js
-    /hello/p : _/hello.py
+
 
 
 
