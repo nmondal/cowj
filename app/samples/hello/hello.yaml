@@ -4,10 +4,22 @@
 # port in which to connect
 port: 1003
 
+# for all static files, js, html pages, pds and what not
+static: _/.
+
+# threading related stuff
+threading:
+  min: 4
+  max : 8
+  timeout: 30000
+
 # path mapping
 routes:
   get:
     /hello/z : _/hello.zm
     /hello/j: _/hello.js
+    /hello/p : _/hello.py
+
+
 
 

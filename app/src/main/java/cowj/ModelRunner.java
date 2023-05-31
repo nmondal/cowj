@@ -37,6 +37,7 @@ public interface ModelRunner extends Runnable {
         port(m.port());
         // load static
         staticFiles.location(m.staticPath());
+        // load routes
         Map<String,Map<String,String>> paths = m.routes();
         for ( String verb : paths.keySet() ){
             Map<String,String> verbRoutes = paths.getOrDefault(verb, Collections.emptyMap());
@@ -46,6 +47,8 @@ public interface ModelRunner extends Runnable {
                 bic.accept(r.getKey(), route);
             }
         }
+        // set threading
+
     }
 
 

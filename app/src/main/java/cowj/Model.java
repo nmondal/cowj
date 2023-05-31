@@ -11,6 +11,14 @@ public interface Model {
 
     String base();
 
+    default Map<String,Integer> threading(){
+        return Map.of(
+                "min", 3,
+                "max", 10,
+                "timeout" , 30000
+        );
+    }
+
     default int port(){
         return 8080;
     }
@@ -30,7 +38,11 @@ public interface Model {
     String PORT = "port" ;
     String STATIC = "static" ;
     String ROUTES = "routes" ;
-    String AUTH = "routes" ;
+
+    String THREADING = "threading" ;
+
+    String AUTH = "auth" ;
+
 
     static Model from(final Map<String,Object> map, final String baseDir){
 
@@ -54,8 +66,13 @@ public interface Model {
             }
 
             @Override
+            public Map<String, Integer> threading() {
+                return (Map) map.getOrDefault( THREADING, Model.super.threading());
+            }
+
+            @Override
             public Map<String, String> auth() {
-                return (Map) map.getOrDefault( ROUTES, Model.super.auth());
+                return (Map) map.getOrDefault( AUTH, Model.super.auth());
             }
         };
     }
