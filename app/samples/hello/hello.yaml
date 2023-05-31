@@ -1,0 +1,13 @@
+# This is the sample routes file
+# basic support are given
+
+# port in which to connect
+port: 1003
+
+# path mapping
+routes:
+  get:
+    /hello/z : _/hello.zm
+    /hello/j: _/hello.js
+
+
