@@ -3,7 +3,12 @@
  */
 package cowj;
 
+import spark.Spark;
+
 public class App {
     public static void main(String[] args) {
+        //ModelRunner mr = ModelRunner.fromModel( "app/samples/hello/hello.yaml") ;
+        //mr.run();
+        Spark.get("/hello", (request, response) -> "Hello World!");
     }
 }

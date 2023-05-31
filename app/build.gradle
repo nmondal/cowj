@@ -26,6 +26,7 @@ dependencies {
     implementation 'com.sparkjava:spark-core:3-JDK17-SNAPSHOT'
     // end of local libraries
     // TODO cron
+    implementation 'org.slf4j:slf4j-jdk14:2.0.7'
 }
 
 testing {
