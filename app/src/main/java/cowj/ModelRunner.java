@@ -15,7 +15,7 @@ public interface ModelRunner extends Runnable {
     Model model();
 
     default RouteCreator routeCreator(){
-        return RouteCreator.JSR;
+        return RouteCreator.UNIVERSAL;
     }
 
     @Override

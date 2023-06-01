@@ -17,6 +17,9 @@ threading:
 routes:
   get:
     /hello/j: _/hello.js
+    /hello/z: _/hello.zm
+
+
 
 
 
