@@ -21,6 +21,9 @@ routes:
     /hello/p: _/hello.py
     /hello/z: _/hello.zm
 
+filters:
+  before:
+    "*" : _/before.zm
 
 
 

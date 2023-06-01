@@ -14,8 +14,8 @@ public interface ModelRunner extends Runnable {
 
     Model model();
 
-    default RouteCreator routeCreator(){
-        return RouteCreator.UNIVERSAL;
+    default Scriptable.Creator scriptCreator(){
+        return Scriptable.UNIVERSAL;
     }
 
     @Override
@@ -40,7 +40,7 @@ public interface ModelRunner extends Runnable {
         int max = tAct.getOrDefault("max", 10);
         int timeout = tAct.getOrDefault("timeout", 30000);
         threadPool( max, min,timeout);
-
+        Scriptable.Creator creator = scriptCreator();
         // load static
         staticFiles.location(m.staticPath());
         final String baseDir = model().base();
@@ -56,11 +56,14 @@ public interface ModelRunner extends Runnable {
                 if ( scriptPath.startsWith("_/")){
                     scriptPath = baseDir + scriptPath.substring(1);
                 }
-                Route route = routeCreator().create(r.getKey(), scriptPath);
+                Route route = creator.createRoute(r.getKey(), scriptPath);
                 bic.accept(r.getKey(), route);
                 System.out.printf("%s -> %s -> %s %n", verb, r.getKey(), scriptPath);
             }
         }
+        // load filters
+        final Map<String, BiConsumer<String,Route> > filterMap = new HashMap<>();
+
     }
 
 

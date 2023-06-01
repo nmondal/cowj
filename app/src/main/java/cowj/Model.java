@@ -35,6 +35,10 @@ public interface Model {
         return Collections.emptyMap();
     }
 
+    default Map<String, Map<String,String>> filters(){
+        return Collections.emptyMap();
+    }
+
     String PORT = "port" ;
     String STATIC = "static" ;
     String ROUTES = "routes" ;
@@ -42,6 +46,8 @@ public interface Model {
     String THREADING = "threading" ;
 
     String AUTH = "auth" ;
+
+    String FILTERS = "filters" ;
 
 
     static Model from(final Map<String,Object> map, final String baseDir){
@@ -73,6 +79,11 @@ public interface Model {
             @Override
             public Map<String, String> auth() {
                 return (Map) map.getOrDefault( AUTH, Model.super.auth());
+            }
+
+            @Override
+            public Map<String, Map<String, String>> filters() {
+                return (Map) map.getOrDefault( ROUTES, Model.super.filters());
             }
         };
     }
