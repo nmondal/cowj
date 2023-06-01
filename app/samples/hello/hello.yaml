@@ -16,8 +16,10 @@ threading:
 # path mapping
 routes:
   get:
+    /hello/g: _/hello.groovy
     /hello/j: _/hello.js
     /hello/z: _/hello.zm
+
 
 
 
