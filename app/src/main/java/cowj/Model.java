@@ -83,7 +83,7 @@ public interface Model {
 
             @Override
             public Map<String, Map<String, String>> filters() {
-                return (Map) map.getOrDefault( ROUTES, Model.super.filters());
+                return (Map) map.getOrDefault( FILTERS, Model.super.filters());
             }
         };
     }

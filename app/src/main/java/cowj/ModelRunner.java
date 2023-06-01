@@ -1,5 +1,6 @@
 package cowj;
 
+import spark.Filter;
 import spark.Route;
 import spark.Spark;
 
@@ -62,8 +63,26 @@ public interface ModelRunner extends Runnable {
             }
         }
         // load filters
-        final Map<String, BiConsumer<String,Route> > filterMap = new HashMap<>();
+        System.out.println("Filters mapping are as follows...");
+        Map<String,Map<String,String>> filters = m.filters();
+        final Map<String, BiConsumer<String,Filter> > filterMap = new HashMap<>();
+        filterMap.put("before", Spark::before);
+        filterMap.put("after", Spark::after);
+        filterMap.put("finally", Spark::afterAfter);
 
+        for ( String filterType : filters.keySet() ){
+            Map<String,String> filterRoutes = filters.getOrDefault(filterType, Collections.emptyMap());
+            BiConsumer<String,Filter> bic = filterMap.get(filterType);
+            for ( Map.Entry<String,String> r: filterRoutes.entrySet() ){
+                String scriptPath = r.getValue();
+                if ( scriptPath.startsWith("_/")){
+                    scriptPath = baseDir + scriptPath.substring(1);
+                }
+                Filter filter = creator.createFilter(r.getKey(), scriptPath);
+                bic.accept(r.getKey(), filter);
+                System.out.printf("%s -> %s -> %s %n", filterType, r.getKey(), scriptPath);
+            }
+        }
     }
 
 
