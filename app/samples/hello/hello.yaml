@@ -18,7 +18,9 @@ routes:
   get:
     /hello/g: _/hello.groovy
     /hello/j: _/hello.js
+    /hello/p: _/hello.py
     /hello/z: _/hello.zm
+
 
 
 

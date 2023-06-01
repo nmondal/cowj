@@ -33,6 +33,7 @@ dependencies {
     implementation 'org.apache.groovy:groovy:4.0.12'
     implementation 'org.apache.groovy:groovy-jsr223:4.0.12'
     // jython ???
+    implementation 'org.python:jython:2.7.3'
 
 }
 

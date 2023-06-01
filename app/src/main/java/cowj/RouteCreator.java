@@ -13,18 +13,32 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.python.core.Options;
+
+
 public interface RouteCreator {
     Route create(String path, String handler);
 
     Map<String,String> ENGINES = Map.of(
             "js", "JavaScript",
-            "groovy", "groovy"
-    );
+            "groovy", "groovy",
+            "py", "python"
+
+            );
 
     default String extension(String path){
         String[] arr = path.split("\\.");
         return arr[arr.length-1].toLowerCase(Locale.ROOT);
     }
+
+    Runnable JythonLoad = new Runnable() {
+        // https://stackoverflow.com/questions/52825426/jython-listed-by-getenginefactories-but-getenginebynamejython-is-null
+        static {
+            Options.importSite = false;
+        }
+        @Override
+        public void run() {}
+    };
 
     default ScriptEngine getEngine(String path){
        String extension = extension(path);
@@ -99,7 +113,7 @@ public interface RouteCreator {
             String extension = extension(handler);
             RouteCreator r = switch (extension){
                 case "zmb", "zm" -> ZMB;
-                case "js", "groovy" -> JSR;
+                case  "js", "groovy", "py" -> JSR;
                 default -> NOP;
             };
             return r.create(path,handler);
