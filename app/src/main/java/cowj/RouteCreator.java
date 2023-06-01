@@ -28,6 +28,7 @@ public interface RouteCreator {
 
     String REQUEST = "req" ;
     String RESPONSE = "resp" ;
+    String RESULT = "_res" ;
 
     default String extension(String path){
         String[] arr = path.split("\\.");
@@ -78,11 +79,18 @@ public interface RouteCreator {
         public Route create(String path, String handler) {
             return (request, response) -> {
                 CompiledScript cs = loadScript(handler);
-                SimpleScriptContext sc = new SimpleScriptContext();
-                sc.setAttribute(REQUEST, request, ScriptContext.ENGINE_SCOPE);
-                sc.setAttribute(RESPONSE, response, ScriptContext.ENGINE_SCOPE);
+                SimpleBindings sb = new SimpleBindings();
+                sb.put(REQUEST, request);
+                sb.put(RESPONSE, response);
                 try {
-                    return cs.eval(sc);
+                    Object r =  cs.eval(sb);
+                    if ( r != null ) return r;
+                    // Jython issue...
+                    if ( sb.containsKey(RESULT) ){
+                        return sb.get(RESULT);
+                    }
+                    return "";
+
                 } catch ( Throwable t){
                     response.status(500);
                     return t;

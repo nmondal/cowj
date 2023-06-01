@@ -1,4 +1,4 @@
 print( req )
 print( resp )
-
-"hello, world!"
+## https://community.nomagic.com/return-values-from-jython-script-in-expression-t7062.html
+_res = "hello, world!"
