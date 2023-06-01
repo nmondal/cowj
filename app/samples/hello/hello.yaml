@@ -24,6 +24,9 @@ routes:
 filters:
   before:
     "*" : _/before.zm
+  after:
+    "*": _/after.zm
+
 
 
 
