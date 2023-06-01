@@ -1,2 +1,6 @@
 // this just returns this
-"hello, world!"
+println( req )
+println( resp )
+
+"hello, world!" // return
+

@@ -26,6 +26,9 @@ public interface RouteCreator {
 
             );
 
+    String REQUEST = "req" ;
+    String RESPONSE = "resp" ;
+
     default String extension(String path){
         String[] arr = path.split("\\.");
         return arr[arr.length-1].toLowerCase(Locale.ROOT);
@@ -76,8 +79,8 @@ public interface RouteCreator {
             return (request, response) -> {
                 CompiledScript cs = loadScript(handler);
                 SimpleScriptContext sc = new SimpleScriptContext();
-                sc.setAttribute("req", request, ScriptContext.ENGINE_SCOPE);
-                sc.setAttribute("resp", response, ScriptContext.ENGINE_SCOPE);
+                sc.setAttribute(REQUEST, request, ScriptContext.ENGINE_SCOPE);
+                sc.setAttribute(RESPONSE, response, ScriptContext.ENGINE_SCOPE);
                 try {
                     return cs.eval(sc);
                 } catch ( Throwable t){
@@ -94,8 +97,8 @@ public interface RouteCreator {
             return (request, response) -> {
                 ZScript zs = loadZScript(handler);
                 ZContext.FunctionContext fc = new ZContext.FunctionContext( ZContext.EMPTY_CONTEXT , ZContext.ArgContext.EMPTY_ARGS_CONTEXT);
-                fc.set("req", request);
-                fc.set("resp", response);
+                fc.set(REQUEST, request);
+                fc.set(RESPONSE, response);
                 zs.runContext(fc);
                 Function.MonadicContainer mc = zs.execute();
                 if ( mc.isNil() ) return "";
