@@ -37,7 +37,7 @@ dependencies {
 
     // Storage...
     implementation 'redis.clients:jedis:5.0.0-beta1'
-
+    implementation 'com.google.cloud:google-cloud-storage:2.22.3'
 
 }
 

@@ -32,6 +32,13 @@ data-sources:
     type : redis
     urls: [ "localhost:6379"]
 
+  pgsql:
+    type: jdbc
+    driver: ""
+    connection : ""
+
+  g_storage:
+    type: google
 
 
 

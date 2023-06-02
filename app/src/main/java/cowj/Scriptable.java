@@ -39,9 +39,14 @@ public interface Scriptable  {
 
     );
 
+    Map<String,Object> DATA_SOURCES = new HashMap<>();
+
+
     String REQUEST = "req" ;
     String RESPONSE = "resp" ;
     String RESULT = "_res" ;
+
+    String DATA_SOURCE = "_ds" ;
 
     static String extension(String path){
         String[] arr = path.split("\\.");
@@ -92,6 +97,7 @@ public interface Scriptable  {
         SimpleBindings sb = new SimpleBindings();
         sb.put(REQUEST, request);
         sb.put(RESPONSE, response);
+        sb.put(DATA_SOURCE, DATA_SOURCES);
         try {
             Object r =  cs.eval(sb);
             if ( r != null ) return r;
@@ -112,6 +118,7 @@ public interface Scriptable  {
         ZContext.FunctionContext fc = new ZContext.FunctionContext( ZContext.EMPTY_CONTEXT , ZContext.ArgContext.EMPTY_ARGS_CONTEXT);
         fc.set(REQUEST, request);
         fc.set(RESPONSE, response);
+        fc.set(DATA_SOURCE, DATA_SOURCES);
         zs.runContext(fc);
         Function.MonadicContainer mc = zs.execute();
         if ( mc.isNil() ) return "";
