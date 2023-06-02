@@ -19,6 +19,10 @@ public interface ModelRunner extends Runnable {
         return Scriptable.UNIVERSAL;
     }
 
+    default DataSource.Creator dsCreator(){
+        return DataSource.UNIVERSAL;
+    }
+
     @Override
     default void run(){
         final Map<String, BiConsumer<String,Route> > routeLoaderMap = new HashMap<>();

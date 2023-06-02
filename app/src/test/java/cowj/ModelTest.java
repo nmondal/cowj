@@ -15,6 +15,8 @@ public class ModelTest {
         Assert.assertNotNull(m);
         Assert.assertFalse(m.routes().isEmpty());
         Assert.assertFalse(m.threading().isEmpty());
+        Assert.assertFalse(m.filters().isEmpty());
+        Assert.assertFalse(m.dataSources().isEmpty());
         Assert.assertEquals( 1003, m.port());
     }
 }

@@ -27,6 +27,11 @@ filters:
   after:
     "*": _/after.zm
 
+data-sources:
+  redis :
+    type : redis
+    urls: [ "localhost:6379"]
+
 
 
 

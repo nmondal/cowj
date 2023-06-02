@@ -35,6 +35,10 @@ dependencies {
     // jython ???
     implementation 'org.python:jython:2.7.3'
 
+    // Storage...
+    implementation 'redis.clients:jedis:5.0.0-beta1'
+
+
 }
 
 testing {
