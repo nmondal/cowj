@@ -47,9 +47,13 @@ public interface DataSource {
 
         String driverName = config.getOrDefault("driver", "").toString();
         String connection = config.getOrDefault("connection", "").toString();
+
+        Map<String,Object> props = (Map<String, Object>) config.getOrDefault("properties", Collections.emptyMap());
+        Properties connectionProperties = new Properties();
+        connectionProperties.putAll(props);
         try {
             Class.forName(driverName);
-            Connection con = DriverManager.getConnection(connection);
+            Connection con = DriverManager.getConnection(connection, connectionProperties);
             return new DataSource() {
                 @Override
                 public Object proxy() {

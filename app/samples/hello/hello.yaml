@@ -36,6 +36,9 @@ data-sources:
     type: jdbc
     driver: ""
     connection : ""
+    properties:
+      a: b
+      x: y
 
   g_storage:
     type: google
