@@ -73,7 +73,7 @@ routes:
     /param/:id  : _/scripts/js/param.js
 
   post:
-    /hello : json@_/scripts/js/hello.js
+    /hello : _/scripts/js/hello.js
 
 # filters - before and after an URI
 filters:
