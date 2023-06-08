@@ -24,6 +24,8 @@ routes:
 proxies:
   get:
     /users: json_place/users
+  post:
+    /users: json_place/users
 
 
 filters:
