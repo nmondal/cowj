@@ -39,6 +39,10 @@ public interface Model {
         return Collections.emptyMap();
     }
 
+    default Map<String, Map<String,String>> proxies(){
+        return Collections.emptyMap();
+    }
+
     default Map<String, Map<String,Object>> dataSources(){
         return Collections.emptyMap();
     }
@@ -54,6 +58,8 @@ public interface Model {
     String FILTERS = "filters" ;
 
     String DATA_SOURCES = "data-sources" ;
+
+    String PROXIES = "proxies" ;
 
 
     static Model from(final Map<String,Object> map, final String baseDir){
@@ -90,6 +96,11 @@ public interface Model {
             @Override
             public Map<String, Map<String, String>> filters() {
                 return (Map) map.getOrDefault( FILTERS, Model.super.filters());
+            }
+
+            @Override
+            public Map<String, Map<String, String>> proxies() {
+                return (Map) map.getOrDefault( PROXIES, Model.super.proxies());
             }
 
             @Override

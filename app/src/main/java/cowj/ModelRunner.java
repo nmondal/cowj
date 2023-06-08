@@ -1,8 +1,7 @@
 package cowj;
 
-import spark.Filter;
-import spark.Route;
-import spark.Spark;
+import spark.*;
+import zoomba.lang.core.io.ZWeb;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,6 +50,21 @@ public interface ModelRunner extends Runnable {
         final String baseDir = model().base();
         // load routes
         System.out.println("Base Directory : " + baseDir);
+        // load data sources ...
+        System.out.println("DataSources mapping are as follows...");
+        Map<String, Map<String, Object>> dataSources = m.dataSources();
+        DataSource.Creator dsCreator = dsCreator();
+        for (String dsName : dataSources.keySet()) {
+            Map<String,Object> dsConfig = dataSources.get(dsName);
+            try{
+                DataSource dataSource = dsCreator.create(dsName, dsConfig);
+                System.out.printf("DS '%s' created! %n", dataSource.name());
+                Scriptable.DATA_SOURCES.put(dsName, dataSource.proxy());
+            }catch (Throwable t){
+                System.err.printf("DS '%s' failed to create! %s %n", dsName, t);
+            }
+        }
+
         System.out.println("Routes mapping are as follows...");
         Map<String, Map<String, String>> paths = m.routes();
         for (String verb : paths.keySet()) {
@@ -66,6 +80,35 @@ public interface ModelRunner extends Runnable {
                 System.out.printf("%s -> %s -> %s %n", verb, r.getKey(), scriptPath);
             }
         }
+        // proxies, if any...
+        System.out.println("Proxies mapping are as follows...");
+        Map<String, Map<String, String>> proxies = m.proxies();
+        for (String verb : proxies.keySet()) {
+            Map<String, String> verbProxies = proxies.getOrDefault(verb, Collections.emptyMap());
+            BiConsumer<String, Route> bic = routeLoaderMap.get(verb);
+            for (Map.Entry<String, String> r : verbProxies.entrySet()) {
+                String proxyPath = r.getValue();
+                String[] arr = proxyPath.split("/");
+                String curlKey = arr[0];
+                Object o = Scriptable.DATA_SOURCES.get(curlKey);
+                if (!(o instanceof ZWeb)){
+                    System.err.printf("route does not have any base curl data source : %s->%s %n", r.getKey(), r.getValue());
+                    continue;
+                }
+                final String destPath = proxyPath.replace(curlKey + "/", "");
+                Route route = (request, response) -> {
+                    final ZWeb zw = (ZWeb) o;
+                    Map<String,String> headerMap = new HashMap<>();
+                    request.headers().forEach( h -> headerMap.put(h, request.headers(h)));
+                    ZWeb.ZWebCom com = zw.send( verb, destPath,  headerMap, request.body() );
+                    response.status(com.status);
+                    return com.body();
+                };
+                bic.accept(r.getKey(), route);
+                System.out.printf("%s -> %s -> %s %n", verb, r.getKey(), r.getValue());
+            }
+        }
+
         // load filters
         System.out.println("Filters mapping are as follows...");
         Map<String, Map<String, String>> filters = m.filters();
@@ -85,20 +128,6 @@ public interface ModelRunner extends Runnable {
                 Filter filter = creator.createFilter(r.getKey(), scriptPath);
                 bic.accept(r.getKey(), filter);
                 System.out.printf("%s -> %s -> %s %n", filterType, r.getKey(), scriptPath);
-            }
-        }
-        // load data sources ...
-        System.out.println("DataSources mapping are as follows...");
-        Map<String, Map<String, Object>> dataSources = m.dataSources();
-        DataSource.Creator dsCreator = dsCreator();
-        for (String dsName : dataSources.keySet()) {
-            Map<String,Object> dsConfig = dataSources.get(dsName);
-            try{
-                DataSource dataSource = dsCreator.create(dsName, dsConfig);
-                System.out.printf("DS '%s' created! %n", dataSource.name());
-                Scriptable.DATA_SOURCES.put(dsName, dataSource);
-            }catch (Throwable t){
-                System.err.printf("DS '%s' failed to create! %s %n", dsName, t);
             }
         }
     }

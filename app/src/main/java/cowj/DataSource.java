@@ -5,6 +5,10 @@ import com.google.cloud.storage.StorageOptions;
 
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import zoomba.lang.core.io.ZWeb;
 import zoomba.lang.core.types.ZNumber;
 
 import java.sql.Connection;
@@ -90,12 +94,38 @@ public interface DataSource {
         }
     };
 
+    Creator CURL = (name, config) -> {
+
+        try {
+            String baseUrl = config.getOrDefault("url", "").toString();
+            Map<String,String> headers = (Map)config.getOrDefault("headers", Collections.emptyMap());
+            ZWeb  zWeb = new ZWeb(baseUrl);
+            if ( !headers.isEmpty()){
+                zWeb.headers.putAll(headers);
+            }
+            return new DataSource() {
+                @Override
+                public Object proxy() {
+                    return zWeb;
+                }
+
+                @Override
+                public String name() {
+                    return name;
+                }
+            };
+        }catch (Throwable t){
+            throw new RuntimeException(t);
+        }
+    };
+
     Creator UNIVERSAL = (name, config) -> {
         String type = config.getOrDefault("type", "").toString();
         Creator creator = switch (type){
             case "redis" -> REDIS ;
             case "jdbc" -> JDBC ;
             case "google" -> G_STORAGE ;
+            case "curl" -> CURL;
             default -> throw new IllegalStateException("Unknown type of datasource -> value: " + type);
         };
         return creator.create(name,config);
