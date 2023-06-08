@@ -130,6 +130,16 @@ https://sparkjava.com/documentation#request
 
 https://sparkjava.com/documentation#response
 
+
+
+#### Filters 
+
+These are how one can have before and after callback before and after any route pattern gets hit. 
+
+
+
+
+
 ### Running 
 
 1. Get the spark-11 cloned in local 

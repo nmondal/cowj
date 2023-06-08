@@ -5,7 +5,12 @@ package cowj;
 
 public class App {
     public static void main(String[] args) {
-        ModelRunner mr = ModelRunner.fromModel( "app/samples/hello/hello.yaml") ;
+        if ( args.length < 1 ){
+            System.out.println("Usage : java -jar cowj.jar <config_file_path>");
+            return;
+        }
+        final String path = args[0];
+        ModelRunner mr = ModelRunner.fromModel(path) ;
         mr.run();
     }
 }
