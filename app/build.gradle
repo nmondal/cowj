@@ -10,12 +10,14 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
+    id 'com.github.johnrengelman.shadow'  version "8.1.1"
 }
 
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
     mavenLocal()
+    gradlePluginPortal()
 }
 
 dependencies {
@@ -39,6 +41,12 @@ dependencies {
     implementation 'redis.clients:jedis:5.0.0-beta1'
     implementation 'com.google.cloud:google-cloud-storage:2.22.3'
 
+}
+
+shadowJar {
+    manifest {
+        attributes 'Main-Class' : "cowj.App"
+    }
 }
 
 testing {
