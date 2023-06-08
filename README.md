@@ -75,6 +75,14 @@ routes:
   post:
     /hello : _/scripts/js/hello.js
 
+# route forwarding local /users points to json_place
+proxies:
+  get:
+    /users: json_place/users
+  post:
+    /users: json_place/users
+
+
 # filters - before and after an URI
 filters:
   before:
@@ -88,6 +96,9 @@ data-sources:
     type : redis
     urls: [ "localhost:6379"]
 
+  json_place:
+    type: curl
+    url: https://jsonplaceholder.typicode.com
 
 ```
 It simply defines the routes - as well the handler script for such a route.
@@ -138,6 +149,19 @@ These are how one can have before and after callback before and after any route 
 
 
 
+#### Proxies 
+
+Path/Packet forwarding. One simply creates a base host - in the data source section of type `curl` and then use that key as base for all forwarding.
+
+In the Yaml example the following routing is done:
+
+``` 
+localhost:1003/users 
+--> https://jsonplaceholder.typicode.com/users
+```
+
+System responds back with the same status as of the external web service as well as the response from the web service gets transferred back to the original caller.
+
 
 
 ### Running 
@@ -146,6 +170,10 @@ These are how one can have before and after callback before and after any route 
 2. Get ZoomBA cloned in local 
 3. Build the app.
 4. Run the app.
+
+Note: It also has `fat-jar` via `shadowJar()` task, one can have one single fat jar for the whole project.
+
+
 
 
 
