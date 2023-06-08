@@ -1,0 +1,3 @@
+// this just returns post body 
+s = req.body() 
+s ?? "" // if s is null return empty
