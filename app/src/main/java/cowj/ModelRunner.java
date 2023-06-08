@@ -98,10 +98,19 @@ public interface ModelRunner extends Runnable {
                 final String destPath = proxyPath.replace(curlKey + "/", "");
                 Route route = (request, response) -> {
                     final ZWeb zw = (ZWeb) o;
-                    Map<String,String> headerMap = new HashMap<>();
-                    request.headers().forEach( h -> headerMap.put(h, request.headers(h)));
-                    ZWeb.ZWebCom com = zw.send( verb, destPath,  headerMap, request.body() );
+                    // No mapping of request headers to forward
+                    final String body = request.body() != null ? request.body() : "" ;
+                    ZWeb.ZWebCom com = zw.send( verb, destPath, Collections.emptyMap(), body );
                     response.status(com.status);
+                    // no mapping of response headers from destination forward...
+                    /*
+                    for ( Object k : com.map.keySet() ){
+                        if ( k == null) continue;
+                        String name = k.toString();
+                        String value = com.map.get(k).toString();
+                        response.header(name, value);
+                    }
+                    */
                     return com.body();
                 };
                 bic.accept(r.getKey(), route);

@@ -51,8 +51,6 @@ data-sources:
   json_place:
     type: curl
     url: https://jsonplaceholder.typicode.com
-    headers:
-      a: b
 
 
 
