@@ -1,6 +1,9 @@
 package cowj;
 
+import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
+import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.python.core.Options;
+import org.python.jsr223.PyScriptEngineFactory;
 import spark.Filter;
 import spark.Request;
 import spark.Response;
@@ -14,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -53,10 +57,16 @@ public interface Scriptable  {
         return arr[arr.length-1].toLowerCase(Locale.ROOT);
     }
 
+    ScriptEngineManager MANAGER = new ScriptEngineManager();
+
     Runnable JythonLoad = new Runnable() {
         // https://stackoverflow.com/questions/52825426/jython-listed-by-getenginefactories-but-getenginebynamejython-is-null
         static {
             Options.importSite = false;
+            // force load engines for fat-jar issues...
+            MANAGER.registerEngineName( "JavaScript", new NashornScriptEngineFactory());
+            MANAGER.registerEngineName( "groovy", new GroovyScriptEngineFactory());
+            MANAGER.registerEngineName( "python", new PyScriptEngineFactory());
         }
         @Override
         public void run() {}
@@ -66,7 +76,7 @@ public interface Scriptable  {
         String extension = extension(path);
         if ( !ENGINES.containsKey(extension) ) throw new RuntimeException("script type not registered : " + path);
         String engineName = ENGINES.get(extension);
-        final ScriptEngine engine = new ScriptEngineManager().getEngineByName(engineName);
+        final ScriptEngine engine = MANAGER.getEngineByName(engineName);
         return engine;
     }
 

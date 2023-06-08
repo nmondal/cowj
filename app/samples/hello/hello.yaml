@@ -21,6 +21,11 @@ routes:
     /hello/p: _/hello.py
     /hello/z: _/hello.zm
 
+proxies:
+  get:
+    /users: json_place/users
+
+
 filters:
   before:
     "*" : _/before.zm
@@ -42,6 +47,12 @@ data-sources:
 
   g_storage:
     type: google
+
+  json_place:
+    type: curl
+    url: https://jsonplaceholder.typicode.com
+    headers:
+      a: b
 
 
 
