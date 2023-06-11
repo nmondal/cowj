@@ -126,4 +126,16 @@ public interface Model {
         }
         throw new RuntimeException(String.format("file '%s' must be a json or yaml", abs ));
     }
+
+    /// Central place to ask the model to interpret the path as it wishes.
+    /// Doing this because a lot of plugins will need to do this. Best to
+    /// have them all using the same function so any improvements are automatically
+    /// propagated to everybody
+    default String interpretPath(String path) {
+        if (!path.startsWith("_/")) {
+            return path;
+        }
+
+        return base() + path.substring(1);
+    }
 }

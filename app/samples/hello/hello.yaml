@@ -20,6 +20,7 @@ routes:
     /hello/j: _/hello.js
     /hello/p: _/hello.py
     /hello/z: _/hello.zm
+    /notification: _/notification.zm
 
 proxies:
   get:
@@ -59,3 +60,6 @@ data-sources:
     type: curl
     url: "http://localhost:1004"
 
+  fcm:
+    type: fcm
+    credentials_file: _/credentials.json
