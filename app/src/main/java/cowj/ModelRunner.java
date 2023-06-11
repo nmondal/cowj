@@ -57,7 +57,7 @@ public interface ModelRunner extends Runnable {
         for (String dsName : dataSources.keySet()) {
             Map<String,Object> dsConfig = dataSources.get(dsName);
             try{
-                DataSource dataSource = dsCreator.create(dsName, dsConfig);
+                DataSource dataSource = dsCreator.create(dsName, dsConfig, model());
                 System.out.printf("DS '%s' created! %n", dataSource.name());
                 Scriptable.DATA_SOURCES.put(dsName, dataSource.proxy());
             }catch (Throwable t){
@@ -71,10 +71,7 @@ public interface ModelRunner extends Runnable {
             Map<String, String> verbRoutes = paths.getOrDefault(verb, Collections.emptyMap());
             BiConsumer<String, Route> bic = routeLoaderMap.get(verb);
             for (Map.Entry<String, String> r : verbRoutes.entrySet()) {
-                String scriptPath = r.getValue();
-                if (scriptPath.startsWith("_/")) {
-                    scriptPath = baseDir + scriptPath.substring(1);
-                }
+                String scriptPath = m.interpretPath(r.getValue());
                 Route route = creator.createRoute(r.getKey(), scriptPath);
                 bic.accept(r.getKey(), route);
                 System.out.printf("%s -> %s -> %s %n", verb, r.getKey(), scriptPath);
