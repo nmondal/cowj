@@ -1,6 +1,10 @@
-import com.google.firebase.messaging.MulticastMessage as MulticastMessage
-import com.google.firebase.messaging.Notification as Notification
-
-response = _ds.fcm.sendMulticast(MulticastMessage.builder().addAllTokens(['a', 'b']).setNotification(Notification.builder().setTitle("Title").setBody("Body").build()).build())
+// get the fcm
+fcm = _ds.fcm
+data = { "_tokens" : [ "a", "b"] , "_tile" : "Title", "_body" : "Body" }
+// create message
+m_message = fcm.multicastMessage(data)
+// pass message
+response = _ds.fcm.sendMulticast(m_message)
+// do something here
 println(response.successCount)
 println(response.failureCount)

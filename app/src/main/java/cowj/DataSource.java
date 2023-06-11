@@ -1,18 +1,12 @@
 package cowj;
 
-import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
-import com.google.firebase.messaging.FirebaseMessaging;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
 import zoomba.lang.core.io.ZWeb;
 import zoomba.lang.core.types.ZNumber;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.*;
@@ -97,36 +91,7 @@ public interface DataSource {
         }
     };
 
-    Creator FCM = (name, config, parent) -> {
-        try {
-            InputStream is = new FileInputStream(parent.interpretPath((String) config.get("credentials_file")));
-            GoogleCredentials credentials = GoogleCredentials.fromStream(is);
-            FirebaseOptions options = FirebaseOptions.builder().setCredentials(credentials).build();
-            try {
-                FirebaseApp.initializeApp(options);
-            } catch (IllegalStateException e) {
-                System.out.println("Firebase is already initialized");
-            }
-
-            FirebaseMessaging messaging = FirebaseMessaging.getInstance();
-            return new DataSource() {
-                @Override
-                public Object proxy() {
-                    return messaging;
-                }
-
-                @Override
-                public String name() {
-                    return name;
-                }
-            };
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
-        }
-    };
-
     Creator CURL = (name, config, parent) -> {
-
         try {
             String baseUrl = config.getOrDefault("url", "").toString();
             Map<String, String> headers = (Map) config.getOrDefault("headers", Collections.emptyMap());
@@ -150,6 +115,8 @@ public interface DataSource {
         }
     };
 
+    Map<String,Creator> REGISTRY = new HashMap<>();
+
     Creator UNIVERSAL = (name, config, parent) -> {
         String type = config.getOrDefault("type", "").toString();
         Creator creator = switch (type) {
@@ -157,8 +124,11 @@ public interface DataSource {
             case "jdbc" -> JDBC;
             case "google" -> G_STORAGE;
             case "curl" -> CURL;
-            case "fcm" -> FCM;
-            default -> throw new IllegalStateException("Unknown type of datasource -> value: " + type);
+            default -> {
+                Creator c = REGISTRY.get(type);
+                if ( c != null ) yield c;
+                throw new IllegalStateException("Unknown type of datasource -> value: " + type);
+            }
         };
         return creator.create(name, config, parent);
     };
