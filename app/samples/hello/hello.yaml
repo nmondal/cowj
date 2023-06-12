@@ -39,6 +39,8 @@ data-sources:
 
   _registry:
     fcm: cowj.plugins.FCMWrapper::FCM
+    g_storage: cowj.plugins.GoogleStorageWrapper::STORAGE
+    redis: cowj.plugins.RedisWrapper::REDIS
 
   redis :
     type : redis
@@ -53,7 +55,7 @@ data-sources:
       x: y
 
   g_storage:
-    type: google
+    type: g_storage
 
   json_place:
     type: curl
