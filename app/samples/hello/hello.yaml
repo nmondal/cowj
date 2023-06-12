@@ -38,9 +38,12 @@ filters:
 data-sources:
 
   _registry:
+    curl: cowj.plugins.CurlWrapper::CURL
     fcm: cowj.plugins.FCMWrapper::FCM
     g_storage: cowj.plugins.GoogleStorageWrapper::STORAGE
+    jdbc: cowj.plugins.JDBCWrapper::JDBC
     redis: cowj.plugins.RedisWrapper::REDIS
+
 
   redis :
     type : redis
