@@ -24,7 +24,11 @@ public interface Model {
     }
 
     default String staticPath(){
-        return "static" ;
+        return "_/static" ;
+    }
+
+    default String libPath(){
+        return "_/lib" ;
     }
 
     default Map<String, Map<String,String>> routes(){
@@ -67,6 +71,8 @@ public interface Model {
 
     String PLUGINS = "plugins" ;
 
+    String LIB_FOLDER = "lib" ;
+
     static Model from(final Map<String,Object> map, final String baseDir){
 
         return new Model() {
@@ -81,6 +87,11 @@ public interface Model {
             @Override
             public String staticPath() {
                 return (String) map.getOrDefault(STATIC, Model.super.staticPath());
+            }
+
+            @Override
+            public String libPath() {
+                return (String) map.getOrDefault(LIB_FOLDER, Model.super.libPath());
             }
 
             @Override

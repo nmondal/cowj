@@ -1,8 +1,7 @@
 // get the fcm
 fcm = _ds.fcm
-
 // pass message
-response = _ds.fcm.sendMulticast({ "_tokens" : ["a", "b"] , "_tile" : "Title", "_body" : "Body" })
+response = fcm.sendMulticast({ "_tokens" : ["a", "b"] , "_tile" : "Title", "_body" : "Body" })
 
 // do something here
 println(response.successCount)

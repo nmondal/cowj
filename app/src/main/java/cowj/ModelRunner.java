@@ -2,6 +2,7 @@ package cowj;
 
 import spark.*;
 import zoomba.lang.core.io.ZWeb;
+import zoomba.lang.core.types.ZTypes;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,10 +48,16 @@ public interface ModelRunner extends Runnable {
         Scriptable.Creator creator = scriptCreator();
         // load static
         staticFiles.location(m.staticPath());
-        final String baseDir = model().base();
+        final String baseDir = m.base();
         // load routes
         System.out.println("Base Directory : " + baseDir);
+        final String libDir = m.interpretPath( m.libPath() );
+        // load libraries
+        System.out.println("Library Directory : " +libDir);
+        ZTypes.loadJar(libDir);
+
         // loading plugins...
+        System.out.println("Loading plugins now...");
         Map<String, Map<String, String>> plugins = m.plugins();
         for ( String packageName : plugins.keySet() ){
             Map<String,String> providers = plugins.get(packageName);

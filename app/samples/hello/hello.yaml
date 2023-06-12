@@ -7,6 +7,9 @@ port: 1003
 # for all static files, js, html pages, pds and what not
 static: _/.
 
+# to load all external jars which are not part of the distribution
+lib: _/lib
+
 # threading related stuff
 threading:
   min: 4
