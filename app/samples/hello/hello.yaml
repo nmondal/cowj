@@ -35,15 +35,16 @@ filters:
   after:
     "*": _/after.zm
 
+plugins:
+  cowj.plugins:
+    curl: CurlWrapper::CURL
+    fcm: FCMWrapper::FCM
+    g_storage: GoogleStorageWrapper::STORAGE
+    jdbc: JDBCWrapper::JDBC
+    redis: RedisWrapper::REDIS
+
+
 data-sources:
-
-  _registry:
-    curl: cowj.plugins.CurlWrapper::CURL
-    fcm: cowj.plugins.FCMWrapper::FCM
-    g_storage: cowj.plugins.GoogleStorageWrapper::STORAGE
-    jdbc: cowj.plugins.JDBCWrapper::JDBC
-    redis: cowj.plugins.RedisWrapper::REDIS
-
 
   redis :
     type : redis

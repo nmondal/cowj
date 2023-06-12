@@ -75,7 +75,7 @@ public final class FCMWrapper {
         return messaging.send(message(data));
     }
 
-    private FCMWrapper(String name, String authFile) throws Exception {
+    private FCMWrapper(String authFile) throws Exception {
         InputStream is = new FileInputStream(authFile);
         GoogleCredentials credentials = GoogleCredentials.fromStream(is);
         FirebaseOptions options = FirebaseOptions.builder().setCredentials(credentials).build();
@@ -89,9 +89,9 @@ public final class FCMWrapper {
         }
     }
 
-    public static FCMWrapper from(String name, String authFile){
+    public static FCMWrapper from(String authFile){
         try {
-            return new FCMWrapper(name, authFile);
+            return new FCMWrapper(authFile);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -99,7 +99,7 @@ public final class FCMWrapper {
 
     public static DataSource.Creator FCM = (name, config, parent) -> {
         String authFile = parent.interpretPath((String) config.get("credentials_file"));
-        FCMWrapper fcmWrapper = FCMWrapper.from(name, authFile);
+        FCMWrapper fcmWrapper = FCMWrapper.from(authFile);
         return new DataSource() {
             @Override
             public Object proxy() {

@@ -26,6 +26,7 @@ public interface DataSource {
                 return;
             }
             REGISTRY.put(type,(Creator) r);
+            System.out.printf("Registered '%s::%s' as provider type for '%s' %n", clazz.getName(), f.getName(), type );
         }catch (Throwable t){
             System.err.println( "Error registering type... : " + t);
         }

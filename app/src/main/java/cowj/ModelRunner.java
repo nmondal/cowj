@@ -50,19 +50,21 @@ public interface ModelRunner extends Runnable {
         final String baseDir = model().base();
         // load routes
         System.out.println("Base Directory : " + baseDir);
+        // loading plugins...
+        Map<String, Map<String, String>> plugins = m.plugins();
+        for ( String packageName : plugins.keySet() ){
+            Map<String,String> providers = plugins.get(packageName);
+            providers.forEach( (type, identifier) -> {
+                String fullProviderName = packageName + "." + identifier ;
+                DataSource.registerType(type, fullProviderName);
+            } );
+        }
+
         // load data sources ...
         System.out.println("DataSources mapping are as follows...");
         Map<String, Map<String, Object>> dataSources = m.dataSources();
-        Map<String,Object> registry = dataSources.getOrDefault("_registry", Collections.emptyMap());
-        registry.forEach((type, value) -> {
-            DataSource.registerType( type, value.toString());
-        });
-
         DataSource.Creator dsCreator = dsCreator();
         for (String dsName : dataSources.keySet()) {
-            // special case
-            if ( "_registry".equals(dsName ) ) continue;
-
             Map<String,Object> dsConfig = dataSources.get(dsName);
             try{
                 DataSource dataSource = dsCreator.create(dsName, dsConfig, model());
