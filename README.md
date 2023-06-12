@@ -90,7 +90,15 @@ filters:
   after:
     "*": _/after.zm
 
-# data storce connections
+# how to load various data sources - plugin based architecture 
+plugins:
+  # the package 
+  cowj.plugins:
+    # items from each package class::field_name
+    curl: CurlWrapper::CURL
+    redis: RedisWrapper::REDIS
+
+# data store connections
 data-sources:
   redis :
     type : redis
@@ -103,8 +111,6 @@ data-sources:
 ```
 It simply defines the routes - as well the handler script for such a route.
 In this way it is very similar to PHP doctrine, as well as DJango or Play.
-
- 
 
 
 #### Scripting 
