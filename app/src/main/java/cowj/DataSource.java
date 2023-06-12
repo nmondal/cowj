@@ -8,6 +8,7 @@ import zoomba.lang.core.io.ZWeb;
 import zoomba.lang.core.types.ZNumber;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -120,26 +121,35 @@ public interface DataSource {
 
     Map<String,Creator> REGISTRY = new HashMap<>();
 
-    Creator UNIVERSAL = new Creator() {
-        static {
-            DataSource.REGISTRY.put("fcm", FCMWrapper.FCM);
+    static void registerType(String type, String path){
+        String[] paths = path.split("::");
+        try {
+            Class<?> clazz = Class.forName(paths[0]);
+            Field f = clazz.getDeclaredField(paths[1]);
+            Object r = f.get(null);
+            if ( !(r instanceof Creator) ){
+                System.err.println( "Error registering type... not a creator object : " + r.getClass());
+                return;
+            }
+            REGISTRY.put(type,(Creator) r);
+        }catch (Throwable t){
+            System.err.println( "Error registering type... : " + t);
         }
+    }
 
-        @Override
-        public DataSource create(String name, Map<String, Object> config, Model parent) {
-            String type = config.getOrDefault("type", "").toString();
-            Creator creator = switch (type) {
-                case "redis" -> REDIS;
-                case "jdbc" -> JDBC;
-                case "google" -> G_STORAGE;
-                case "curl" -> CURL;
-                default -> {
-                    Creator c = REGISTRY.get(type);
-                    if (c != null) yield c;
-                    throw new IllegalStateException("Unknown type of datasource -> value: " + type);
-                }
-            };
-            return creator.create(name, config, parent);
-        }
+    Creator UNIVERSAL = (name, config, parent) -> {
+        String type = config.getOrDefault("type", "").toString();
+        Creator creator = switch (type) {
+            case "redis" -> REDIS;
+            case "jdbc" -> JDBC;
+            case "google" -> G_STORAGE;
+            case "curl" -> CURL;
+            default -> {
+                Creator c = REGISTRY.get(type);
+                if (c != null) yield c;
+                throw new IllegalStateException("Unknown type of datasource -> value: " + type);
+            }
+        };
+        return creator.create(name, config, parent);
     };
 }

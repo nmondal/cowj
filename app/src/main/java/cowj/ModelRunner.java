@@ -53,8 +53,16 @@ public interface ModelRunner extends Runnable {
         // load data sources ...
         System.out.println("DataSources mapping are as follows...");
         Map<String, Map<String, Object>> dataSources = m.dataSources();
+        Map<String,Object> registry = dataSources.getOrDefault("_registry", Collections.emptyMap());
+        registry.forEach((type, value) -> {
+            DataSource.registerType( type, value.toString());
+        });
+
         DataSource.Creator dsCreator = dsCreator();
         for (String dsName : dataSources.keySet()) {
+            // special case
+            if ( "_registry".equals(dsName ) ) continue;
+
             Map<String,Object> dsConfig = dataSources.get(dsName);
             try{
                 DataSource dataSource = dsCreator.create(dsName, dsConfig, model());

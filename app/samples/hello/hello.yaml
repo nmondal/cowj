@@ -36,6 +36,10 @@ filters:
     "*": _/after.zm
 
 data-sources:
+
+  _registry:
+    fcm: cowj.plugins.FCMWrapper::FCM
+
   redis :
     type : redis
     urls: [ "localhost:6379"]
