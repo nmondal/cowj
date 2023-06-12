@@ -58,7 +58,7 @@ public final class FirebaseWrapper  {
         }
         v = message.get("_body");
         if (  v != null ){
-            b.setTitle( v.toString() );
+            b.setBody( v.toString() );
         }
         v = message.get("_image");
         if (  v != null ){
