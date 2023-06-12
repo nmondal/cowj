@@ -7,10 +7,13 @@ import redis.clients.jedis.JedisCluster;
 import zoomba.lang.core.io.ZWeb;
 import zoomba.lang.core.types.ZNumber;
 
+import java.io.File;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.*;
 import java.util.stream.Collectors;
+import cowj.plugins.FCMWrapper;
 
 public interface DataSource {
 
@@ -117,19 +120,26 @@ public interface DataSource {
 
     Map<String,Creator> REGISTRY = new HashMap<>();
 
-    Creator UNIVERSAL = (name, config, parent) -> {
-        String type = config.getOrDefault("type", "").toString();
-        Creator creator = switch (type) {
-            case "redis" -> REDIS;
-            case "jdbc" -> JDBC;
-            case "google" -> G_STORAGE;
-            case "curl" -> CURL;
-            default -> {
-                Creator c = REGISTRY.get(type);
-                if ( c != null ) yield c;
-                throw new IllegalStateException("Unknown type of datasource -> value: " + type);
-            }
-        };
-        return creator.create(name, config, parent);
+    Creator UNIVERSAL = new Creator() {
+        static {
+            DataSource.REGISTRY.put("fcm", FCMWrapper.FCM);
+        }
+
+        @Override
+        public DataSource create(String name, Map<String, Object> config, Model parent) {
+            String type = config.getOrDefault("type", "").toString();
+            Creator creator = switch (type) {
+                case "redis" -> REDIS;
+                case "jdbc" -> JDBC;
+                case "google" -> G_STORAGE;
+                case "curl" -> CURL;
+                default -> {
+                    Creator c = REGISTRY.get(type);
+                    if (c != null) yield c;
+                    throw new IllegalStateException("Unknown type of datasource -> value: " + type);
+                }
+            };
+            return creator.create(name, config, parent);
+        }
     };
 }

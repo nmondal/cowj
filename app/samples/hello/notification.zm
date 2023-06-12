@@ -1,10 +1,9 @@
 // get the fcm
 fcm = _ds.fcm
-data = { "_tokens" : [ "a", "b"] , "_tile" : "Title", "_body" : "Body" }
-// create message
-m_message = fcm.multicastMessage(data)
+
 // pass message
-response = _ds.fcm.sendMulticast(m_message)
+response = _ds.fcm.sendMulticast({ "_tokens" : ["a", "b"] , "_tile" : "Title", "_body" : "Body" })
+
 // do something here
 println(response.successCount)
 println(response.failureCount)
