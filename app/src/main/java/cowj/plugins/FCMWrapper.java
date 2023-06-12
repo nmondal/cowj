@@ -8,24 +8,71 @@ import cowj.DataSource;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 public final class FCMWrapper {
     public final FirebaseMessaging messaging;
 
+    private Message message(Map<String,Object> message){
+        Message.Builder builder = Message.builder();
+        Object v = message.get("_token");
+        if ( v != null ){
+            builder.setToken( v.toString() );
+        }
+        Notification.Builder b = Notification.builder();
+        v = message.get("_title");
+        if ( v != null ){
+            b.setTitle( v.toString() );
+        }
+        v = message.get("_body");
+        if (  v != null ){
+            b.setBody( v.toString() );
+        }
+        v = message.get("_image");
+        if (  v != null ){
+            b.setImage( v.toString() );
+        }
+        // other properties gets added like as is...
+        message.keySet().stream().filter(  k -> !k.startsWith("_")).forEach( k -> {
+            Object x = message.get(k);
+            builder.putData(k, x.toString());
+        });
+        return builder.setNotification( b.build() ).build();
+    }
+
+    private MulticastMessage multicastMessage(Map<String,Object> message){
+        MulticastMessage.Builder builder = MulticastMessage.builder();
+        List<String> tokens = (List) message.getOrDefault("_tokens", Collections.emptyList());
+        builder.addAllTokens( tokens );
+        Notification.Builder b = Notification.builder();
+        Object v = message.get("_title");
+        if ( v != null ){
+            b.setTitle( v.toString() );
+        }
+        v = message.get("_body");
+        if (  v != null ){
+            b.setBody( v.toString() );
+        }
+        v = message.get("_image");
+        if (  v != null ){
+            b.setImage( v.toString() );
+        }
+        // other properties gets added like as is...
+        message.keySet().stream().filter(  k -> !k.startsWith("_")).forEach( k -> {
+            Object x = message.get(k);
+            builder.putData(k, x.toString());
+        });
+        return builder.setNotification( b.build() ).build();
+    }
+
     public BatchResponse sendMulticast(Map<String, Object> data) throws FirebaseMessagingException {
-        return messaging.sendMulticast(
-                MulticastMessage.builder()
-                        .addAllTokens((List<String>) data.get("_tokens"))
-                        .setNotification(
-                                Notification.builder()
-                                        .setTitle((String) data.get("_title"))
-                                        .setBody((String) data.get("_body"))
-                                        .build()
-                        )
-                        .build()
-        );
+        return messaging.sendMulticast(multicastMessage(data));
+    }
+
+    public String sendMessage(Map<String, Object> data) throws FirebaseMessagingException {
+        return messaging.send(message(data));
     }
 
     private FCMWrapper(String name, String authFile) throws Exception {
