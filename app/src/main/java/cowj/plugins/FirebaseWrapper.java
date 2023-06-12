@@ -6,32 +6,70 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.MulticastMessage;
+import com.google.firebase.messaging.Notification;
 import cowj.DataSource;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public final class FirebaseWrapper  {
 
     public final FirebaseMessaging messaging;
 
-    public static Message.Builder messageBuilder(){
-        return Message.builder();
-    }
-
-    public static MulticastMessage.Builder multicastMessageBuilder(){
-        return MulticastMessage.builder();
-    }
-
     public Message message(Map<String,Object> message){
-        // TODO Hemil does this
-        return messageBuilder().build();
+
+        Message.Builder builder = Message.builder();
+        Object v = message.get("_token");
+        if ( v != null ){
+            builder.setToken( v.toString() );
+        }
+        Notification.Builder b = Notification.builder();
+        v = message.get("_title");
+        if ( v != null ){
+            b.setTitle( v.toString() );
+        }
+        v = message.get("_body");
+        if (  v != null ){
+            b.setBody( v.toString() );
+        }
+        v = message.get("_image");
+        if (  v != null ){
+            b.setImage( v.toString() );
+        }
+        // other properties gets added like as is...
+        message.keySet().stream().filter(  k -> !k.startsWith("_")).forEach( k -> {
+            Object x = message.get(k);
+            builder.putData(k, x.toString());
+        });
+        return builder.setNotification( b.build() ).build();
     }
 
     public MulticastMessage multicastMessage(Map<String,Object> message){
-        // TODO Hemil does this
-        return MulticastMessage.builder().build();
+        MulticastMessage.Builder builder = MulticastMessage.builder();
+        List<String> tokens = (List) message.getOrDefault("_tokens", Collections.emptyList());
+        builder.addAllTokens( tokens );
+        Notification.Builder b = Notification.builder();
+        Object v = message.get("_title");
+        if ( v != null ){
+            b.setTitle( v.toString() );
+        }
+        v = message.get("_body");
+        if (  v != null ){
+            b.setTitle( v.toString() );
+        }
+        v = message.get("_image");
+        if (  v != null ){
+            b.setImage( v.toString() );
+        }
+        // other properties gets added like as is...
+        message.keySet().stream().filter(  k -> !k.startsWith("_")).forEach( k -> {
+            Object x = message.get(k);
+            builder.putData(k, x.toString());
+        });
+        return builder.setNotification( b.build() ).build();
     }
 
     private FirebaseWrapper(String name, String authFile) throws Exception {
