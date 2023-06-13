@@ -175,7 +175,7 @@ some_jdbc:
   driver : "full-class-for-driver"
   connection: "connection-string"
   properties: # properties for connection
-  		x : y # all of them will be added 
+    x : y # all of them will be added 
 ```
 
 
@@ -191,7 +191,7 @@ some_curl:
   type: curl # shoule have been registered before
   url : "https://jsonplaceholder.typicode.com" # the url 
   headers: # headers we want to pass through
-  		x : y # all of them will be added 
+    x : y # all of them will be added 
 ```
 
 
