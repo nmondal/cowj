@@ -4,13 +4,12 @@ import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
 import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.python.core.Options;
 import org.python.jsr223.PyScriptEngineFactory;
-import spark.Filter;
-import spark.Request;
-import spark.Response;
-import spark.Route;
+import spark.*;
 import zoomba.lang.core.interpreter.ZContext;
 import zoomba.lang.core.interpreter.ZScript;
 import zoomba.lang.core.operations.Function;
+import zoomba.lang.core.types.ZException;
+import zoomba.lang.core.types.ZNumber;
 
 import javax.script.*;
 import java.io.IOException;
@@ -132,8 +131,18 @@ public interface Scriptable  {
         zs.runContext(fc);
         Function.MonadicContainer mc = zs.execute();
         if ( mc.isNil() ) return "";
-        if ( mc.value() instanceof Throwable ){
-            response.status(500);
+        if (mc.value() instanceof Throwable th){
+            if ( th instanceof ZException.ZRuntimeAssertion ){
+                Object[] args = ((ZException.ZRuntimeAssertion) th).args;
+                String message = ((Throwable)args[0]).getMessage();
+                int status = 500;
+                if ( args.length > 1 ){
+                    status = ZNumber.integer( args[1], 500 ).intValue();
+                }
+                Spark.halt( status, message );
+            } else {
+                response.status(500);
+            }
         }
         return mc.value();
     };

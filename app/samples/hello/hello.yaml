@@ -24,6 +24,8 @@ routes:
     /hello/p: _/hello.py
     /hello/z: _/hello.zm
     /notification: _/notification.zm
+    /error: _/error.zm
+
 
 proxies:
   get:
