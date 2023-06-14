@@ -1,7 +1,7 @@
 package cowj;
 
 import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
-import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import org.mozilla.javascript.engine.RhinoScriptEngineFactory ;
 import org.python.core.Options;
 import org.python.jsr223.PyScriptEngineFactory;
 import spark.*;
@@ -40,6 +40,8 @@ public interface Scriptable  {
     * */
     interface TestAsserter{
 
+        Bindings binding();
+
         class HaltException extends RuntimeException{
             public final int code;
             public HaltException( String message, int code ){
@@ -54,11 +56,14 @@ public interface Scriptable  {
             return panic(b, message, 500);
         }
         default boolean panic(boolean b, String message, int code ){
-            if ( b ) throw new HaltException(message,code);
+            if ( b ) {
+                RuntimeException ex = new HaltException(message, code);
+                binding().put(HALT_ERROR, ex);
+                throw ex;
+            }
             return false;
         }
 
-        TestAsserter TEST_ASSERTER = new TestAsserter() {};
         String ASSERTER = "Test" ;
     }
 
@@ -78,6 +83,9 @@ public interface Scriptable  {
 
     String DATA_SOURCE = "_ds" ;
 
+    String HALT_ERROR = "_ex" ;
+
+
     static String extension(String path){
         String[] arr = path.split("\\.");
         return arr[arr.length-1].toLowerCase(Locale.ROOT);
@@ -90,7 +98,7 @@ public interface Scriptable  {
         static {
             Options.importSite = false;
             // force load engines for fat-jar issues...
-            MANAGER.registerEngineName( "JavaScript", new NashornScriptEngineFactory());
+            MANAGER.registerEngineName( "JavaScript", new RhinoScriptEngineFactory());
             MANAGER.registerEngineName( "groovy", new GroovyScriptEngineFactory());
             MANAGER.registerEngineName( "python", new PyScriptEngineFactory());
         }
@@ -134,7 +142,7 @@ public interface Scriptable  {
         sb.put(REQUEST, request);
         sb.put(RESPONSE, response);
         sb.put(DATA_SOURCE, DATA_SOURCES);
-        sb.put(TestAsserter.ASSERTER, TestAsserter.TEST_ASSERTER);
+        sb.put(TestAsserter.ASSERTER, (TestAsserter) () -> sb);
         try {
             Object r =  cs.eval(sb);
             if ( r != null ) return r;
@@ -145,7 +153,8 @@ public interface Scriptable  {
             return "";
 
         } catch ( Throwable t){
-            if ( t.getCause() instanceof TestAsserter.HaltException he ){
+            if ( sb.containsKey(HALT_ERROR) ){
+                TestAsserter.HaltException he = (TestAsserter.HaltException) sb.get(HALT_ERROR);
                    Spark.halt(he.code, he.getMessage());
             } else {
                 response.status(500);

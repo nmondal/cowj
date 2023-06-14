@@ -31,7 +31,7 @@ dependencies {
     // TODO cron
     implementation 'org.slf4j:slf4j-jdk14:2.0.7'
     // Scripting Engines JSR-223
-    implementation 'org.openjdk.nashorn:nashorn-core:15.4' //js
+    implementation 'org.mozilla:rhino-engine:1.7.14' //js
     // groovy
     implementation 'org.apache.groovy:groovy:4.0.12'
     implementation 'org.apache.groovy:groovy-jsr223:4.0.12'
