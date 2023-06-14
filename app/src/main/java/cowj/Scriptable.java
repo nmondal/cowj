@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -35,6 +34,34 @@ public interface Scriptable  {
             return scriptable::exec;
         }
     }
+
+    /*
+    * If the condition is true, halts, with message and error code
+    * */
+    interface TestAsserter{
+
+        class HaltException extends RuntimeException{
+            public final int code;
+            public HaltException( String message, int code ){
+                super(message);
+                this.code = code ;
+            }
+        }
+        default boolean panic(boolean b){
+            return panic(b, "Internal Error");
+        }
+        default boolean panic(boolean b, String message){
+            return panic(b, message, 500);
+        }
+        default boolean panic(boolean b, String message, int code ){
+            if ( b ) throw new HaltException(message,code);
+            return false;
+        }
+
+        TestAsserter TEST_ASSERTER = new TestAsserter() {};
+        String ASSERTER = "Test" ;
+    }
+
     Map<String,String> ENGINES = Map.of(
             "js", "JavaScript",
             "groovy", "groovy",
@@ -107,6 +134,7 @@ public interface Scriptable  {
         sb.put(REQUEST, request);
         sb.put(RESPONSE, response);
         sb.put(DATA_SOURCE, DATA_SOURCES);
+        sb.put(TestAsserter.ASSERTER, TestAsserter.TEST_ASSERTER);
         try {
             Object r =  cs.eval(sb);
             if ( r != null ) return r;
@@ -117,7 +145,11 @@ public interface Scriptable  {
             return "";
 
         } catch ( Throwable t){
-            response.status(500);
+            if ( t.getCause() instanceof TestAsserter.HaltException he ){
+                   Spark.halt(he.code, he.getMessage());
+            } else {
+                response.status(500);
+            }
             return t;
         }
     };
