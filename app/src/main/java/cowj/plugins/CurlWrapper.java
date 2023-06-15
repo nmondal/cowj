@@ -3,22 +3,30 @@ package cowj.plugins;
 import cowj.DataSource;
 import zoomba.lang.core.io.ZWeb;
 
-import java.util.Collections;
 import java.util.Map;
 
-public class CurlWrapper {
-    public static DataSource.Creator CURL = (name, config, parent) -> {
+public interface CurlWrapper {
+
+    ZWeb.ZWebCom send(String verb, String path, Map<String,String> headers, Map<String,String> params, String body);
+
+    DataSource.Creator CURL = (name, config, parent) -> {
         try {
             String baseUrl = config.getOrDefault("url", "").toString();
-            Map<String, String> headers = (Map) config.getOrDefault("headers", Collections.emptyMap());
-            ZWeb zWeb = new ZWeb(baseUrl);
-            if (!headers.isEmpty()) {
+
+            final CurlWrapper curlWrapper = (verb, path, headers, params, body) -> {
+                ZWeb zWeb = new ZWeb(baseUrl); // every call gets its own con
                 zWeb.headers.putAll(headers);
-            }
+                try {
+                    return zWeb.send(verb, path, params, body);
+                }catch (Throwable t){
+                    return null;
+                }
+            };
+
             return new DataSource() {
                 @Override
                 public Object proxy() {
-                    return zWeb;
+                    return curlWrapper;
                 }
 
                 @Override

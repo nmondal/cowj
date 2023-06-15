@@ -1,5 +1,6 @@
 package cowj;
 
+import cowj.plugins.CurlWrapper;
 import spark.*;
 import zoomba.lang.core.io.ZWeb;
 import zoomba.lang.core.types.ZTypes;
@@ -105,26 +106,21 @@ public interface ModelRunner extends Runnable {
                 String[] arr = proxyPath.split("/");
                 String curlKey = arr[0];
                 Object o = Scriptable.DATA_SOURCES.get(curlKey);
-                if (!(o instanceof ZWeb)){
+                if (!(o instanceof CurlWrapper )){
                     System.err.printf("route does not have any base curl data source : %s->%s %n", r.getKey(), r.getValue());
                     continue;
                 }
                 final String destPath = proxyPath.replace(curlKey + "/", "");
                 Route route = (request, response) -> {
-                    final ZWeb zw = (ZWeb) o;
+                    final CurlWrapper cw = (CurlWrapper) o;
                     // No mapping of request headers to forward
                     final String body = request.body() != null ? request.body() : "" ;
-                    ZWeb.ZWebCom com = zw.send( verb, destPath, Collections.emptyMap(), body );
+                    ZWeb.ZWebCom com = cw.send( verb, destPath, Collections.emptyMap(), Collections.emptyMap(), body );
+                    if ( com == null ){
+                        Spark.halt(500, "Proxy rout failed executing!");
+                    }
                     response.status(com.status);
                     // no mapping of response headers from destination forward...
-                    /*
-                    for ( Object k : com.map.keySet() ){
-                        if ( k == null) continue;
-                        String name = k.toString();
-                        String value = com.map.get(k).toString();
-                        response.header(name, value);
-                    }
-                    */
                     return com.body();
                 };
                 bic.accept(r.getKey(), route);

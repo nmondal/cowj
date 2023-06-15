@@ -74,6 +74,10 @@ data-sources:
   local_send:
     type: curl
     url: "http://localhost:1004"
+    proxy:
+      headers:
+        request: [ ] # allowed
+        response: "*" # copy
 
   fcm:
     type: fcm
