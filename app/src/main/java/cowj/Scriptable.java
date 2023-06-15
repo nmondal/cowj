@@ -63,6 +63,15 @@ public interface Scriptable  {
             }
             return false;
         }
+        default boolean expect(boolean b){
+            return expect(b, "Internal Error");
+        }
+        default boolean expect(boolean b, String message){
+            return expect(b, message, 500);
+        }
+        default boolean expect(boolean b, String message, int code ){
+            return panic(!b, message, code);
+        }
 
         String ASSERTER = "Test" ;
     }
