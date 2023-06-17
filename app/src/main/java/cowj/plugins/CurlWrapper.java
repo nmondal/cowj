@@ -59,10 +59,10 @@ public interface CurlWrapper {
                     request.headers().forEach( h ->  headers.put(h, request.headers(h)) );
                     bindings.put(HEADER, headers);
                     Map<String,String> queryParams = new HashMap<>();
-                    // TODO Hemil
+                    request.queryParams().forEach( q -> queryParams.put( q, request.queryParams(q)) );
                     bindings.put(QUERY, queryParams);
                     bindings.put(BODY, request.body());
-
+                    // TODO hemil should think more here...
                     try {
                        Object r = sc.exec( bindings);
                        if ( r instanceof  Map ) return (Map)r;
