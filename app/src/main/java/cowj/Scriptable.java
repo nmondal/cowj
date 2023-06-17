@@ -1,23 +1,21 @@
 package cowj;
 
 import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
-import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import org.mozilla.javascript.engine.RhinoScriptEngineFactory ;
 import org.python.core.Options;
 import org.python.jsr223.PyScriptEngineFactory;
-import spark.Filter;
-import spark.Request;
-import spark.Response;
-import spark.Route;
+import spark.*;
 import zoomba.lang.core.interpreter.ZContext;
 import zoomba.lang.core.interpreter.ZScript;
 import zoomba.lang.core.operations.Function;
+import zoomba.lang.core.types.ZException;
+import zoomba.lang.core.types.ZNumber;
 
 import javax.script.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -36,6 +34,48 @@ public interface Scriptable  {
             return scriptable::exec;
         }
     }
+
+    /*
+    * If the condition is true, halts, with message and error code
+    * */
+    interface TestAsserter{
+
+        Bindings binding();
+
+        class HaltException extends RuntimeException{
+            public final int code;
+            public HaltException( String message, int code ){
+                super(message);
+                this.code = code ;
+            }
+        }
+        default boolean panic(boolean b){
+            return panic(b, "Internal Error");
+        }
+        default boolean panic(boolean b, String message){
+            return panic(b, message, 500);
+        }
+        default boolean panic(boolean b, String message, int code ){
+            if ( b ) {
+                RuntimeException ex = new HaltException(message, code);
+                binding().put(HALT_ERROR, ex);
+                throw ex;
+            }
+            return false;
+        }
+        default boolean expect(boolean b){
+            return expect(b, "Internal Error");
+        }
+        default boolean expect(boolean b, String message){
+            return expect(b, message, 500);
+        }
+        default boolean expect(boolean b, String message, int code ){
+            return panic(!b, message, code);
+        }
+
+        String ASSERTER = "Test" ;
+    }
+
     Map<String,String> ENGINES = Map.of(
             "js", "JavaScript",
             "groovy", "groovy",
@@ -52,6 +92,9 @@ public interface Scriptable  {
 
     String DATA_SOURCE = "_ds" ;
 
+    String HALT_ERROR = "_ex" ;
+
+
     static String extension(String path){
         String[] arr = path.split("\\.");
         return arr[arr.length-1].toLowerCase(Locale.ROOT);
@@ -64,7 +107,7 @@ public interface Scriptable  {
         static {
             Options.importSite = false;
             // force load engines for fat-jar issues...
-            MANAGER.registerEngineName( "JavaScript", new NashornScriptEngineFactory());
+            MANAGER.registerEngineName( "JavaScript", new RhinoScriptEngineFactory());
             MANAGER.registerEngineName( "groovy", new GroovyScriptEngineFactory());
             MANAGER.registerEngineName( "python", new PyScriptEngineFactory());
         }
@@ -108,6 +151,7 @@ public interface Scriptable  {
         sb.put(REQUEST, request);
         sb.put(RESPONSE, response);
         sb.put(DATA_SOURCE, DATA_SOURCES);
+        sb.put(TestAsserter.ASSERTER, (TestAsserter) () -> sb);
         try {
             Object r =  cs.eval(sb);
             if ( r != null ) return r;
@@ -118,7 +162,12 @@ public interface Scriptable  {
             return "";
 
         } catch ( Throwable t){
-            response.status(500);
+            if ( sb.containsKey(HALT_ERROR) ){
+                TestAsserter.HaltException he = (TestAsserter.HaltException) sb.get(HALT_ERROR);
+                   Spark.halt(he.code, he.getMessage());
+            } else {
+                response.status(500);
+            }
             return t;
         }
     };
@@ -132,8 +181,18 @@ public interface Scriptable  {
         zs.runContext(fc);
         Function.MonadicContainer mc = zs.execute();
         if ( mc.isNil() ) return "";
-        if ( mc.value() instanceof Throwable ){
-            response.status(500);
+        if (mc.value() instanceof Throwable th){
+            if ( th instanceof ZException.ZRuntimeAssertion ){
+                Object[] args = ((ZException.ZRuntimeAssertion) th).args;
+                String message = ((Throwable)args[0]).getMessage();
+                int status = 500;
+                if ( args.length > 1 ){
+                    status = ZNumber.integer( args[1], 500 ).intValue();
+                }
+                Spark.halt( status, message );
+            } else {
+                response.status(500);
+            }
         }
         return mc.value();
     };

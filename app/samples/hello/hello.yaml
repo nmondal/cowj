@@ -7,6 +7,9 @@ port: 1003
 # for all static files, js, html pages, pds and what not
 static: _/.
 
+# to load all external jars which are not part of the distribution
+lib: _/lib
+
 # threading related stuff
 threading:
   min: 4
@@ -21,6 +24,8 @@ routes:
     /hello/p: _/hello.py
     /hello/z: _/hello.zm
     /notification: _/notification.zm
+    /error: _/error.zm
+
 
 proxies:
   get:
@@ -35,7 +40,17 @@ filters:
   after:
     "*": _/after.zm
 
+plugins:
+  cowj.plugins:
+    curl: CurlWrapper::CURL
+    fcm: FCMWrapper::FCM
+    g_storage: GoogleStorageWrapper::STORAGE
+    jdbc: JDBCWrapper::JDBC
+    redis: RedisWrapper::REDIS
+
+
 data-sources:
+
   redis :
     type : redis
     urls: [ "localhost:6379"]
@@ -49,7 +64,7 @@ data-sources:
       x: y
 
   g_storage:
-    type: google
+    type: g_storage
 
   json_place:
     type: curl
@@ -59,6 +74,10 @@ data-sources:
   local_send:
     type: curl
     url: "http://localhost:1004"
+    proxy:
+      headers:
+        request: [ ] # allowed
+        response: "*" # copy
 
   fcm:
     type: fcm

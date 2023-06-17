@@ -1,0 +1,4 @@
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418
+// showing custom errors
+panic(true, "boom!", 418 )
+

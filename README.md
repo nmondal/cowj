@@ -53,10 +53,9 @@ hence they should be hosted outside the API end points - DSL should be created t
 Any "Service" point requiring any "data store" access need to declare it, specifically 
 as part of the service configuration process. Objective of the engine would be to handle the data transfer. JSON is the choice for data transfer for now.
 
+## Current Implementation 
 
-### Current Implementation 
-
-#### Service Configuration
+### Service Configuration
 
 Here is the config:
 
@@ -90,7 +89,15 @@ filters:
   after:
     "*": _/after.zm
 
-# data storce connections
+# how to load various data sources - plugin based architecture 
+plugins:
+  # the package 
+  cowj.plugins:
+    # items from each package class::field_name
+    curl: CurlWrapper::CURL
+    redis: RedisWrapper::REDIS
+
+# data store connections
 data-sources:
   redis :
     type : redis
@@ -104,10 +111,7 @@ data-sources:
 It simply defines the routes - as well the handler script for such a route.
 In this way it is very similar to PHP doctrine, as well as DJango or Play.
 
- 
-
-
-#### Scripting 
+### Scripting 
 
 Is Polyglot.  We support JSR-223 languages - in built support is provided right now for:
 
@@ -141,15 +145,125 @@ https://sparkjava.com/documentation#request
 
 https://sparkjava.com/documentation#response
 
+### Filters 
+
+These are how one can have before and after callback before and after any route pattern gets hit.  This are forward proxying requests. At the same time - we can have before and after filters employed in them to make COWJ a fully working forward proxy like SQUID.
+
+### Data Sources 
+
+If the idea of COWJ is to do CRUD, where it does CRUD to/from? The underlying data is provided via the data sources.
+
+How data sources work? There is a global map for registered data sources, which gets injected in the scripts as `_ds`  :
+
+```js
+_ds.redis
+```
+
+Would access the data source which is registered in the name of `redis` .
 
 
-#### Filters 
 
-These are how one can have before and after callback before and after any route pattern gets hit. 
+Right now there are the following data sources supported:
+
+##### JDBC 
+
+JDBC data source - anything that can connect to JDDBC drivers.
+
+```yaml
+some_jdbc:
+  type: jdbc # shoule have been registered before
+  driver : "full-class-for-driver"
+  connection: "connection-string"
+  properties: # properties for connection
+    x : y # all of them will be added 
+```
 
 
 
-#### Proxies 
+##### CURL
+
+External Web Service calling. This is the underlying mechanism to call Proxies to forwarding data.
+
+
+
+```yaml
+some_curl:
+  type: curl # shoule have been registered before
+  url : "https://jsonplaceholder.typicode.com" # the url 
+  headers: # headers we want to pass through
+    x : y # all of them will be added 
+```
+
+
+
+##### Google Storage
+
+Exposes Google Storage as a data source.
+
+```yaml
+googl_storage:
+  type: g_storage # shoule have been registered before
+```
+
+
+
+##### Redis 
+
+Exposes Redis cluster  as a data source:
+
+```yaml
+ redis :
+   type : redis # should register before 
+   urls: [ "localhost:6379"] # bunch of urls to the cluster 
+```
+
+
+
+##### Firebase Notification Service 
+
+Firebase  as a data source.
+
+
+
+### Plugins
+
+All data sources are implemented as plug and play architecture such that no code is required to change for adding plugins to the original one.
+
+This is how one can register a plugin to the system - the following showcases all default ones:
+
+```yaml
+# how to load various data sources - plugin based architecture 
+plugins:
+  # the package 
+  cowj.plugins:
+    # items from each package class::field_name
+    curl: CurlWrapper::CURL
+    fcm: FCMWrapper::FCM
+    g_storage: GoogleStorageWrapper::STORAGE
+    jdbc: JDBCWrapper::JDBC
+    redis: RedisWrapper::REDIS
+
+```
+
+As one can see, we have multiple keys inside the `plugins` which corresponds to multiple packages - and under each package there are `type` of `datasource` we want to register it as, and the right side is the `implementor_class::static_field_name`.
+
+In plain language it reads:
+
+> A static filed `CURL` of the class `cowj.plugins.CurlWrapper` implements a `DataStore.Creator` class and is being registered as `curl` type of data store creator.
+
+#### Library Folder 
+
+From where plugins should be loaded? If one chose not to compile their code with COWJ - as majority of the case would be - there is a special folder in the base director defaults to `lib`.  All jars in all directories, recursively will be loaded in system boot and would be put into class path,
+
+One can naturally change the location of the lib folder by:
+
+```yaml
+lib: _/some_other_random_dir
+```
+
+
+
+### Proxies 
 
 Path/Packet forwarding. One simply creates a base host - in the data source section of type `curl` and then use that key as base for all forwarding.
 
@@ -164,7 +278,7 @@ System responds back with the same status as of the external web service as well
 
 
 
-### Running 
+## Running 
 
 1. Get the spark-11 cloned in local 
 2. Get ZoomBA cloned in local 

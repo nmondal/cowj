@@ -24,7 +24,11 @@ public interface Model {
     }
 
     default String staticPath(){
-        return "static" ;
+        return "_/static" ;
+    }
+
+    default String libPath(){
+        return "_/lib" ;
     }
 
     default Map<String, Map<String,String>> routes(){
@@ -40,6 +44,10 @@ public interface Model {
     }
 
     default Map<String, Map<String,String>> proxies(){
+        return Collections.emptyMap();
+    }
+
+    default Map<String, Map<String,String>> plugins(){
         return Collections.emptyMap();
     }
 
@@ -61,6 +69,9 @@ public interface Model {
 
     String PROXIES = "proxies" ;
 
+    String PLUGINS = "plugins" ;
+
+    String LIB_FOLDER = "lib" ;
 
     static Model from(final Map<String,Object> map, final String baseDir){
 
@@ -76,6 +87,11 @@ public interface Model {
             @Override
             public String staticPath() {
                 return (String) map.getOrDefault(STATIC, Model.super.staticPath());
+            }
+
+            @Override
+            public String libPath() {
+                return (String) map.getOrDefault(LIB_FOLDER, Model.super.libPath());
             }
 
             @Override
@@ -101,6 +117,11 @@ public interface Model {
             @Override
             public Map<String, Map<String, String>> proxies() {
                 return (Map) map.getOrDefault( PROXIES, Model.super.proxies());
+            }
+
+            @Override
+            public Map<String, Map<String, String>> plugins() {
+                return (Map) map.getOrDefault( PLUGINS, Model.super.plugins());
             }
 
             @Override
