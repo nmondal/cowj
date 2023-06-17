@@ -44,6 +44,9 @@ dependencies {
 
     // fcm
     implementation 'com.google.firebase:firebase-admin:9.1.1'
+
+    // mysql connector
+    implementation 'com.mysql:mysql-connector-j:8.0.33'
 }
 
 shadowJar {
