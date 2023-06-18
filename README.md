@@ -106,6 +106,8 @@ data-sources:
   json_place:
     type: curl
     url: https://jsonplaceholder.typicode.com
+    proxy: _/proxy_transform.zm # responsible for message transform
+    
 
 ```
 It simply defines the routes - as well the handler script for such a route.
@@ -136,6 +138,7 @@ Here is how it works:
 Here is one such example of routes being implemented:
 
 ```js
+// javascript
 let x = { "id" : req.params("id") };
 x;// return 
 ```
@@ -145,9 +148,17 @@ https://sparkjava.com/documentation#request
 
 https://sparkjava.com/documentation#response
 
+See the document  "A Guide to COWJ Scripting" found here - [Scripting](manuals/scripting.md)
+
 ### Filters 
 
-These are how one can have before and after callback before and after any route pattern gets hit.  This are forward proxying requests. At the same time - we can have before and after filters employed in them to make COWJ a fully working forward proxy like SQUID.
+These are how one can have before and after callback before and after any route pattern gets hit.  
+
+A `before` filter gets hit before hitting the actual route, while an `after` filter gets hit after returning from the route, so one can modify the response if need be.
+
+Classic example of `before` filter is for `auth` while `after` filter can be used to modify response type  by adding response headers.
+
+
 
 ### Data Sources 
 
@@ -276,7 +287,40 @@ localhost:1003/users
 
 System responds back with the same status as of the external web service as well as the response from the web service gets transferred back to the original caller.
 
+This `transform` is coded in the `curl` type as follows:
 
+```yaml 
+data-sources:
+  json_place:
+    type: curl
+    url: https://jsonplaceholder.typicode.com
+    proxy: _/proxy_transform.zm # responsible for message transform
+```
+
+The `proxy` section has the script to transform the following to be forwarded to the destination server :
+
+1. `request` object 
+2. `headers` has a mutable map of request headers 
+3. `queries` has mutable map of all query parameters 
+4. `body` has the string which is `request.body()` 
+
+Evidently at a forward proxy level, these are the parameters one can change before forwarding it to destination.
+
+The transformation function / script is expected to return a map of the form:
+
+```javascript
+{
+  headers : {
+    key : value
+  },
+  query : {
+    key : value
+  },  
+  body : "request body"
+}
+```
+
+In case the script does not return a map - pushed values will be used to be extracted from the script context and used as a response. 
 
 ## Running 
 
@@ -286,16 +330,3 @@ System responds back with the same status as of the external web service as well
 4. Run the app.
 
 Note: It also has `fat-jar` via `shadowJar()` task, one can have one single fat jar for the whole project.
-
-
-
-
-
-
-
- 
-
-
-
-
-
