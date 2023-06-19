@@ -1,6 +1,8 @@
 // this just returns this
 println( req )
 println( resp )
-println( jstr( _ds ) )
+println( jstr( _ds ) ) // data sources
+println( jstr( _env ) ) // environment variables
+
 "hello, world!" // return
 
