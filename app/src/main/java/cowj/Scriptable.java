@@ -27,8 +27,6 @@ public interface Scriptable  {
         SimpleBindings sb = new SimpleBindings();
         sb.put(REQUEST, request);
         sb.put(RESPONSE, response);
-        sb.put(DATA_SOURCE, DATA_SOURCES);
-        sb.put( ENVIRON, System.getenv());
         try {
             return exec(sb);
         } catch ( Throwable t){
@@ -172,7 +170,9 @@ public interface Scriptable  {
 
     Creator JSR = (path, handler) -> (bindings) -> {
         CompiledScript cs = loadScript(handler);
+        bindings.put(DATA_SOURCE, DATA_SOURCES);
         bindings.put(TestAsserter.ASSERTER, (TestAsserter) () -> bindings);
+        bindings.put( ENVIRON, System.getenv());
         Object r =  cs.eval(bindings);
         if ( r != null ) return r;
         // Jython issue...
@@ -185,7 +185,9 @@ public interface Scriptable  {
     Creator ZMB = (path, handler) -> (bindings) -> {
         ZScript zs = loadZScript(handler);
         ZContext.FunctionContext fc = new ZContext.FunctionContext( ZContext.EMPTY_CONTEXT , ZContext.ArgContext.EMPTY_ARGS_CONTEXT);
-        fc.putAll(bindings);
+        bindings.put(DATA_SOURCE, DATA_SOURCES);
+        bindings.put( ENVIRON, System.getenv());
+        fc.putAll( bindings);
         zs.runContext(fc);
         Function.MonadicContainer mc = zs.execute();
         if ( mc.isNil() ) return "";
@@ -226,6 +228,8 @@ public interface Scriptable  {
         return NOP.create(path,path);
     }
     Creator BINARY = (path, handler) -> (bindings) -> {
+        bindings.put(DATA_SOURCE, DATA_SOURCES);
+        bindings.put( ENVIRON, System.getenv());
         Scriptable scriptable = loadClass(handler);
         return scriptable.exec(bindings);
     };
