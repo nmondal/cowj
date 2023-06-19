@@ -113,15 +113,7 @@ public interface ModelRunner extends Runnable {
                 final String destPath = proxyPath.replace(curlKey + "/", "");
                 Route route = (request, response) -> {
                     final CurlWrapper cw = (CurlWrapper) o;
-                    // No mapping of request headers to forward
-                    final String body = request.body() != null ? request.body() : "" ;
-                    ZWeb.ZWebCom com = cw.send( verb, destPath, Collections.emptyMap(), Collections.emptyMap(), body );
-                    if ( com == null ){
-                        Spark.halt(500, "Proxy rout failed executing!");
-                    }
-                    response.status(com.status);
-                    // no mapping of response headers from destination forward...
-                    return com.body();
+                    return cw.proxy(verb, destPath, request, response);
                 };
                 bic.accept(r.getKey(), route);
                 System.out.printf("%s -> %s -> %s %n", verb, r.getKey(), r.getValue());

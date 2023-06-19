@@ -21,7 +21,26 @@ import java.util.Map;
 
 public interface Scriptable  {
 
-    Object exec(Request request, Response response) throws Exception;
+    Object exec(Bindings bindings) throws Exception;
+
+    default Object exec(Request request, Response response){
+        SimpleBindings sb = new SimpleBindings();
+        sb.put(REQUEST, request);
+        sb.put(RESPONSE, response);
+        sb.put(DATA_SOURCE, DATA_SOURCES);
+        sb.put(TestAsserter.ASSERTER, (TestAsserter) () -> sb);
+        try {
+            return exec(sb);
+        } catch ( Throwable t){
+            if ( sb.containsKey(HALT_ERROR) ){
+                TestAsserter.HaltException he = (TestAsserter.HaltException) sb.get(HALT_ERROR);
+                Spark.halt(he.code, he.getMessage());
+            } else {
+                response.status(500);
+            }
+            return t;
+        }
+    }
 
     interface Creator {
         Scriptable create(String path, String handler);
@@ -143,45 +162,28 @@ public interface Scriptable  {
         return zScript;
     }
 
-    Creator NOP = (path, handler) -> (request, response) -> "";
+    Creator NOP = (path, handler) -> bindings -> "";
 
-    Creator JSR = (path, handler) -> (request, response) -> {
+    Creator JSR = (path, handler) -> (bindings) -> {
         CompiledScript cs = loadScript(handler);
-        SimpleBindings sb = new SimpleBindings();
-        sb.put(REQUEST, request);
-        sb.put(RESPONSE, response);
-        sb.put(DATA_SOURCE, DATA_SOURCES);
-        sb.put(TestAsserter.ASSERTER, (TestAsserter) () -> sb);
-        try {
-            Object r =  cs.eval(sb);
-            if ( r != null ) return r;
-            // Jython issue...
-            if ( sb.containsKey(RESULT) ){
-                return sb.get(RESULT);
-            }
-            return "";
-
-        } catch ( Throwable t){
-            if ( sb.containsKey(HALT_ERROR) ){
-                TestAsserter.HaltException he = (TestAsserter.HaltException) sb.get(HALT_ERROR);
-                   Spark.halt(he.code, he.getMessage());
-            } else {
-                response.status(500);
-            }
-            return t;
+        Object r =  cs.eval(bindings);
+        if ( r != null ) return r;
+        // Jython issue...
+        if ( bindings.containsKey(RESULT) ){
+            return bindings.get(RESULT);
         }
+        return "";
     };
 
-    Creator ZMB = (path, handler) -> (request, response) -> {
+    Creator ZMB = (path, handler) -> (bindings) -> {
         ZScript zs = loadZScript(handler);
         ZContext.FunctionContext fc = new ZContext.FunctionContext( ZContext.EMPTY_CONTEXT , ZContext.ArgContext.EMPTY_ARGS_CONTEXT);
-        fc.set(REQUEST, request);
-        fc.set(RESPONSE, response);
-        fc.set(DATA_SOURCE, DATA_SOURCES);
+        fc.putAll( bindings);
         zs.runContext(fc);
         Function.MonadicContainer mc = zs.execute();
         if ( mc.isNil() ) return "";
         if (mc.value() instanceof Throwable th){
+            final Exception ex;
             if ( th instanceof ZException.ZRuntimeAssertion ){
                 Object[] args = ((ZException.ZRuntimeAssertion) th).args;
                 String message = ((Throwable)args[0]).getMessage();
@@ -189,10 +191,12 @@ public interface Scriptable  {
                 if ( args.length > 1 ){
                     status = ZNumber.integer( args[1], 500 ).intValue();
                 }
-                Spark.halt( status, message );
+                ex = new TestAsserter.HaltException(message, status);
             } else {
-                response.status(500);
+                ex = new RuntimeException(th);
             }
+            bindings.put( HALT_ERROR, ex );
+            throw ex;
         }
         return mc.value();
     };
