@@ -191,10 +191,13 @@ public interface Scriptable  {
             final Exception ex;
             if ( th instanceof ZException.ZRuntimeAssertion ){
                 Object[] args = ((ZException.ZRuntimeAssertion) th).args;
-                String message = ((Throwable)args[0]).getMessage();
+                String message = th.toString();
                 int status = 500;
-                if ( args.length > 1 ){
-                    status = ZNumber.integer( args[1], 500 ).intValue();
+                if ( args.length > 0 ) {
+                    message = ((Throwable)args[0]).getMessage();
+                    if (args.length > 1) {
+                        status = ZNumber.integer(args[1], 500).intValue();
+                    }
                 }
                 ex = new TestAsserter.HaltException(message, status);
                 bindings.put( HALT_ERROR, ex );
