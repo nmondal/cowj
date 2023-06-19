@@ -197,10 +197,11 @@ public interface Scriptable  {
                     status = ZNumber.integer( args[1], 500 ).intValue();
                 }
                 ex = new TestAsserter.HaltException(message, status);
+                bindings.put( HALT_ERROR, ex );
             } else {
                 ex = new RuntimeException(th);
             }
-            bindings.put( HALT_ERROR, ex );
+
             throw ex;
         }
         return mc.value();
