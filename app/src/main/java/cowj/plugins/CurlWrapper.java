@@ -15,7 +15,29 @@ import java.util.function.Function;
 
 public interface CurlWrapper {
 
-    ZWeb.ZWebCom send(String verb, String path, Map<String,String> headers, Map<String,String> params, String body);
+    final class CurlResponse{
+        private final ZWeb.ZWebCom com;
+        private final Throwable err;
+        public boolean inError(){
+            return  !isSuccessful();
+        }
+        public boolean isSuccessful(){ return  err == null; }
+        public ZWeb.ZWebCom com() { return com; }
+        public Throwable error() { return err; }
+
+        private CurlResponse(ZWeb.ZWebCom com, Throwable err){
+            this.com = com;
+            this.err = err;
+        }
+        public static CurlResponse error(Throwable th){
+            return new CurlResponse(null, th);
+        }
+        public static CurlResponse response(ZWeb.ZWebCom com){
+            return new CurlResponse(com, null);
+        }
+    }
+
+    CurlResponse send(String verb, String path, Map<String,String> headers, Map<String,String> params, String body);
 
     Function<Request, Map<String,Object>> proxyTransformation();
 
@@ -25,20 +47,18 @@ public interface CurlWrapper {
 
 
     default String proxy(String verb, String destPath, Request request, Response response){
-
-        Map<String,Object> trObject = proxyTransformation().apply(request);
         String body = request.body() != null ? request.body() : "" ;
-        Map<String,Object> resp = (Map<String, Object>)trObject;
+        Map<String,Object> resp = proxyTransformation().apply(request);
         Map<String,String> queryMap = (Map)resp.getOrDefault(QUERY, Collections.emptyMap());
         Map<String,String> headerMap = (Map)resp.getOrDefault(HEADER, Collections.emptyMap());
         body = resp.getOrDefault(BODY, body).toString();
-        ZWeb.ZWebCom com = send(verb, destPath, headerMap, queryMap, body );
-        if ( com == null ){
-            Spark.halt(500, "Proxy route failed executing!");
+        CurlResponse curlResponse = send(verb, destPath, headerMap, queryMap, body );
+        if ( curlResponse.inError() ){
+            Spark.halt(500, "Proxy route failed executing!\n" + curlResponse.error());
         }
-        response.status(com.status);
+        response.status(curlResponse.com().status);
         // no mapping of response headers from destination forward...
-        return com.body();
+        return curlResponse.com().body();
     }
 
     DataSource.Creator CURL = (name, config, parent) -> {
@@ -77,14 +97,15 @@ public interface CurlWrapper {
 
             final CurlWrapper curlWrapper = new CurlWrapper() {
                 @Override
-                public ZWeb.ZWebCom send(String verb, String path, Map<String, String> headers, Map<String, String> params, String body) {
+                public CurlResponse send(String verb, String path, Map<String, String> headers, Map<String, String> params, String body) {
                     ZWeb zWeb = new ZWeb(baseUrl); // every call gets its own con
                     zWeb.headers.putAll(headers);
                     try {
-                        return zWeb.send(verb, path, params, body);
+                        final ZWeb.ZWebCom com = zWeb.send(verb, path, params, body);
+                        return CurlResponse.response(com);
                     }catch (Throwable t){
                         t.printStackTrace();
-                        return null;
+                        return CurlResponse.error(t);
                     }
                 }
                 @Override
