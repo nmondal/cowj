@@ -23,6 +23,7 @@ routes:
     /hello/j: _/hello.js
     /hello/p: _/hello.py
     /hello/z: _/hello.zm
+    /hello/b: "cowj.plugins.SampleJVMScriptable.class"
     /notification: _/notification.zm
     /error: _/error.zm
 

@@ -1,19 +1,52 @@
 package cowj.plugins;
 
 import cowj.DataSource;
-import jnr.constants.platform.Local;
-
-import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 
 public interface JDBCWrapper {
 
-    List<Map> select(String query, List<Object> args);
+    Connection connection();
+
+    default Object getObject(Object value) {
+        if (value instanceof java.sql.Date) {
+            return ((Date) value).getTime();
+        }
+        if (value instanceof LocalDateTime) {
+            return ((LocalDateTime) value).atZone(ZoneId.systemDefault()).toEpochSecond() * 1000;
+        }
+        return value;
+    }
+
+    default List<Map<String,Object>> select(String query, List<Object> args) {
+        List<Map<String,Object>> result = new ArrayList<>();
+        final Connection con = connection();
+        try (Statement stmt = con.createStatement()) {
+            String q = query.formatted(args.toArray());
+            System.out.println(q);
+            ResultSet rs = stmt.executeQuery(q);
+            ResultSetMetaData rsmd = rs.getMetaData();
+            int count = rsmd.getColumnCount();
+
+            while (rs.next()) {
+                Map<String,Object> m = new LinkedHashMap<>(); // because of... order preserving
+                for (int index = 1; index <= count; index++) {
+                    String column = rsmd.getColumnName(index);
+                    Object value = rs.getObject(column);
+                    Object transformedValue = getObject(value);
+                    m.put(column, transformedValue);
+                }
+                result.add(m);
+            }
+            return result;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
 
     DataSource.Creator JDBC = (name, config, parent) -> {
         String driverName = config.getOrDefault("driver", "").toString();
@@ -24,61 +57,8 @@ public interface JDBCWrapper {
         connectionProperties.putAll(props);
         try {
             Class.forName(driverName);
-            Connection con = DriverManager.getConnection(connection, connectionProperties);
-            JDBCWrapper wrapper = (query, args) -> {
-                List<Map> result = new ArrayList<>();
-                try (Statement stmt = con.createStatement()){
-                    String q = query.formatted(args.toArray());
-                    System.out.println(q);
-                    ResultSet rs = stmt.executeQuery(q);
-                    ResultSetMetaData rsmd = rs.getMetaData();
-                    int count = rsmd.getColumnCount();
-
-                    while (rs.next()) {
-                        Map m = new HashMap();
-                        for (int index = 1; index <= count; index++)
-                        {
-                            String column = rsmd.getColumnName(index);
-                            Object value = rs.getObject(column);
-                            if (value == null)
-                            {
-                                m.put(column, null);
-                            } else if (value instanceof Integer) {
-                                m.put(column, value);
-                            } else if (value instanceof String) {
-                                m.put(column, value);
-                            } else if (value instanceof Boolean) {
-                                m.put(column, value);
-                            } else if (value instanceof Date) {
-                                m.put(column, ((Date) value).getTime());
-                            } else if (value instanceof LocalDateTime) {
-                                /// convert to milliseconds since epoch
-                                m.put(column, ((LocalDateTime) value).atZone(ZoneId.systemDefault()).toEpochSecond() * 1000);
-                            } else if (value instanceof Long) {
-                                m.put(column, value);
-                            } else if (value instanceof Double) {
-                                m.put(column, value);
-                            } else if (value instanceof Float) {
-                                m.put(column, value);
-                            } else if (value instanceof BigDecimal) {
-                                m.put(column, value);
-                            } else if (value instanceof Byte) {
-                                m.put(column, value);
-                            } else if (value instanceof byte[]) {
-                                m.put(column, value);
-                            } else {
-                                throw new IllegalArgumentException("Unmappable object type: " + value.getClass());
-                            }
-                        }
-                        result.add(m);
-                    }
-
-                    return result;
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    return null;
-                }
-            };
+            final Connection con = DriverManager.getConnection(connection, connectionProperties);
+            JDBCWrapper wrapper = () -> con;
             return new DataSource() {
                 @Override
                 public Object proxy() {
