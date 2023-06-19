@@ -27,8 +27,6 @@ public interface Scriptable  {
         SimpleBindings sb = new SimpleBindings();
         sb.put(REQUEST, request);
         sb.put(RESPONSE, response);
-        sb.put(DATA_SOURCE, DATA_SOURCES);
-        sb.put(TestAsserter.ASSERTER, (TestAsserter) () -> sb);
         try {
             return exec(sb);
         } catch ( Throwable t){
@@ -111,6 +109,8 @@ public interface Scriptable  {
 
     String DATA_SOURCE = "_ds" ;
 
+    String ENVIRON = "_env" ;
+
     String HALT_ERROR = "_ex" ;
 
 
@@ -166,6 +166,9 @@ public interface Scriptable  {
 
     Creator JSR = (path, handler) -> (bindings) -> {
         CompiledScript cs = loadScript(handler);
+        bindings.put(DATA_SOURCE, DATA_SOURCES);
+        bindings.put(TestAsserter.ASSERTER, (TestAsserter) () -> bindings);
+        bindings.put( ENVIRON, System.getenv());
         Object r =  cs.eval(bindings);
         if ( r != null ) return r;
         // Jython issue...
@@ -178,6 +181,8 @@ public interface Scriptable  {
     Creator ZMB = (path, handler) -> (bindings) -> {
         ZScript zs = loadZScript(handler);
         ZContext.FunctionContext fc = new ZContext.FunctionContext( ZContext.EMPTY_CONTEXT , ZContext.ArgContext.EMPTY_ARGS_CONTEXT);
+        bindings.put(DATA_SOURCE, DATA_SOURCES);
+        bindings.put( ENVIRON, System.getenv());
         fc.putAll( bindings);
         zs.runContext(fc);
         Function.MonadicContainer mc = zs.execute();
@@ -201,11 +206,36 @@ public interface Scriptable  {
         return mc.value();
     };
 
+    Map<String, Scriptable> binaryInstances = new HashMap<>(); // TODO ? Should be LRU? What?
+
+    static Scriptable loadClass( String path){
+        if ( binaryInstances.containsKey( path ) ) return binaryInstances.get(path);
+        try {
+            int inx = path.lastIndexOf(".class");
+            String className = path.substring(0, inx);
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.getDeclaredConstructor().newInstance();
+            if ( !(instance instanceof  Scriptable) ) throw new RuntimeException("Not A Scriptable Implementation! " + clazz);
+            binaryInstances.put(path, (Scriptable) instance);
+            return (Scriptable) instance;
+        }catch (Throwable t){
+            System.err.println( "Error registering type for Scriptable... : " + t);
+        }
+        return NOP.create(path,path);
+    }
+    Creator BINARY = (path, handler) -> (bindings) -> {
+        bindings.put(DATA_SOURCE, DATA_SOURCES);
+        bindings.put( ENVIRON, System.getenv());
+        Scriptable scriptable = loadClass(handler);
+        return scriptable.exec(bindings);
+    };
+
     Creator UNIVERSAL = (path, handler) -> {
         String extension = extension(handler);
         Creator r = switch (extension){
             case "zmb", "zm" -> ZMB;
             case  "js", "groovy", "py" -> JSR;
+            case "class" -> BINARY;
             default -> NOP;
         };
         return r.create(path,handler);
