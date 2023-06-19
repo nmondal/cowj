@@ -113,7 +113,7 @@ public interface ModelRunner extends Runnable {
                 final String destPath = proxyPath.replace(curlKey + "/", "");
                 Route route = (request, response) -> {
                     final CurlWrapper cw = (CurlWrapper) o;
-                    return cw.proxy(verb, destPath, request, response);
+                    return cw.proxy(verb, "*".equals(destPath) ? request.pathInfo() : destPath, request, response);
                 };
                 bic.accept(r.getKey(), route);
                 System.out.printf("%s -> %s -> %s %n", verb, r.getKey(), r.getValue());
