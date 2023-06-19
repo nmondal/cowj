@@ -34,7 +34,7 @@ public interface CurlWrapper {
         body = resp.getOrDefault(BODY, body).toString();
         ZWeb.ZWebCom com = send(verb, destPath, headerMap, queryMap, body );
         if ( com == null ){
-            Spark.halt(500, "Proxy rout failed executing!");
+            Spark.halt(500, "Proxy route failed executing!");
         }
         response.status(com.status);
         // no mapping of response headers from destination forward...
@@ -62,6 +62,7 @@ public interface CurlWrapper {
                     request.queryParams().forEach( q -> queryParams.put( q, request.queryParams(q)) );
                     bindings.put(QUERY, queryParams);
                     bindings.put(BODY, request.body());
+                    bindings.put(Scriptable.DATA_SOURCE, Scriptable.DATA_SOURCES);
                     // TODO hemil should think more here...
                     try {
                        Object r = sc.exec( bindings);
