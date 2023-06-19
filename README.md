@@ -80,7 +80,7 @@ proxies:
     /users: json_place/users
     # or
     # /*: json_place/*
-    # above will send all requests and forward it to json_place i.e. 
+    # above will forward all get requests to json_place i.e. 
     # /abc will for forwarded json_place/abc
   post:
     /users: json_place/users
