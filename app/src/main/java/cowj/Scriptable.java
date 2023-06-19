@@ -33,8 +33,12 @@ public interface Scriptable  {
             return exec(sb);
         } catch ( Throwable t){
             if ( sb.containsKey(HALT_ERROR) ){
-                TestAsserter.HaltException he = (TestAsserter.HaltException) sb.get(HALT_ERROR);
-                Spark.halt(he.code, he.getMessage());
+                Exception e = (Exception) sb.get(HALT_ERROR);
+                if (e instanceof TestAsserter.HaltException) {
+                    Spark.halt(((TestAsserter.HaltException) e).code, e.getMessage());
+                } else {
+                    Spark.halt(500, e.getMessage());
+                }
             } else {
                 response.status(500);
             }
