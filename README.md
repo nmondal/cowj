@@ -148,7 +148,7 @@ https://sparkjava.com/documentation#request
 
 https://sparkjava.com/documentation#response
 
-See the document  "A Guide to COWJ Scripting" found here - [Scripting](manuals/scripting.md)
+See the document  "A Guide to COWJ Scripting" found here - [Scripting](manual/scripting.md)
 
 ### Filters 
 
@@ -272,7 +272,7 @@ One can naturally change the location of the lib folder by:
 lib: _/some_other_random_dir
 ```
 
-How to author COWJ plugins can be found in here [Writing Custom Plugins](manuals/plugins.md)
+How to author COWJ plugins can be found in here [Writing Custom Plugins](manual/plugins.md)
 
 
 
