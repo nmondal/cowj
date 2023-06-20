@@ -78,7 +78,8 @@ public interface CurlWrapper {
                        }
                        return EitherMonad.value(m);
                     }catch (Throwable e){
-                        System.err.println("Proxy Transform threw error... " + e );
+                        System.err.println("Proxy Transform threw error... ");
+                        e.printStackTrace();
                         return EitherMonad.error(e);
                     }
                 };
