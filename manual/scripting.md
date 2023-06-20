@@ -2,7 +2,6 @@
 
 ##  Why Scripts?
 
-
 ### Motivation 
 
 Cowj was build to replace code with versioned configuration - to ensure that the `back end development` does not require beyond a limited no of Engineers. As would be apparent from the main doc, the motivation is very anti establishment, and as one can find, the focus here to help business out, not to promote development or increase cost in development.
@@ -53,11 +52,180 @@ Forget AI, the enterprise must reinvent itself to move fast, because the 2nd rev
 
 ##  Engines
 
+If businesses programming is assembly - we need components, and we must democratize it. 
+Thus, we wanted polyglot support - and hence JVM was put into action. JVM has JSR-223 standard, via which 
+many languages can be used as a scripting language.
+
+### Default Engines
+The following languages are default in the system:
+
+1. JavaScript - via Mozilla Rhino Engine 
+2. Python - via Jython binding
+3. Groovy - as standard Java Scripting 
+4. ZoomBA - a custom made language created to do spaghetti coding easy
+
+These are the ones which would not require any code change, they are available, as is, via default.
+Also Java class instances can be directly called up as scripts, see interfacing section for more.
+
+### Importing Other Engines
+On the way to support pluggable engines.
+Check plugins document to see more.
+
 
 ##  Interfacing 
 
+A script essentially abstracts a java 8 `Function` of the form:
+
+```java
+Function<Binding,Object> 
+```
+while a `Binding` is nothing but a name,value pair map - an abstraction created for JSR-223.
+Consider a function as follows:
+
+```java 
+int add( int a, int b){ return a + b ; }
+int r = add(10, 32);
+```
+this can be very well abstracted by a function as follows:
+
+```javascript
+function script( parameterMap ){ /* implementation */ }
+let r = script( { a : 10, b :  32  } ); 
+```
+Once we have this abstraction, we can build anything on top of it.
+
+### Lifecycle of a Script 
+
+#### Identification 
+Given a string is to be interpreted as a script,
+based on the extension of the script COWJ Engine loads appropriate
+engine for the script.
+
+1. `js` --> Rhino ( JavaScript )
+2. `py` --> Python ( Jython )
+3. `groovy` --> Groovy 
+4. `zm,zmb` --> ZoomBA
+5. `class` --> JVM Binary Execution 
+
+#### Load 
+Loading requires absolute path of the script.
+Which is non trivial, hence the special syntax `_/` is provided, 
+this points to the base directory, the directory of the configuration `yaml` file.
+Thus, if the script path is this:
+
+```yaml
+# I am  /home/user_name/hello/config.yaml 
+get:
+   /x : _/x.zm
+```
+the base directory would be `/home/user_name/hello/` and thus, 
+the route for `x` is going to be: `/home/user_name/hello/x.zm`.
+
+For the  `.class` extension - full class name for the class is necessary.
+System uses reflection, and we have to make sure the class implements `Scriptable` interface, 
+specifically the method `exec(Bindings)`.
+
+#### Compile And Cache
+
+For the first time load the scripts gets compiled into JVM form - so that it gets near native JVM speed
+in further execution, sans, ZoomBA scripts. There are engine specific cache in which compiled forms 
+are stored for faster access.
+
+This cache is lifetime cache, there is no way to invalidate during runtime of COWJ.
+
+#### Execution 
+
+Scriptable gets the data it needs in the `Bindings` object, which is a JSR-223 standard.
+
+```java
+Object exec(Bindings b) throws Exception;
+```
+Then on top of it executes and can throw exception.
+Following variables gets injected in the `Bindings` variable:
+
+1. DataSources - marked as `_ds`
+2. Asserters - sans ZoomBA `Test.expect, Test.panic`
+
+##### Route and Filter
+
+Following variables gets injected in the `Bindings` variable:
+
+1. Request - marked as `req`
+2. Response `resp`
+3. Error if any `_ex` 
+4. Result to be returned `_res`
+
+Note that for `Filter` the response object is not used, while for `Route`, the response object 
+is returned as response body automatically.
+Implementation is done re-using the exec function.
+
+```java
+Object exec(Request request, Response response);
+```
+
+##### Proxy Hook
+Abstraction about the proxy is as follows:
+
+```java
+ Function<Request, EitherMonad<Map<String,Object>>> proxyTransformation();
+```
+In specificity, for the scriptable we add the following parameters to the `Bindings` :
+
+1. `query` : query map for the request 
+2. `headers` : headers map for the request 
+3. `body` : body of the request 
+
+In the end it is supposed to return error or a map comprise of these 3 keys, 
+which can then be used to send the crafted request to the destination.
+
+#### Errors
+
+##### Default Handling 
+
+Error generated, from the script, any script will raise `500` error, by default.
+The request body would be the `toString()` of the exception that was raise.
+
+##### Raising 
+One can raise custom errors via `Test.expect()` and `Test.panic()` functions family in JSR langs, sans ZoomBA, 
+and in case of ZoomBA default support is given using `assert()` and `panic()` function family.
+
+The syntax are as follows:
+
+```scala
+// this is JSR 223 - does not have default asserters, so it is inserted 
+Test.expect(false) // raise error 
+Test.expect(false, "Message") // raise error with message 
+Test.expect(false, "Message", 418 ) // raise error with message with a status 
+
+Test.panic(true) // raise error 
+Test.panic(true, "Message") // raise error with message 
+Test.panic(true, "Message", 418 ) // raise error with message with a status 
+```
+
+```scala
+// this is ZoomBA - has default assert and panic 
+assert(false) // raise error 
+assert(false, "Message") // raise error with message 
+assert(false, "Message", 418 ) // raise error with message with a status 
+
+panic(true) // raise error 
+panic(true, "Message") // raise error with message 
+panic(true, "Message", 418 ) // raise error with message with a status 
+
+```
 
 ##  Debugging
+
+WIP.
+
+## References 
+
+1. JSR 223 - https://en.wikipedia.org/wiki/Scripting_for_the_Java_Platform 
+2. Script Engines - https://en.wikipedia.org/wiki/List_of_JVM_languages 
+3. Bindings - https://docs.oracle.com/javase/9/docs/api/javax/script/Bindings.html 
+4. Routes - https://sparkjava.com/documentation#routes 
+5. Filters - https://sparkjava.com/documentation#filters 
+6. Forward Proxy - https://en.wikipedia.org/wiki/Proxy_server 
 
 
 
