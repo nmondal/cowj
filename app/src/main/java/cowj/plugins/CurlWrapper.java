@@ -1,6 +1,7 @@
 package cowj.plugins;
 
 import cowj.DataSource;
+import cowj.EitherMonad;
 import cowj.Scriptable;
 import spark.Request;
 import spark.Response;
@@ -15,59 +16,42 @@ import java.util.function.Function;
 
 public interface CurlWrapper {
 
-    final class CurlResponse{
-        private final ZWeb.ZWebCom com;
-        private final Throwable err;
-        public boolean inError(){
-            return  !isSuccessful();
-        }
-        public boolean isSuccessful(){ return  err == null; }
-        public ZWeb.ZWebCom com() { return com; }
-        public Throwable error() { return err; }
+    EitherMonad<ZWeb.ZWebCom> send(String verb, String path, Map<String,String> headers, Map<String,String> params, String body);
 
-        private CurlResponse(ZWeb.ZWebCom com, Throwable err){
-            this.com = com;
-            this.err = err;
-        }
-        public static CurlResponse error(Throwable th){
-            return new CurlResponse(null, th);
-        }
-        public static CurlResponse response(ZWeb.ZWebCom com){
-            return new CurlResponse(com, null);
-        }
-    }
-
-    CurlResponse send(String verb, String path, Map<String,String> headers, Map<String,String> params, String body);
-
-    Function<Request, Map<String,Object>> proxyTransformation();
+    Function<Request, EitherMonad<Map<String,Object>>> proxyTransformation();
 
     String QUERY = "query" ;
     String HEADER = "headers" ;
     String BODY = "body" ;
 
-
     default String proxy(String verb, String destPath, Request request, Response response){
         String body = request.body() != null ? request.body() : "" ;
-        Map<String,Object> resp = proxyTransformation().apply(request);
+        EitherMonad<Map<String,Object>> transformResult = proxyTransformation().apply(request);
+        if ( transformResult.inError() ){
+            Spark.halt(500, transformResult.error().getMessage());
+            return "";
+        }
+        // now here...
+        Map<String,Object> resp = transformResult.value();
         Map<String,String> queryMap = (Map)resp.getOrDefault(QUERY, Collections.emptyMap());
         Map<String,String> headerMap = (Map)resp.getOrDefault(HEADER, Collections.emptyMap());
         body = resp.getOrDefault(BODY, body).toString();
-        CurlResponse curlResponse = send(verb, destPath, headerMap, queryMap, body );
+        EitherMonad<ZWeb.ZWebCom> curlResponse = send(verb, destPath, headerMap, queryMap, body );
         if ( curlResponse.inError() ){
             Spark.halt(500, "Proxy route failed executing!\n" + curlResponse.error());
         }
-        response.status(curlResponse.com().status);
+        response.status(curlResponse.value().status);
         // no mapping of response headers from destination forward...
-        return curlResponse.com().body();
+        return curlResponse.value().body();
     }
 
     DataSource.Creator CURL = (name, config, parent) -> {
         try {
             String baseUrl = config.getOrDefault("url", "").toString();
             String proxy = config.getOrDefault( "proxy", "").toString();
-            final Function<Request,Map<String,Object>> transformation;
+            final Function<Request, EitherMonad<Map<String,Object>>> transformation;
             if ( proxy.isEmpty() ){
-                transformation = (m) -> Collections.emptyMap();
+                transformation = (m) -> EitherMonad.value(Collections.emptyMap());
             } else {
                 final String absPath = parent.interpretPath(proxy);
                 Scriptable sc  = Scriptable.UNIVERSAL.create("proxy." + name, absPath);
@@ -83,33 +67,38 @@ public interface CurlWrapper {
                     bindings.put(QUERY, queryParams);
                     bindings.put(BODY, request.body());
                     bindings.put(Scriptable.DATA_SOURCE, Scriptable.DATA_SOURCES);
-                    // TODO hemil should think more here...
+
                     try {
                        Object r = sc.exec( bindings);
-                       if ( r instanceof  Map ) return (Map)r;
-                       return Map.of( BODY, bindings.get(BODY), HEADER, bindings.get(HEADER), QUERY, bindings.get(QUERY));
-                    }catch (Exception e){
-                        System.err.println(e);
-                        return Collections.emptyMap();
+                       final Map<String,Object> m ;
+                       if ( r instanceof  Map ) {
+                           m = (Map)r;
+                       } else {
+                           m = Map.of( BODY, bindings.get(BODY), HEADER, bindings.get(HEADER), QUERY, bindings.get(QUERY));
+                       }
+                       return EitherMonad.value(m);
+                    }catch (Throwable e){
+                        System.err.println("Proxy Transform threw error... " + e );
+                        return EitherMonad.error(e);
                     }
                 };
             }
 
             final CurlWrapper curlWrapper = new CurlWrapper() {
                 @Override
-                public CurlResponse send(String verb, String path, Map<String, String> headers, Map<String, String> params, String body) {
+                public EitherMonad<ZWeb.ZWebCom> send(String verb, String path, Map<String, String> headers, Map<String, String> params, String body) {
                     ZWeb zWeb = new ZWeb(baseUrl); // every call gets its own con
                     zWeb.headers.putAll(headers);
                     try {
                         final ZWeb.ZWebCom com = zWeb.send(verb, path, params, body);
-                        return CurlResponse.response(com);
+                        return EitherMonad.value(com);
                     }catch (Throwable t){
                         t.printStackTrace();
-                        return CurlResponse.error(t);
+                        return EitherMonad.error(t);
                     }
                 }
                 @Override
-                public Function<Request, Map<String, Object>> proxyTransformation() {
+                public Function<Request, EitherMonad<Map<String, Object>>> proxyTransformation() {
                     return transformation;
                 }
             };
