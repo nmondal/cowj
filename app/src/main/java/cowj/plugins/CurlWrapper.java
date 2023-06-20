@@ -28,7 +28,12 @@ public interface CurlWrapper {
         String body = request.body() != null ? request.body() : "" ;
         EitherMonad<Map<String,Object>> transformResult = proxyTransformation().apply(request);
         if ( transformResult.inError() ){
-            Spark.halt(500, transformResult.error().getMessage());
+            int status = 500;
+            Throwable error = transformResult.error();
+            if (error instanceof Scriptable.TestAsserter.HaltException ) {
+                status = ((Scriptable.TestAsserter.HaltException) error).code;
+            }
+            Spark.halt(status, transformResult.error().getMessage());
             return "";
         }
         // now here...
