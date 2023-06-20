@@ -44,26 +44,24 @@ public final class FCMWrapper {
 
     private MulticastMessage multicastMessage(Map<String,Object> message){
         MulticastMessage.Builder builder = MulticastMessage.builder();
-        List<String> tokens = (List) message.getOrDefault("_tokens", Collections.emptyList());
+        List<String> tokens = (List) message.getOrDefault("tokens", Collections.emptyList());
         builder.addAllTokens( tokens );
         Notification.Builder b = Notification.builder();
-        Object v = message.get("_title");
+        Object v = message.get("title");
         if ( v != null ){
             b.setTitle( v.toString() );
         }
-        v = message.get("_body");
+        v = message.get("body");
         if (  v != null ){
             b.setBody( v.toString() );
         }
-        v = message.get("_image");
+        v = message.get("image");
         if (  v != null ){
             b.setImage( v.toString() );
         }
+        Map<String, Object> data = (Map<String, Object>) message.getOrDefault("data", Collections.emptyMap());
         // other properties gets added like as is...
-        message.keySet().stream().filter(  k -> !k.startsWith("_")).forEach( k -> {
-            Object x = message.get(k);
-            builder.putData(k, x.toString());
-        });
+        data.forEach((key, value) -> builder.putData(key, value.toString()));
         return builder.setNotification( b.build() ).build();
     }
 
