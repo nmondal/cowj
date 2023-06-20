@@ -11,6 +11,12 @@ public interface JDBCWrapper {
 
     Connection connection();
 
+    String DRIVER = "driver" ;
+    String CONNECTION = "connection" ;
+    String CONNECTION_ENV = "connection-env" ;
+    String PROPERTIES = "properties" ;
+
+
     default Object getObject(Object value) {
         if (value instanceof java.sql.Date) {
             return ((Date) value).getTime();
@@ -49,10 +55,22 @@ public interface JDBCWrapper {
     }
 
     DataSource.Creator JDBC = (name, config, parent) -> {
-        String driverName = config.getOrDefault("driver", "").toString();
-        String connection = config.getOrDefault("connection", "").toString();
+        String driverName = config.getOrDefault(DRIVER, "").toString();
+        String conEnv = config.getOrDefault(CONNECTION_ENV, "").toString();
+        String connection = "" ;
+        if ( conEnv.isEmpty() ){
+            connection = config.getOrDefault(CONNECTION, "").toString();
+            if ( connection.isEmpty() ){
+                System.err.printf(" Connection '%s' is empty! %n", name);
+            }
+        } else {
+            connection = System.getenv().getOrDefault(conEnv, "");
+            if ( connection.isEmpty() ){
+                System.err.printf("Connection '%s' supposed to pick up from ENV variable '%s', but the variable is empty!%n", name, conEnv);
+            }
+        }
 
-        Map<String, Object> props = (Map<String, Object>) config.getOrDefault("properties", Collections.emptyMap());
+        Map<String, Object> props = (Map<String, Object>) config.getOrDefault(PROPERTIES, Collections.emptyMap());
         Properties connectionProperties = new Properties();
         connectionProperties.putAll(props);
         try {

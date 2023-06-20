@@ -24,6 +24,9 @@ public interface CurlWrapper {
     String HEADER = "headers" ;
     String BODY = "body" ;
 
+    String DESTINATION_URL = "url" ;
+    String PROXY_TRANSFORMER = "proxy" ;
+
     default String proxy(String verb, String destPath, Request request, Response response){
         String body = request.body() != null ? request.body() : "" ;
         EitherMonad<Map<String,Object>> transformResult = proxyTransformation().apply(request);
@@ -47,8 +50,8 @@ public interface CurlWrapper {
 
     DataSource.Creator CURL = (name, config, parent) -> {
         try {
-            String baseUrl = config.getOrDefault("url", "").toString();
-            String proxy = config.getOrDefault( "proxy", "").toString();
+            String baseUrl = config.getOrDefault(DESTINATION_URL, "").toString();
+            String proxy = config.getOrDefault(PROXY_TRANSFORMER, "").toString();
             final Function<Request, EitherMonad<Map<String,Object>>> transformation;
             if ( proxy.isEmpty() ){
                 transformation = (m) -> EitherMonad.value(Collections.emptyMap());
@@ -78,8 +81,7 @@ public interface CurlWrapper {
                        }
                        return EitherMonad.value(m);
                     }catch (Throwable e){
-                        System.err.println("Proxy Transform threw error... ");
-                        e.printStackTrace();
+                        System.err.printf("Proxy Transform threw error for the proxy [%s] at script '%s' %n", name, absPath );
                         return EitherMonad.error(e);
                     }
                 };
