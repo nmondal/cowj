@@ -1,12 +1,19 @@
 package cowj;
 
+import com.google.cloud.secretmanager.v1.AccessSecretVersionResponse;
+import com.google.cloud.secretmanager.v1.SecretManagerServiceClient;
+import com.google.cloud.secretmanager.v1.SecretVersionName;
 import cowj.plugins.CurlWrapper;
-import spark.*;
-import zoomba.lang.core.io.ZWeb;
+import org.json.JSONObject;
+import spark.Filter;
+import spark.Route;
+import spark.Spark;
 import zoomba.lang.core.types.ZTypes;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -26,6 +33,7 @@ public interface ModelRunner extends Runnable {
 
     @Override
     default void run() {
+        setupCowjRuntime();
         final Map<String, BiConsumer<String, Route>> routeLoaderMap = new HashMap<>();
         routeLoaderMap.put("get", Spark::get);
         routeLoaderMap.put("put", Spark::put);
@@ -79,6 +87,7 @@ public interface ModelRunner extends Runnable {
                 System.out.printf("DS '%s' created! %n", dataSource.name());
                 Scriptable.DATA_SOURCES.put(dsName, dataSource.proxy());
             }catch (Throwable t){
+                t.printStackTrace();
                 System.err.printf("DS '%s' failed to create! %s %n", dsName, t);
             }
         }
@@ -140,6 +149,32 @@ public interface ModelRunner extends Runnable {
                 bic.accept(r.getKey(), filter);
                 System.out.printf("%s -> %s -> %s %n", filterType, r.getKey(), scriptPath);
             }
+        }
+    }
+
+    default void setupCowjRuntime() {
+        String cowjEnvironment = CowjRuntime.env.getOrDefault("COWJ_ENV", "");
+        String projectID = CowjRuntime.env.getOrDefault("GCP_PROJECT_ID", "");
+
+        if (cowjEnvironment.isEmpty() || projectID.isEmpty()) {
+            System.out.println("COWJ_ENV or GCP_PROJECT_ID not set");
+            return;
+        }
+
+        try (SecretManagerServiceClient client = SecretManagerServiceClient.create()) {
+            AccessSecretVersionResponse resp = client.accessSecretVersion(SecretVersionName.of(projectID, cowjEnvironment, "latest"));
+            String json = resp.getPayload().getData().toStringUtf8();
+            JSONObject object = new JSONObject(json);
+
+            for (Iterator<String> it = object.keys(); it.hasNext(); ) {
+                String key = it.next();
+
+                /// only insert if not present in environment variable.
+                /// So environment variables override secrets manager
+                CowjRuntime.env.putIfAbsent(key, object.getString(key));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

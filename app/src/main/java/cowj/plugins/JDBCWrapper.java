@@ -1,5 +1,6 @@
 package cowj.plugins;
 
+import cowj.CowjRuntime;
 import cowj.DataSource;
 import java.sql.Date;
 import java.sql.*;
@@ -11,9 +12,13 @@ public interface JDBCWrapper {
 
     Connection connection();
 
-    String DRIVER = "driver" ;
-    String CONNECTION = "connection" ;
-    String CONNECTION_ENV = "connection-env" ;
+    String DRIVER = "driver";
+    String ENV = "env" ;
+    String SCHEME = "scheme";
+    String DATABASE = "database";
+    String USER = "user";
+    String PASSWORD = "password";
+    String HOST = "host";
     String PROPERTIES = "properties" ;
 
 
@@ -56,19 +61,15 @@ public interface JDBCWrapper {
 
     DataSource.Creator JDBC = (name, config, parent) -> {
         String driverName = config.getOrDefault(DRIVER, "").toString();
-        String conEnv = config.getOrDefault(CONNECTION_ENV, "").toString();
-        String connection = "" ;
-        if ( conEnv.isEmpty() ){
-            connection = config.getOrDefault(CONNECTION, "").toString();
-            if ( connection.isEmpty() ){
-                System.err.printf(" Connection '%s' is empty! %n", name);
-            }
-        } else {
-            connection = System.getenv().getOrDefault(conEnv, "");
-            if ( connection.isEmpty() ){
-                System.err.printf("Connection '%s' supposed to pick up from ENV variable '%s', but the variable is empty!%n", name, conEnv);
-            }
-        }
+        String scheme = (String) config.getOrDefault(SCHEME, "");
+
+        Map<String, Object> env = (Map<String, Object>) config.getOrDefault(ENV, Collections.emptyMap());
+        String host = CowjRuntime.env.get((String) env.getOrDefault(HOST, ""));
+        String database = CowjRuntime.env.get((String) env.getOrDefault(DATABASE, ""));
+        String user = CowjRuntime.env.get((String) env.getOrDefault(USER, ""));
+        String password = CowjRuntime.env.get((String) env.getOrDefault(PASSWORD, ""));
+
+        String connection = "jdbc:%s://%s/%s?user=%s&password=%s".formatted(scheme, host, database, user, password);
 
         Map<String, Object> props = (Map<String, Object>) config.getOrDefault(PROPERTIES, Collections.emptyMap());
         Properties connectionProperties = new Properties();
