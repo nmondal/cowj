@@ -47,6 +47,9 @@ dependencies {
 
     // mysql connector
     implementation 'com.mysql:mysql-connector-j:8.0.33'
+
+    /// secret manager
+    implementation 'com.google.cloud:google-cloud-secretmanager:2.19.0'
 }
 
 shadowJar {

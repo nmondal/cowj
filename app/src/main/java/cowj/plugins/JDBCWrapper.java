@@ -1,6 +1,8 @@
 package cowj.plugins;
 
 import cowj.DataSource;
+import cowj.Scriptable;
+
 import java.sql.Date;
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -13,7 +15,7 @@ public interface JDBCWrapper {
 
     String DRIVER = "driver" ;
     String CONNECTION = "connection" ;
-    String CONNECTION_ENV = "connection-env" ;
+    String SECRET_MANAGER = "secrets";
     String PROPERTIES = "properties" ;
 
 
@@ -54,28 +56,33 @@ public interface JDBCWrapper {
         }
     }
 
+    static String connectionString(Map<String, String> map, SecretManager secretManager) {
+        String scheme = map.getOrDefault(CONNECTION, "");
+        String hostKey = map.getOrDefault("host", "");
+        String userKey = map.getOrDefault("user", "");
+        String dbKey = map.getOrDefault("db", "");
+        String passKey = map.getOrDefault("pass", "");
+
+        String host = secretManager.getOrDefault(hostKey, "");
+        String user = secretManager.getOrDefault(userKey, "");
+        String db = secretManager.getOrDefault(dbKey, "");
+        String pass = secretManager.getOrDefault(passKey, "");
+
+        /// TODO(Hemil): Each db has a different format
+        return String.format("%s://%s/%s?user=%s&password=%s", scheme, host, db, user, pass);
+    }
+
     DataSource.Creator JDBC = (name, config, parent) -> {
         String driverName = config.getOrDefault(DRIVER, "").toString();
-        String conEnv = config.getOrDefault(CONNECTION_ENV, "").toString();
-        String connection = "" ;
-        if ( conEnv.isEmpty() ){
-            connection = config.getOrDefault(CONNECTION, "").toString();
-            if ( connection.isEmpty() ){
-                System.err.printf(" Connection '%s' is empty! %n", name);
-            }
-        } else {
-            connection = System.getenv().getOrDefault(conEnv, "");
-            if ( connection.isEmpty() ){
-                System.err.printf("Connection '%s' supposed to pick up from ENV variable '%s', but the variable is empty!%n", name, conEnv);
-            }
-        }
 
-        Map<String, Object> props = (Map<String, Object>) config.getOrDefault(PROPERTIES, Collections.emptyMap());
-        Properties connectionProperties = new Properties();
-        connectionProperties.putAll(props);
+        String secretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
+        SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.get(secretManagerName);
+
+        Map<String, String> props = (Map<String, String>) config.getOrDefault(PROPERTIES, Collections.emptyMap());
+        String connection = connectionString(props, sm);
         try {
             Class.forName(driverName);
-            final Connection con = DriverManager.getConnection(connection, connectionProperties);
+            final Connection con = DriverManager.getConnection(connection);
             JDBCWrapper wrapper = () -> con;
             return new DataSource() {
                 @Override
