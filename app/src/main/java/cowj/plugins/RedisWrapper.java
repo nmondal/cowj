@@ -3,6 +3,8 @@ package cowj.plugins;
 import cowj.DataSource;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
+import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 import zoomba.lang.core.types.ZNumber;
 
 import java.util.Collections;
@@ -19,7 +21,13 @@ public class RedisWrapper {
                     String[] arr = s.split(":");
                     return new HostAndPort(arr[0], ZNumber.integer(arr[1], 6379).intValue());
                 }).collect(Collectors.toSet());
-        final JedisCluster jedis = new JedisCluster(jedisClusterNodes);
+        final UnifiedJedis jedis;
+        if ( jedisClusterNodes.size() > 1 ){
+            jedis =  new JedisCluster(jedisClusterNodes);
+        } else {
+            HostAndPort hp = jedisClusterNodes.iterator().next();
+            jedis = new JedisPooled(hp.getHost(), hp.getPort());
+        }
         return new DataSource() {
             @Override
             public Object proxy() {
