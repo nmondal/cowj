@@ -88,12 +88,66 @@ Thus, based on the language the usage can be:
 fcm_instance = _ds.fcm_ds // zoomba , groovy 
 fcm_instance = _ds["fcm_ds"] // zoomba, js, groovy, python 
 ```
-At this point `fcm_instance` is the 
+At this point `fcm_instance` is the instance returned by the `proxy()` method
+of the underlying data source.
 
 
 ## Default Plugins 
 
+
+### Either Monad 
+This is a way to create a monadic container to wrap `result, error` while calling APIs.
+
+```java
+public final class EitherMonad<V> {
+  public boolean inError();
+  public boolean isSuccessful();
+  public boolean isValid();
+  public V value();
+  public Throwable error();
+}
+```
+It is highly encouraged to wrap around plugins exposed APIs with this class.
+Usage is as follows:
+
+```java
+EitherMonad<Integer> EitherMonad.value( 42 );
+EitherMonad<Integer> EitherMonad.error( new NumberFormatException("Integer can not be parsed!") );
+```
+
 ### Web IO - CURL
+
+The implementor class is `cowj.plugins.CurlWrapper`.
+
+This does web IO.
+This is how a data souce looks like:
+
+```yaml
+plugins:
+  cowj.plugins:
+    curl: CurlWrapper::CURL # add to the plugins
+
+data-source:
+  json_place: # name of the ds 
+    type: curl # type must match the registered type of the curl plugin
+    url: https://jsonplaceholder.typicode.com # base url to connec to
+    proxy: _/proxy_transform.zm # use for transforming the request to proxy request
+
+```
+The wrapper in essence has 2 interface methods:
+
+```java
+public interface CurlWrapper {
+  // sends a request to a path for the underlying data source 
+  EitherMonad<ZWeb.ZWebCom> send(String verb, String path, Map<String,String> headers, Map<String,String> params, String body);
+  Function<Request, EitherMonad<Map<String,Object>>> proxyTransformation();
+  String proxy(String verb, String destPath, Request request, Response response){}
+
+}
+```
+
+
+
 
 ### JDBC 
 

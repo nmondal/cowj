@@ -5,12 +5,14 @@ package cowj;
 
 import org.junit.Assert;
 import org.junit.Test;
+import java.util.Map;
 
 public class ModelTest {
 
+    final String p = "samples/hello/hello.yaml" ;
+
     @Test
     public void loadingTest(){
-        final String p = "samples/hello/hello.yaml" ;
         Model m = Model.from(p);
         Assert.assertNotNull(m);
         Assert.assertFalse(m.routes().isEmpty());
@@ -18,5 +20,15 @@ public class ModelTest {
         Assert.assertFalse(m.filters().isEmpty());
         Assert.assertFalse(m.dataSources().isEmpty());
         Assert.assertEquals( 1003, m.port());
+    }
+
+    @Test
+    public void templateTests(){
+        Model m = Model.from(p);
+        Map<String,Object> ctx = Map.of("a", "Hello", "b" , "World" );
+        String r = m.template("${a} , ${b}!", ctx);
+        Assert.assertEquals("Hello , World!", r);
+        r = m.template("${c} , ${d}!", ctx);
+        Assert.assertEquals("?c , ?d!", r);
     }
 }

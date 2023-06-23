@@ -6,8 +6,23 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public interface Model {
+
+    Pattern TEMPLATE_PATTERN = Pattern.compile("\\$\\{(?<var>[^\\{\\}]+)\\}");
+    default String template(String templateString, Map<String,Object> context){
+        Matcher m = TEMPLATE_PATTERN.matcher(templateString);
+        String ret = templateString;
+        while ( m.find() ){
+            String varName =  m.group("var");
+            // may be evaluated? In that case the place is in Scriptable
+            Object val = context.getOrDefault(varName, "?" + varName);
+            ret = ret.replace("${" + varName + "}", val.toString());
+        }
+        return ret;
+    }
 
     String base();
 
