@@ -89,31 +89,23 @@ public class ModelRunnerTest {
     }
 
     @Test
-    public void errorCheck(){
+    public void errorCheck() throws Exception {
         mr = runModel(hello);
         ZWeb zWeb = new ZWeb("http://localhost:1003");
-        try {
-            ZWeb.ZWebCom r = zWeb.get("/error", Collections.emptyMap());
-            Assert.assertEquals( "boom!", r.body());
-            Assert.assertEquals( 418, r.status);
-        }catch (Exception ex){
-            Assert.fail();
-        }
+        ZWeb.ZWebCom r = zWeb.get("/error", Collections.emptyMap());
+        Assert.assertEquals( "boom!", r.body());
+        Assert.assertEquals( 418, r.status);
     }
 
     @Test
-    public void proxyTest(){
+    public void proxyTest() {
         mr = runModel(hello);
         // proxy route
         String resp = get("http://localhost:1003", "/users");
         Assert.assertNotNull(resp);
-        try {
-            Object r = ZTypes.json(resp);
-            Assert.assertTrue( r instanceof List);
-            Assert.assertFalse( ((List<?>) r).isEmpty());
-        }catch (Exception ex){
-            Assert.fail();
-        }
+        Object r = ZTypes.json(resp);
+        Assert.assertTrue( r instanceof List);
+        Assert.assertFalse( ((List<?>) r).isEmpty());
     }
 
     @Test
@@ -122,31 +114,23 @@ public class ModelRunnerTest {
         // proxy route
         String resp = post("http://localhost:1004", "/echo", "");
         Assert.assertNotNull(resp);
-        try {
-            Object r = ZTypes.json(resp);
-            Assert.assertTrue( r instanceof Map);
-            Object h = ((Map) r).get("headers");
-            Assert.assertTrue( h instanceof Map);
-            Assert.assertEquals( "42", ((Map<?, ?>) h).get("cowj"));
-            Object b = ((Map<?, ?>) r).get("json");
-            Assert.assertTrue( b instanceof Map);
-            Object bs = ((Map<?, ?>) b).keySet().iterator().next();
-            Assert.assertEquals( "hello,proxy!", bs);
-        }catch (Exception ex){
-            Assert.fail();
-        }
+        Object r = ZTypes.json(resp);
+        Assert.assertTrue( r instanceof Map);
+        Object h = ((Map) r).get("headers");
+        Assert.assertTrue( h instanceof Map);
+        Assert.assertEquals( "42", ((Map<?, ?>) h).get("cowj"));
+        Object b = ((Map<?, ?>) r).get("json");
+        Assert.assertTrue( b instanceof Map);
+        Object bs = ((Map<?, ?>) b).keySet().iterator().next();
+        Assert.assertEquals( "hello,proxy!", bs);
     }
 
     @Test
-    public void proxyTransformErrorCheck(){
+    public void proxyTransformErrorCheck() throws Exception {
         mr = runModel(proxy);
         ZWeb zWeb = new ZWeb("http://localhost:1004");
-        try {
-            ZWeb.ZWebCom r = zWeb.get("/error", Collections.emptyMap());
-            Assert.assertEquals( "boom!", r.body());
-            Assert.assertEquals( 500, r.status);
-        }catch (Exception ex){
-            Assert.fail();
-        }
+        ZWeb.ZWebCom r = zWeb.get("/error", Collections.emptyMap());
+        Assert.assertEquals( "boom!", r.body());
+        Assert.assertEquals( 500, r.status);
     }
 }
