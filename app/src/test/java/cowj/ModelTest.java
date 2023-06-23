@@ -20,6 +20,7 @@ public class ModelTest {
         Assert.assertFalse(m.filters().isEmpty());
         Assert.assertFalse(m.dataSources().isEmpty());
         Assert.assertEquals( 1003, m.port());
+        Assert.assertTrue( m.base().endsWith("samples/hello"));
     }
 
     @Test
