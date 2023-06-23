@@ -143,6 +143,9 @@ public interface ModelRunner extends Runnable {
         }
     }
 
+    default void stop(){
+        Spark.stop();
+    }
 
     static ModelRunner fromModel(String path){
         final Model model = Model.from(path);
