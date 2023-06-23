@@ -30,11 +30,31 @@ public class ModelRunnerTest {
         return false;
     }
 
+    static String get( String base, String path ){
+        ZWeb zWeb = new ZWeb(base);
+        try {
+            ZWeb.ZWebCom r = zWeb.get(path, Collections.emptyMap());
+            return  r.body() ;
+        }catch (Exception ignored){}
+        return null;
+    }
+
     @Test
     public void bootTest(){
         ModelRunner mr = runModel(hello);
         Assert.assertTrue( ping("http://localhost:1003", "/hello/z"));
         mr.stop();
         Assert.assertFalse( ping("http://localhost:1003", "/hello/z"));
+    }
+
+    @Test
+    public void routesTest(){
+        ModelRunner mr = runModel(hello);
+        final String expected = "hello, world!" ;
+        Assert.assertEquals( expected, get("http://localhost:1003", "/hello/g"));
+        Assert.assertEquals( expected, get("http://localhost:1003", "/hello/j"));
+        Assert.assertEquals( expected, get("http://localhost:1003", "/hello/p"));
+        Assert.assertEquals( expected, get("http://localhost:1003", "/hello/z"));
+        mr.stop();
     }
 }
