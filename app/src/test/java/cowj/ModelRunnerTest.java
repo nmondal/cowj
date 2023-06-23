@@ -134,4 +134,17 @@ public class ModelRunnerTest {
             Assert.fail();
         }
     }
+
+    @Test
+    public void proxyTransformErrorCheck(){
+        mr = runModel(proxy);
+        ZWeb zWeb = new ZWeb("http://localhost:1004");
+        try {
+            ZWeb.ZWebCom r = zWeb.get("/error", Collections.emptyMap());
+            Assert.assertEquals( "boom!", r.body());
+            Assert.assertEquals( 500, r.status);
+        }catch (Exception ex){
+            Assert.fail();
+        }
+    }
 }

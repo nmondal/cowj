@@ -19,6 +19,9 @@ routes:
     /send: _/post.zm
 
 proxies:
+  get:
+    /error: google/error
+
   post:
     /echo: postman_echo/post
 
@@ -32,3 +35,7 @@ data-sources:
     url: https://postman-echo.com
     proxy: _/proxy.zm # use for transforming the request to proxy request
 
+  google:
+    type: curl
+    url: https://google.co.in
+    proxy: _/proxy_err.zm # use for transforming the request to proxy request
