@@ -4,8 +4,10 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import zoomba.lang.core.io.ZWeb;
+import zoomba.lang.core.types.ZTypes;
 
 import java.util.Collections;
+import java.util.List;
 
 public class ModelRunnerTest {
 
@@ -85,6 +87,21 @@ public class ModelRunnerTest {
             ZWeb.ZWebCom r = zWeb.get("/error", Collections.emptyMap());
             Assert.assertEquals( "boom!", r.body());
             Assert.assertEquals( 418, r.status);
+        }catch (Exception ex){
+            Assert.fail();
+        }
+    }
+
+    @Test
+    public void proxyTest(){
+        mr = runModel(hello);
+        // proxy route
+        String resp = get("http://localhost:1003", "/users");
+        Assert.assertNotNull(resp);
+        try {
+            Object r = ZTypes.json(resp);
+            Assert.assertTrue( r instanceof List);
+            Assert.assertFalse( ((List<?>) r).isEmpty());
         }catch (Exception ex){
             Assert.fail();
         }
