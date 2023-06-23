@@ -17,3 +17,18 @@ threading:
 routes:
   post:
     /send: _/post.zm
+
+proxies:
+  post:
+    /echo: postman_echo/post
+
+plugins:
+  cowj.plugins:
+    curl: CurlWrapper::CURL
+
+data-sources:
+  postman_echo:
+    type: curl
+    url: https://postman-echo.com
+    proxy: _/proxy.zm # use for transforming the request to proxy request
+

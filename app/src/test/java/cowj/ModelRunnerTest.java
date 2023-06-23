@@ -8,6 +8,7 @@ import zoomba.lang.core.types.ZTypes;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class ModelRunnerTest {
 
@@ -71,9 +72,15 @@ public class ModelRunnerTest {
         mr = runModel(hello);
         final String expected = "hello, world!" ;
         // get routes
+        // Java binary
+        Assert.assertEquals( expected, get("http://localhost:1003", "/hello/b"));
+        // Groovy
         Assert.assertEquals( expected, get("http://localhost:1003", "/hello/g"));
+        // Javascript
         Assert.assertEquals( expected, get("http://localhost:1003", "/hello/j"));
+        // python
         Assert.assertEquals( expected, get("http://localhost:1003", "/hello/p"));
+        // zoomba
         Assert.assertEquals( expected, get("http://localhost:1003", "/hello/z"));
         // post routes
         Assert.assertEquals( expected, post("http://localhost:1003", "/hello", ""));
@@ -102,6 +109,27 @@ public class ModelRunnerTest {
             Object r = ZTypes.json(resp);
             Assert.assertTrue( r instanceof List);
             Assert.assertFalse( ((List<?>) r).isEmpty());
+        }catch (Exception ex){
+            Assert.fail();
+        }
+    }
+
+    @Test
+    public void proxyForwardTransformTest(){
+        mr = runModel(proxy);
+        // proxy route
+        String resp = post("http://localhost:1004", "/echo", "");
+        Assert.assertNotNull(resp);
+        try {
+            Object r = ZTypes.json(resp);
+            Assert.assertTrue( r instanceof Map);
+            Object h = ((Map) r).get("headers");
+            Assert.assertTrue( h instanceof Map);
+            Assert.assertEquals( "42", ((Map<?, ?>) h).get("cowj"));
+            Object b = ((Map<?, ?>) r).get("json");
+            Assert.assertTrue( b instanceof Map);
+            Object bs = ((Map<?, ?>) b).keySet().iterator().next();
+            Assert.assertEquals( "hello,proxy!", bs);
         }catch (Exception ex){
             Assert.fail();
         }

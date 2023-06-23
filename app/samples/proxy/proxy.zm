@@ -1,0 +1,2 @@
+// return a proper map of headers, and body and query map
+{ "body" : "hello,proxy!" , "headers" : { "cowj" : "42" }, "query" : {:} }
