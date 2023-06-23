@@ -18,9 +18,11 @@ public class ModelRunnerTest {
     private ModelRunner mr ;
 
     @After
-    public void stopSpark(){
+    public void stopSpark() throws Exception{
         if ( mr == null ) return;
         mr.stop();
+        mr = null;
+        Thread.sleep(1500);
     }
 
     static ModelRunner runModel(String modelPath){

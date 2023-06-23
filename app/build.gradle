@@ -12,6 +12,8 @@ plugins {
     id 'application'
     // https://imperceptiblethoughts.com/shadow/introduction/
     id 'com.github.johnrengelman.shadow'  version "8.1.1"
+    // code coverage jacoco
+    id 'jacoco'
 }
 
 repositories {
@@ -67,6 +69,15 @@ testing {
             useJUnit('4.13.2')
         }
     }
+}
+test {
+    testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+    }
+}
+
+jacocoTestReport {
+    dependsOn test // tests are required to run before generating the report
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
