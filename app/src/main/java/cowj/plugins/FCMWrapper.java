@@ -77,32 +77,20 @@ public interface FCMWrapper {
         return messaging().send(message(data));
     }
 
-    static FCMWrapper from(String authFile){
-       return () -> {
-           try {
-               InputStream is = new FileInputStream(authFile);
-               GoogleCredentials credentials = GoogleCredentials.fromStream(is);
-               FirebaseOptions options = FirebaseOptions.builder().setCredentials(credentials).build();
-               FirebaseMessaging messaging = null;
-               try {
-                   FirebaseApp.initializeApp(options);
-               } catch (IllegalStateException e) {
-                   System.err.println("Firebase is already initialized!");
-
-               } finally {
-                   messaging = FirebaseMessaging.getInstance();
-               }
-               return messaging;
-
-           } catch (Exception e) {
-               throw new RuntimeException(e);
-           }
-       };
-    }
-
     DataSource.Creator FCM = (name, config, parent) -> {
-        String authFile = parent.interpretPath((String) config.get("credentials_file"));
-        FCMWrapper fcmWrapper = FCMWrapper.from(authFile);
+        FCMWrapper fcmWrapper = () -> {
+            try {
+                try {
+                    FirebaseApp.initializeApp();
+                } catch (IllegalStateException e) {
+                    System.err.println("Firebase is already initialized!");
+                }
+
+                return FirebaseMessaging.getInstance();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        };
         return new DataSource() {
             @Override
             public Object proxy() {
