@@ -1,5 +1,6 @@
 package cowj;
 
+import zoomba.lang.core.types.ZNumber;
 import zoomba.lang.core.types.ZTypes;
 
 import java.io.File;
@@ -22,6 +23,10 @@ public interface Model {
             ret = ret.replace("${" + varName + "}", val.toString());
         }
         return ret;
+    }
+
+    default String envTemplate(String templateString){
+        return template( templateString, Collections.unmodifiableMap(System.getenv()));
     }
 
     String base();
@@ -96,7 +101,13 @@ public interface Model {
             public String base(){ return baseDir; }
             @Override
             public int port() {
-                return (int)map.getOrDefault(PORT, Model.super.port());
+                Object p = map.getOrDefault(PORT, Model.super.port());
+                if ( p instanceof Integer ) return (int)p;
+                System.out.printf("Port is possibly redirected : '%s' %n", p );
+                String ps = p.toString();
+                String subP = envTemplate(ps);
+                System.out.printf("Port is redirected to : '%s' %n", subP );
+                return ZNumber.integer(subP, Model.super.port()).intValue();
             }
 
             @Override
