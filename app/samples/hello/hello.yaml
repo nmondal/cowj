@@ -26,6 +26,9 @@ routes:
     /hello/b: "cowj.plugins.SampleJVMScriptable.class"
     /notification: _/notification.zm
     /error: _/error.zm
+  
+  post:
+    /hello: _/hello.zm
 
 
 proxies:
