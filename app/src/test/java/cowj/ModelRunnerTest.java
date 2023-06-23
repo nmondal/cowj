@@ -130,7 +130,7 @@ public class ModelRunnerTest {
         mr = runModel(proxy);
         ZWeb zWeb = new ZWeb("http://localhost:1004");
         ZWeb.ZWebCom r = zWeb.get("/error", Collections.emptyMap());
-        Assert.assertEquals( "boom!", r.body());
+        Assert.assertEquals( "proxy transform boom!", r.body());
         Assert.assertEquals( 500, r.status);
     }
 }
