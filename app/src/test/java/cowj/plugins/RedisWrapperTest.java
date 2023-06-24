@@ -40,7 +40,7 @@ public class RedisWrapperTest {
     }
 
     @Test
-    public void invalidConfig(){
+    public void invalidConfigTest(){
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             DataSource ds = RedisWrapper.REDIS.create("foo", Collections.emptyMap(), model);
         });

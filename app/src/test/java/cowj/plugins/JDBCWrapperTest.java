@@ -14,6 +14,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertThrows;
+
 public class JDBCWrapperTest {
 
     static Model model = () -> ".";
@@ -28,6 +30,8 @@ public class JDBCWrapperTest {
                 "driver", driverClassName );
         DataSource ds = JDBCWrapper.JDBC.create("derby", config, model);
         Assert.assertTrue( ds.proxy() instanceof  JDBCWrapper );
+        Assert.assertEquals( "derby", ds.name() );
+
         derby = (JDBCWrapper) ds.proxy();
         Connection con = derby.connection();
         Assert.assertNotNull( con );
@@ -72,5 +76,16 @@ public class JDBCWrapperTest {
         EitherMonad<List<Map<String,Object>>> resp = derby.select("select * from Data;" , Collections.emptyList());
         Assert.assertTrue(resp.inError());
         Assert.assertTrue( resp.error().getMessage().contains(";")); // error due to semi colon
+    }
+
+    @Test
+    public void invalidConfigTest(){
+        Map<String,Object> config = Map.of("connection_string", "jdbc:foo:memory:cowjdb;create=true" ,
+                "driver", "" );
+
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            DataSource ds = JDBCWrapper.JDBC.create("foo", config, model);
+        });
+        Assert.assertNotNull(exception);
     }
 }
