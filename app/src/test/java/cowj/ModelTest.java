@@ -7,9 +7,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import java.util.Map;
 
+import static org.junit.Assert.assertThrows;
+
 public class ModelTest {
 
     final String p = "samples/hello/hello.yaml" ;
+    final String pj = "samples/proxy/proxy.json" ;
+
+    final String wm = "samples/proxy/proxy.zm" ;
 
     @Test
     public void loadingTest(){
@@ -32,4 +37,45 @@ public class ModelTest {
         r = m.template("${c} , ${d}!", ctx);
         Assert.assertEquals("?c , ?d!", r);
     }
+
+    @Test
+    public void templateEnvTests(){
+        Model m = Model.from(p);
+        // runs only on *Nix
+        String r = m.envTemplate("Hello, ${USER}!");
+        Assert.assertFalse(r.contains("?"));
+        Assert.assertTrue(r.contains("Hello, "));
+    }
+
+    @Test
+    public void jsonLoadTest(){
+        // should it be used.. like at all?
+        Model m = Model.from(pj);
+        Assert.assertNotNull(m);
+        Assert.assertTrue(m.auth().isEmpty()); // auth should be empty
+        Assert.assertFalse(m.proxies().isEmpty()); // proxies should not be empty
+        // port is redirected and will not be what it is .. so...
+        Assert.assertEquals( 8080, m.port());
+    }
+
+    @Test
+    public void nonExistingFileTest(){
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            Model.from("foo/bar.yaml");
+        });
+        Assert.assertNotNull(exception);
+        Assert.assertTrue( exception.getMessage().contains("exists"));
+        Assert.assertTrue( exception.getMessage().contains("foo/bar.yaml"));
+    }
+
+    @Test
+    public void wrongTypeOfFileTest(){
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            Model.from(wm);
+        });
+        Assert.assertNotNull(exception);
+        Assert.assertTrue( exception.getMessage().contains("Invalid Type"));
+        Assert.assertTrue( exception.getMessage().contains(wm));
+    }
+
 }

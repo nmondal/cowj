@@ -160,7 +160,7 @@ public interface Model {
     static Model from(String path){
         File f = new File(path);
         final String abs = f.getAbsolutePath();
-        if ( !f.exists() ) throw new RuntimeException(String.format("No file name : '%s' ", abs ));
+        if ( !f.exists() ) throw new IllegalArgumentException(String.format("No file name : '%s' exists", abs ));
         final String lc = abs.toLowerCase(Locale.ROOT);
         final String baseDir = f.getAbsoluteFile().getParent();
         if ( lc.endsWith(".yaml") || lc.endsWith(".yml")){ //  yaml load
@@ -171,7 +171,7 @@ public interface Model {
             Map m = (Map)ZTypes.json(abs,true);
             return from(m,baseDir);
         }
-        throw new RuntimeException(String.format("file '%s' must be a json or yaml", abs ));
+        throw new IllegalArgumentException(String.format("Invalid Type of file : '%s' must be a json or yaml", abs ));
     }
 
     /// Central place to ask the model to interpret the path as it wishes.

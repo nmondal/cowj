@@ -1,0 +1,39 @@
+{
+  "port": "${PORT}",
+  "static": "_/.",
+  "threading": {
+    "min": 4,
+    "max": 8,
+    "timeout": 30000
+  },
+  "routes": {
+    "post": {
+      "/send": "_/post.zm"
+    }
+  },
+  "proxies": {
+    "get": {
+      "/error": "google/error"
+    },
+    "post": {
+      "/echo": "postman_echo/post"
+    }
+  },
+  "plugins": {
+    "cowj.plugins": {
+      "curl": "CurlWrapper::CURL"
+    }
+  },
+  "data-sources": {
+    "postman_echo": {
+      "type": "curl",
+      "url": "https://postman-echo.com",
+      "proxy": "_/proxy.zm"
+    },
+    "google": {
+      "type": "curl",
+      "url": "https://google.co.in",
+      "proxy": "_/proxy_err.zm"
+    }
+  }
+}
