@@ -12,10 +12,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class RedisWrapper {
-    public static DataSource.Creator REDIS = (name, config, parent) -> {
+public interface RedisWrapper {
+    DataSource.Creator REDIS = (name, config, parent) -> {
         List<String> urls = (List) config.getOrDefault("urls", Collections.emptyList());
-        if (urls.isEmpty()) throw new RuntimeException("redis config must have 'urls' pointing to cluster!");
+        if (urls.isEmpty()) throw new IllegalArgumentException("url list is empty!");
         Set<HostAndPort> jedisClusterNodes =
                 urls.stream().map(s -> {
                     String[] arr = s.split(":");
