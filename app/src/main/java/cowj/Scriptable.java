@@ -13,6 +13,7 @@ import zoomba.lang.core.types.ZNumber;
 
 import javax.script.*;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -121,7 +122,7 @@ public interface Scriptable  {
 
     ScriptEngineManager MANAGER = new ScriptEngineManager();
 
-    Runnable JythonLoad = new Runnable() {
+    Serializable JythonLoad = new Serializable() { // simplest hack to load Jython ...
         // https://stackoverflow.com/questions/52825426/jython-listed-by-getenginefactories-but-getenginebynamejython-is-null
         static {
             Options.importSite = false;
@@ -130,8 +131,6 @@ public interface Scriptable  {
             MANAGER.registerEngineName( "groovy", new GroovyScriptEngineFactory());
             MANAGER.registerEngineName( "python", new PyScriptEngineFactory());
         }
-        @Override
-        public void run() {}
     };
 
     static ScriptEngine getEngine(String path){
@@ -240,7 +239,10 @@ public interface Scriptable  {
             case "zmb", "zm" -> ZMB;
             case  "js", "groovy", "py" -> JSR;
             case "class" -> BINARY;
-            default -> NOP;
+            default -> {
+                System.err.printf("No pattern matched for path '%s' -> For handler '%s' Using NOP!%n", path, handler);
+                yield NOP;
+            }
         };
         return r.create(path,handler);
     };

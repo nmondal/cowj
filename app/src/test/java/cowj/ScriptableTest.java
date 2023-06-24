@@ -10,7 +10,6 @@ import static org.junit.Assert.assertThrows;
 
 public class ScriptableTest {
 
-
     @Test
     public void eitherMonadTest(){
         EitherMonad<String> ems = EitherMonad.value("");
@@ -25,11 +24,18 @@ public class ScriptableTest {
     }
     @Test
     public void loadClassErrorTest() throws Exception {
-        Scriptable sc = Scriptable.loadClass("java.lang.String");
+        Scriptable sc = Scriptable.loadClass("java.lang.String.class");
         Assert.assertNotNull(sc);
         Object r = sc.exec(new SimpleBindings());
         Assert.assertNotNull(r);
         Assert.assertTrue(r.toString().isEmpty());
+    }
+
+    @Test
+    public void nopScriptableTest() throws Exception {
+       Scriptable sc = Scriptable.UNIVERSAL.create("foo", "bar");
+       Object o = sc.exec(new SimpleBindings());
+       Assert.assertEquals("", o);
     }
 
     @Test
@@ -40,6 +46,13 @@ public class ScriptableTest {
         });
         Assert.assertNotNull(exception);
         Assert.assertTrue( exception.getMessage().contains("bar"));
+    }
+
+    @Test
+    public void jsrNullReturnTest() throws Exception {
+        Scriptable sc = Scriptable.JSR.create("",  "samples/test_scripts/null_return.js" );
+        Object o = sc.exec(new SimpleBindings());
+        Assert.assertEquals("", o);
     }
 
     @Test

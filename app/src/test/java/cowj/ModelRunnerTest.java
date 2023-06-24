@@ -107,6 +107,15 @@ public class ModelRunnerTest {
     }
 
     @Test
+    public void runTimeErrorJSR() throws Exception {
+        mr = runModel(hello);
+        ZWeb zWeb = new ZWeb("http://localhost:1003");
+        ZWeb.ZWebCom r = zWeb.get("/runtime_error", Collections.emptyMap());
+        Assert.assertTrue (r.body().contains("bar"));
+        Assert.assertEquals( 500, r.status);
+    }
+
+    @Test
     public void proxyTest() {
         mr = runModel(hello);
         // proxy route
