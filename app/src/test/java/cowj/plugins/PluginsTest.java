@@ -1,5 +1,7 @@
-package cowj;
+package cowj.plugins;
 
+import cowj.DataSource;
+import cowj.EitherMonad;
 import org.junit.Assert;
 import org.junit.Test;
 
