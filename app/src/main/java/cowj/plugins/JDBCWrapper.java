@@ -21,6 +21,8 @@ public interface JDBCWrapper {
 
     String CONNECTION_STRING = "connection_string" ;
 
+    String ENV = "env" ;
+
     default Object getObject(Object value) {
         if (value instanceof java.sql.Date) {
             return ((Date) value).getTime();
@@ -57,35 +59,40 @@ public interface JDBCWrapper {
         }
     }
 
-    static String connectionString(Map<String, String> map, SecretManager secretManager) {
-        String scheme = map.getOrDefault(CONNECTION, "");
-        String hostKey = map.getOrDefault("host", "");
-        String userKey = map.getOrDefault("user", "");
-        String dbKey = map.getOrDefault("db", "");
-        String passKey = map.getOrDefault("pass", "");
-
-        String host = secretManager.getOrDefault(hostKey, "");
-        String user = secretManager.getOrDefault(userKey, "");
-        String db = secretManager.getOrDefault(dbKey, "");
-        String pass = secretManager.getOrDefault(passKey, "");
-
-        /// TODO(Hemil): Each db has a different format
-        return String.format("%s://%s/%s?user=%s&password=%s", scheme, host, db, user, pass);
-    }
-
     DataSource.Creator JDBC = (name, config, parent) -> {
         String driverName = config.getOrDefault(DRIVER, "").toString();
         Map<String, String> props = (Map<String, String>) config.getOrDefault(PROPERTIES, Collections.emptyMap());
         String conString = config.getOrDefault(CONNECTION_STRING, "").toString();
-        if ( conString.isEmpty() ) {
-            String secretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
-            SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.get(secretManagerName);
-            conString = connectionString(props, sm);
+
+        String secretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
+        SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.get(secretManagerName);
+
+        Map<String, Object> env = (Map<String, Object>) config.getOrDefault(ENV, Collections.emptyMap());
+        /// Mapping a Map in java is way too verbose. Imperative is much
+        /// more readable in java
+        Map<String, Object> substitutedEnv = new HashMap<>();
+        for (Map.Entry<String, Object> entry : env.entrySet()) {
+            String value = sm.getOrDefault(entry.getValue().toString(), "");
+            if (value.isEmpty()) {
+                System.out.printf("Warning: Value for env %s is empty or could not be found in secret manager %n", entry.getKey());
+            }
+            substitutedEnv.put(entry.getKey(), value);
+        }
+        String connectionString = parent.template(conString, substitutedEnv);
+
+        Properties properties = new Properties();
+
+        for (Map.Entry<String, String> entry : props.entrySet()) {
+            String value = sm.getOrDefault(entry.getValue(), "");
+            if (value.isEmpty()) {
+                System.out.printf("Warning: Value for env %s is empty or could not be found in secret manager %n", entry.getKey());
+            }
+            properties.put(entry.getKey(), value);
         }
 
         try {
             Class.forName(driverName);
-            final Connection con = DriverManager.getConnection(conString);
+            final Connection con = DriverManager.getConnection(connectionString, properties);
             JDBCWrapper wrapper = () -> con;
             return new DataSource() {
                 @Override
