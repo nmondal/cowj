@@ -18,6 +18,7 @@ public class JDBCWrapperTest {
 
     static Model model = () -> ".";
     static JDBCWrapper derby = null;
+    static final int UPTO = 5 ;
 
     @BeforeClass
     public static void boot() throws Exception {
@@ -38,11 +39,11 @@ public class JDBCWrapperTest {
         stmt.execute(query);
         System.out.println("Table created");
         // insert 2 rows of data
-        /*
-        stmt = con.createStatement();
-        String sql = "INSERT into Data values"+"("+ "'"+ id +"'"+ ","+ name + ","+ "'"+ marks+"'"+")";
-        stmt.executeUpdate(sql);
-         */
+        for ( int i = 0; i < UPTO ; i ++ ){
+            String sql = String.format( "INSERT into Data values ( 'n_%d' , %d )", i+1, i+1 )  ;
+            stmt.executeUpdate(sql);
+            System.out.println("Row Inserted...: " + i );
+        }
     }
     @AfterClass
     public static void shutDown() throws Exception {
@@ -55,5 +56,21 @@ public class JDBCWrapperTest {
     public void queryTest(){
        EitherMonad<List<Map<String,Object>>> resp = derby.select("select * from Data" , Collections.emptyList());
        Assert.assertTrue(resp.isSuccessful());
+       List<Map<String,Object>> rows = resp.value();
+       Assert.assertEquals( UPTO, rows.size() );
+       // SQL has poor sense of casing...
+       rows.forEach( m -> {
+           Object name = m.get("NAME");
+           Assert.assertTrue( name instanceof String );
+           Object age = m.get("AGE");
+           Assert.assertTrue( age instanceof Integer );
+       });
+    }
+
+    @Test
+    public void injectError(){
+        EitherMonad<List<Map<String,Object>>> resp = derby.select("select * from Data;" , Collections.emptyList());
+        Assert.assertTrue(resp.inError());
+        Assert.assertTrue( resp.error().getMessage().contains(";")); // error due to semi colon
     }
 }
