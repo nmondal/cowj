@@ -141,10 +141,12 @@ public interface ModelRunner extends Runnable {
                 System.out.printf("%s -> %s -> %s %n", filterType, r.getKey(), scriptPath);
             }
         }
+        awaitInitialization();
     }
 
     default void stop(){
         Spark.stop();
+        awaitStop();
     }
 
     static ModelRunner fromModel(String path){

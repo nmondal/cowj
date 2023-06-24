@@ -10,7 +10,7 @@ public final class EitherMonad<V> {
     public boolean isSuccessful(){ return  err == null; }
 
     public boolean isValid(){
-        return value == null && err == null  || value != null && err != null ;
+        return ( err == null &&  value != null ) || ( err != null &&  value == null );
     }
     public V value() { return value; }
     public Throwable error() { return err; }
