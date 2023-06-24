@@ -9,7 +9,7 @@ import javax.script.SimpleBindings;
 import static org.junit.Assert.assertThrows;
 
 public class ScriptableTest {
-    
+
     @Test
     public void loadClassErrorTest() throws Exception {
         Scriptable sc = Scriptable.loadClass("java.lang.String");
@@ -30,7 +30,7 @@ public class ScriptableTest {
     }
 
     @Test
-    public void znbRuntimeErrorTest(){
+    public void zmbRuntimeErrorTest(){
         Scriptable sc = Scriptable.ZMB.create("",  "samples/test_scripts/runtime_error.zmb" );
         Exception exception = assertThrows(RuntimeException.class, () -> {
             sc.exec(new SimpleBindings());
