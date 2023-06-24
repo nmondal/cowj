@@ -20,7 +20,8 @@ routes:
 
 proxies:
   get:
-    /error: google/error
+    /error: google/*
+    /wp: foo/bar # this does not exist
 
   post:
     /echo: postman_echo/post

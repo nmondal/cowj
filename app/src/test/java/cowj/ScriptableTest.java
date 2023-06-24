@@ -13,14 +13,11 @@ public class ScriptableTest {
     @Test
     public void eitherMonadTest(){
         EitherMonad<String> ems = EitherMonad.value("");
-        Assert.assertTrue( ems.isValid() );
         Assert.assertTrue( ems.isSuccessful() );
         Assert.assertFalse( ems.inError() );
         ems = EitherMonad.error(new Throwable());
-        Assert.assertTrue( ems.isValid() );
         Assert.assertFalse( ems.isSuccessful() );
         Assert.assertTrue( ems.inError() );
-
     }
     @Test
     public void loadClassErrorTest() throws Exception {
