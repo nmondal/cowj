@@ -89,10 +89,19 @@ public class ModelRunnerTest {
     }
 
     @Test
-    public void errorCheck() throws Exception {
+    public void errorCheckZMB() throws Exception {
         mr = runModel(hello);
         ZWeb zWeb = new ZWeb("http://localhost:1003");
-        ZWeb.ZWebCom r = zWeb.get("/error", Collections.emptyMap());
+        ZWeb.ZWebCom r = zWeb.get("/error/z", Collections.emptyMap());
+        Assert.assertEquals( "boom!", r.body());
+        Assert.assertEquals( 418, r.status);
+    }
+
+    @Test
+    public void errorCheckJSR() throws Exception {
+        mr = runModel(hello);
+        ZWeb zWeb = new ZWeb("http://localhost:1003");
+        ZWeb.ZWebCom r = zWeb.get("/error/j", Collections.emptyMap());
         Assert.assertEquals( "boom!", r.body());
         Assert.assertEquals( 418, r.status);
     }
