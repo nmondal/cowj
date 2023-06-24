@@ -59,10 +59,17 @@ public interface JDBCWrapper {
         }
     }
 
+    Map<String, String> defaultConnectionStrings = Map.of(
+            "mysql", "jdbc:mysql://${host}/${db}?user=${user}&password=${pass}"
+    );
+
     DataSource.Creator JDBC = (name, config, parent) -> {
         String driverName = config.getOrDefault(DRIVER, "").toString();
         Map<String, String> props = (Map<String, String>) config.getOrDefault(PROPERTIES, Collections.emptyMap());
-        String conString = config.getOrDefault(CONNECTION_STRING, "").toString();
+
+        String database = config.getOrDefault("database", "").toString();
+        String defaultConnectionString = defaultConnectionStrings.getOrDefault(database, "");
+        String conString = config.getOrDefault(CONNECTION_STRING, defaultConnectionString).toString();
 
         String secretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
         SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.get(secretManagerName);
@@ -74,7 +81,7 @@ public interface JDBCWrapper {
         for (Map.Entry<String, Object> entry : env.entrySet()) {
             String value = sm.getOrDefault(entry.getValue().toString(), "");
             if (value.isEmpty()) {
-                System.out.printf("Warning: Value for env %s is empty or could not be found in secret manager %n", entry.getKey());
+                System.out.printf("Warning: Value for env '%s' is empty or could not be found in secret manager %n", entry.getKey());
             }
             substitutedEnv.put(entry.getKey(), value);
         }
@@ -85,7 +92,7 @@ public interface JDBCWrapper {
         for (Map.Entry<String, String> entry : props.entrySet()) {
             String value = sm.getOrDefault(entry.getValue(), "");
             if (value.isEmpty()) {
-                System.out.printf("Warning: Value for env %s is empty or could not be found in secret manager %n", entry.getKey());
+                System.out.printf("Warning: Value for property '%s' is empty or could not be found in secret manager %n", entry.getKey());
             }
             properties.put(entry.getKey(), value);
         }
