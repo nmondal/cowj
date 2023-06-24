@@ -1,6 +1,7 @@
 package cowj.plugins;
 
 import cowj.DataSource;
+import cowj.EitherMonad;
 import cowj.Scriptable;
 
 import java.sql.Date;
@@ -18,6 +19,7 @@ public interface JDBCWrapper {
     String SECRET_MANAGER = "secrets";
     String PROPERTIES = "properties" ;
 
+    String CONNECTION_STRING = "connection_string" ;
 
     default Object getObject(Object value) {
         if (value instanceof java.sql.Date) {
@@ -29,7 +31,7 @@ public interface JDBCWrapper {
         return value;
     }
 
-    default List<Map<String,Object>> select(String query, List<Object> args) {
+    default EitherMonad<List<Map<String,Object>>> select(String query, List<Object> args) {
         List<Map<String,Object>> result = new ArrayList<>();
         final Connection con = connection();
         try (Statement stmt = con.createStatement()) {
@@ -49,10 +51,9 @@ public interface JDBCWrapper {
                 }
                 result.add(m);
             }
-            return result;
+            return EitherMonad.value(result);
         } catch (SQLException e) {
-            e.printStackTrace();
-            return Collections.emptyList();
+            return EitherMonad.error(e);
         }
     }
 
@@ -74,15 +75,17 @@ public interface JDBCWrapper {
 
     DataSource.Creator JDBC = (name, config, parent) -> {
         String driverName = config.getOrDefault(DRIVER, "").toString();
-
-        String secretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
-        SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.get(secretManagerName);
-
         Map<String, String> props = (Map<String, String>) config.getOrDefault(PROPERTIES, Collections.emptyMap());
-        String connection = connectionString(props, sm);
+        String conString = config.getOrDefault(CONNECTION_STRING, "").toString();
+        if ( conString.isEmpty() ) {
+            String secretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
+            SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.get(secretManagerName);
+            conString = connectionString(props, sm);
+        }
+
         try {
             Class.forName(driverName);
-            final Connection con = DriverManager.getConnection(connection);
+            final Connection con = DriverManager.getConnection(conString);
             JDBCWrapper wrapper = () -> con;
             return new DataSource() {
                 @Override

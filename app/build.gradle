@@ -52,6 +52,13 @@ dependencies {
 
     /// secret manager
     implementation 'com.google.cloud:google-cloud-secretmanager:2.19.0'
+
+    ///// test stuff
+    testImplementation 'junit:junit:4.13.2'
+    // JDBC
+    testImplementation 'org.apache.derby:derby:10.16.1.1'
+    // REDIS
+
 }
 
 shadowJar {
@@ -61,15 +68,6 @@ shadowJar {
     }
 }
 
-testing {
-    suites {
-        // Configure the built-in test suite
-        test {
-            // Use JUnit4 test framework
-            useJUnit('4.13.2')
-        }
-    }
-}
 test {
     testLogging {
         events "passed", "skipped", "failed", "standardOut", "standardError"
