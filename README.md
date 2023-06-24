@@ -53,6 +53,25 @@ hence they should be hosted outside the API end points - DSL should be created t
 Any "Service" point requiring any "data store" access need to declare it, specifically 
 as part of the service configuration process. Objective of the engine would be to handle the data transfer. JSON is the choice for data transfer for now.
 
+## Unit Testing - Code Coverage
+
+If one is willing to use this, one must wonder  - what Makes Anything 'Prod Ready' ?
+Only suitable answer is the core components must be excessively well tested, 
+and should have really good instruction and branch coverage.
+
+### Cowj All Coverage 
+
+<img src="manual/coverage-all.png" style="zoom:85%;" />
+
+Thus the engine core is immensely tested, and is at per with industry standard quality.
+
+### Cowj Plugin Coverage 
+
+<img src="manual/coverage-plugin.png" style="zoom:72%;" />
+
+Hence, the plugins need more testing work done, which is expected within July 4th.
+
+
 ## Current Implementation 
 
 ### Service Configuration
