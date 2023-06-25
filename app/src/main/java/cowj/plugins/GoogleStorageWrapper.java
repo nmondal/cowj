@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public interface GoogleStorageWrapper {
+
     Storage storage();
 
     default Blob dumps(String bucketName, String fileName, String data) {
@@ -69,8 +70,7 @@ public interface GoogleStorageWrapper {
     }
 
     default Stream<Object> allData(String bucketName){
-        Page<Blob> p = storage().list(bucketName);
-        return p.streamAll().map( b -> {
+        return all(bucketName).map( b -> {
             final String data = new String( b.getContent(), UTF_8);
             try {
                 return ZTypes.json(data);

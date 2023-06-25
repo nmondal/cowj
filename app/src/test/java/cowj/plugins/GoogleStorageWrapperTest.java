@@ -1,5 +1,6 @@
 package cowj.plugins;
 
+import com.google.api.gax.paging.Page;
 import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.*;
 import org.junit.Assert;
@@ -9,9 +10,11 @@ import zoomba.lang.core.types.ZTypes;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -80,5 +83,25 @@ public class GoogleStorageWrapperTest {
         when(b.getContent()).thenReturn( dataString.getBytes( StandardCharsets.UTF_8 ));
         res = gsw.load("foo", "bar");
         Assert.assertEquals( dataString, res );
+    }
+
+    @Test
+    public void streamTest(){
+        Storage storage = mock( Storage.class);
+        Page<Blob> page = mock(Page.class);
+        Stream<Blob> stream = mock(Stream.class);
+        Stream<String> streamStr = mock(Stream.class);
+
+        Blob b = mock(Blob.class);
+        when(b.getStorage()).thenReturn(storage);
+        when(storage.list(anyString())).thenReturn(page);
+        when(page.streamAll()).thenReturn(stream);
+        GoogleStorageWrapper gsw = () -> storage;
+        Assert.assertEquals( stream, gsw.all("foo"));
+        // ensure stream has some stuff
+        Stream<String> as = gsw.allContent("foo");
+        Assert.assertNotNull(as);
+        Stream<Object> ac = gsw.allData("foo");
+        Assert.assertNotNull(ac);
     }
 }
