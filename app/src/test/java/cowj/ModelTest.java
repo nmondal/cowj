@@ -26,6 +26,9 @@ public class ModelTest {
         Assert.assertFalse(m.dataSources().isEmpty());
         Assert.assertEquals( 1003, m.port());
         Assert.assertTrue( m.base().endsWith("samples/hello"));
+        // try loading a ".yml" file too
+        m = Model.from("samples/test_scripts/test.yml");
+        Assert.assertNotNull(m);
     }
 
     @Test

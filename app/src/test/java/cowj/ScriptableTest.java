@@ -61,4 +61,32 @@ public class ScriptableTest {
         Assert.assertNotNull(exception);
         Assert.assertTrue( exception.getMessage().contains("bar"));
     }
+
+    @Test
+    public void unrecognizedEngineTypeTest(){
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            Scriptable.getEngine("foo/bar.txt");
+        });
+        Assert.assertNotNull(exception);
+        Assert.assertTrue( exception.getMessage().contains("registered"));
+    }
+
+    @Test
+    public void zmbRaiseErrorsDifferentArgsTest(){
+
+        Scriptable.TestAsserter.HaltException exception = assertThrows(Scriptable.TestAsserter.HaltException.class, () -> {
+            Scriptable sc = Scriptable.ZMB.create("",  "samples/test_scripts/error_1_arg.zm" );
+            sc.exec(new SimpleBindings());
+        });
+        Assert.assertNotNull(exception);
+        Assert.assertEquals(500, exception.code);
+
+        exception = assertThrows(Scriptable.TestAsserter.HaltException.class, () -> {
+            Scriptable sc = Scriptable.ZMB.create("",  "samples/test_scripts/error_2_arg.zm" );
+            sc.exec(new SimpleBindings());
+        });
+        Assert.assertNotNull(exception);
+        Assert.assertEquals("my error message", exception.getMessage());
+        Assert.assertEquals(500, exception.code);
+    }
 }

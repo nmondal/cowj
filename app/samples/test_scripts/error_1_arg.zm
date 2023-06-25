@@ -1,0 +1,1 @@
+panic(true) // should raise issue

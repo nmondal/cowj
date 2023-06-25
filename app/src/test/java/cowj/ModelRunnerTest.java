@@ -76,6 +76,9 @@ public class ModelRunnerTest {
         // get routes
         // Java binary
         Assert.assertEquals( expected, get("http://localhost:1003", "/hello/b"));
+        // cache run
+        Assert.assertEquals( expected, get("http://localhost:1003", "/hello/b"));
+
         // Groovy
         Assert.assertEquals( expected, get("http://localhost:1003", "/hello/g"));
         // Javascript
@@ -84,6 +87,8 @@ public class ModelRunnerTest {
         Assert.assertEquals( expected, get("http://localhost:1003", "/hello/p"));
         // zoomba
         Assert.assertEquals( expected, get("http://localhost:1003", "/hello/z"));
+        // cache run
+        Assert.assertEquals( expected, get("http://localhost:1003", "/hello/j"));
         // post routes
         Assert.assertEquals( expected, post("http://localhost:1003", "/hello", ""));
     }

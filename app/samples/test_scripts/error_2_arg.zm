@@ -1,0 +1,1 @@
+panic(true,"my error message") // should raise issue

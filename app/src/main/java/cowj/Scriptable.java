@@ -135,7 +135,7 @@ public interface Scriptable  {
 
     static ScriptEngine getEngine(String path){
         String extension = extension(path);
-        if ( !ENGINES.containsKey(extension) ) throw new RuntimeException("script type not registered : " + path);
+        if ( !ENGINES.containsKey(extension) ) throw new IllegalArgumentException("script type not registered : " + path);
         String engineName = ENGINES.get(extension);
         final ScriptEngine engine = MANAGER.getEngineByName(engineName);
         return engine;
