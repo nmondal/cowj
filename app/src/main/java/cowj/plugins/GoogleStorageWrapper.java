@@ -1,6 +1,7 @@
 package cowj.plugins;
 
 import com.google.api.gax.paging.Page;
+import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.*;
 import cowj.DataSource;
 import zoomba.lang.core.types.ZTypes;
@@ -23,11 +24,11 @@ public interface GoogleStorageWrapper {
             return storage.create(blobInfo, data.getBytes(UTF_8));
         }
         try {
-            WritableByteChannel channel = blob.writer();
+            WriteChannel channel = blob.writer();
             channel.write(ByteBuffer.wrap("Updated content".getBytes(UTF_8)));
             channel.close();
         } catch (Exception e){
-            System.err.println(e);
+            throw new RuntimeException(e);
         }
         return blob;
     }
@@ -64,8 +65,7 @@ public interface GoogleStorageWrapper {
     }
 
     default Stream<String> allContent(String bucketName){
-        Page<Blob> p = storage().list(bucketName);
-        return p.streamAll().map( b -> new String( b.getContent(), UTF_8) );
+        return all(bucketName).map( b -> new String( b.getContent(), UTF_8) );
     }
 
     default Stream<Object> allData(String bucketName){
