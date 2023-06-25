@@ -3,12 +3,14 @@ package cowj.plugins;
 import com.google.api.gax.paging.Page;
 import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.*;
+import cowj.DataSource;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 import zoomba.lang.core.types.ZTypes;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -89,19 +91,36 @@ public class GoogleStorageWrapperTest {
     public void streamTest(){
         Storage storage = mock( Storage.class);
         Page<Blob> page = mock(Page.class);
-        Stream<Blob> stream = mock(Stream.class);
-        Stream<String> streamStr = mock(Stream.class);
+        // two items
+        Blob b1 = mock(Blob.class);
+        when(b1.getStorage()).thenReturn(storage);
 
-        Blob b = mock(Blob.class);
-        when(b.getStorage()).thenReturn(storage);
+        final  String first = "hello, world!" ;
+        final  String second = "{ \"a\" : 42 }" ;
+
+        when(b1.getContent()).thenReturn( first.getBytes(StandardCharsets.UTF_8));
+
+        Blob b2 = mock(Blob.class);
+        when(b2.getStorage()).thenReturn(storage);
+        when(b2.getContent()).thenReturn( second.getBytes(StandardCharsets.UTF_8));
+
         when(storage.list(anyString())).thenReturn(page);
-        when(page.streamAll()).thenReturn(stream);
+        when(page.streamAll()).thenReturn(Stream.of(b1, b2));
         GoogleStorageWrapper gsw = () -> storage;
-        Assert.assertEquals( stream, gsw.all("foo"));
         // ensure stream has some stuff
         Stream<String> as = gsw.allContent("foo");
         Assert.assertNotNull(as);
-        Stream<Object> ac = gsw.allData("foo");
-        Assert.assertNotNull(ac);
+        List<String> res = as.toList();
+        Assert.assertEquals(2, res.size());
+        Assert.assertEquals(first, res.get(0));
+        Assert.assertEquals(second, res.get(1));
+
+        when(page.streamAll()).thenReturn(Stream.of(b1, b2));
+        Stream<Object> ao = gsw.allData("foo");
+        List<Object> r = ao.toList();
+
+        Assert.assertEquals(2, r.size());
+        Assert.assertEquals(first, r.get(0));
+        Assert.assertTrue( r.get(1) instanceof Map );
     }
 }
