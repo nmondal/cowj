@@ -10,6 +10,8 @@ import org.junit.Test;
 
 import java.sql.Connection;
 import java.sql.Statement;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -87,5 +89,20 @@ public class JDBCWrapperTest {
             DataSource ds = JDBCWrapper.JDBC.create("foo", config, model);
         });
         Assert.assertNotNull(exception);
+    }
+
+    @Test
+    public void getObjectTest(){
+        java.util.Date o = new java.util.Date();
+        java.sql.Date d = new java.sql.Date( o.getTime());
+        LocalDateTime ld = o.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+        Object r = derby.getObject(d);
+        Assert.assertTrue( r instanceof Long);
+        Assert.assertEquals(o.getTime(), r);
+
+        r = derby.getObject(ld);
+        Assert.assertTrue( r instanceof Long);
     }
 }
