@@ -1,5 +1,7 @@
 package cowj.plugins;
 
+import com.google.firebase.messaging.BatchResponse;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.MulticastMessage;
 import cowj.DataSource;
@@ -15,6 +17,9 @@ import java.util.Map;
 
 import static cowj.plugins.FCMWrapper.*;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 public class FCMWrapperTest {
@@ -70,5 +75,15 @@ public class FCMWrapperTest {
             fcm.sendMulticast(payload);
         });
         Assert.assertNotNull(exception);
+    }
+
+    @Test
+    public void mockMessageSendTest() throws Exception {
+        FCMWrapper fcmWrapper = () -> mock(FirebaseMessaging.class);
+        when(fcmWrapper.messaging().send(any())).thenReturn("");
+        BatchResponse br = mock(BatchResponse.class);
+        when(fcmWrapper.messaging().sendMulticast(any())).thenReturn(br);
+        fcmWrapper.sendMessage( Map.of("token", "abcd" ));
+        fcmWrapper.sendMulticast( Map.of("tokens", Arrays.asList("a","b") ) );
     }
 }
