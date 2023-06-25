@@ -65,12 +65,15 @@ and should have really good instruction and branch coverage.
 
 Thus the engine core is immensely tested, and is at per with industry standard quality.
 
+### Cowj Core Coverage
+
+<img src="manual/coverage-core.png" style="zoom:72%;" />
+
 ### Cowj Plugin Coverage 
 
 <img src="manual/coverage-plugin.png" style="zoom:72%;" />
 
-Hence, the plugins need more testing work done, which is expected within July 4th.
-
+Even plugins are reasonably tested, and are ready for production usage.
 
 ## Current Implementation 
 
