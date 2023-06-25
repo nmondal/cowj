@@ -14,6 +14,7 @@ public class ModelRunnerTest {
 
     final String hello = "samples/hello/hello.yaml" ;
     final String proxy = "samples/proxy/proxy.yaml" ;
+    final String test = "samples/test_scripts/test.yml" ;
 
     private ModelRunner mr ;
 
@@ -154,6 +155,15 @@ public class ModelRunnerTest {
         ZWeb zWeb = new ZWeb("http://localhost:1004");
         ZWeb.ZWebCom r = zWeb.get("/error", Collections.emptyMap());
         Assert.assertEquals( "proxy transform boom!", r.body());
+        Assert.assertEquals( 500, r.status);
+    }
+
+    @Test
+    public void pathRelativeScriptTest() throws Exception {
+        mr = runModel(test);
+        ZWeb zWeb = new ZWeb("http://localhost:1234");
+        ZWeb.ZWebCom r = zWeb.get("/call", Collections.emptyMap());
+        Assert.assertFalse( r.body().isEmpty() );
         Assert.assertEquals( 500, r.status);
     }
 }

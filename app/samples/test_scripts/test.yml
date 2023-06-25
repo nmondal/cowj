@@ -1,3 +1,8 @@
 # this exists to just load the yml extension
 port: 1234
 
+routes:
+  # use relative path, not base relative path
+  get:
+   /call : "samples/error_1_arg.zm"
+

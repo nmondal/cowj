@@ -132,10 +132,7 @@ public interface ModelRunner extends Runnable {
             Map<String, String> filterRoutes = filters.getOrDefault(filterType, Collections.emptyMap());
             BiConsumer<String, Filter> bic = filterMap.get(filterType);
             for (Map.Entry<String, String> r : filterRoutes.entrySet()) {
-                String scriptPath = r.getValue();
-                if (scriptPath.startsWith("_/")) {
-                    scriptPath = baseDir + scriptPath.substring(1);
-                }
+                String scriptPath = m.interpretPath(r.getValue());
                 Filter filter = creator.createFilter(r.getKey(), scriptPath);
                 bic.accept(r.getKey(), filter);
                 System.out.printf("%s -> %s -> %s %n", filterType, r.getKey(), scriptPath);
