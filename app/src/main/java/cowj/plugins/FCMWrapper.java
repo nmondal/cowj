@@ -1,16 +1,13 @@
 package cowj.plugins;
 
-import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.google.firebase.messaging.*;
 import cowj.DataSource;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 public interface FCMWrapper {
     FirebaseMessaging messaging();
@@ -21,48 +18,35 @@ public interface FCMWrapper {
     String TOKENS = "tokens" ;
     String DATUM = "data" ;
 
-    private Message message(Map<String,Object> message){
+    static void computeIfPresent(Map<String,Object> map, String key, BiConsumer<String,String> function){
+        // trick to reduce branching at a performance cost
+        Object v = map.get(key);
+        if ( v == null ) return;
+        function.accept(key, v.toString());
+    }
+
+    static Message message(Map<String,Object> message){
+
         Message.Builder builder = Message.builder();
-        Object v = message.get(TOKEN);
-        if ( v != null ){
-            builder.setToken( v.toString() );
-        }
+        computeIfPresent( message, TOKEN, (k,v) -> builder.setToken(v) );
         Notification.Builder b = Notification.builder();
-        v = message.get(TITLE);
-        if ( v != null ){
-            b.setTitle( v.toString() );
-        }
-        v = message.get(BODY);
-        if (  v != null ){
-            b.setBody( v.toString() );
-        }
-        v = message.get(IMAGE);
-        if (  v != null ){
-            b.setImage( v.toString() );
-        }
+        computeIfPresent(message, TITLE, (k,v) -> b.setTitle(v) );
+        computeIfPresent(message, BODY, (k,v) -> b.setBody(v) );
+        computeIfPresent(message, IMAGE, (k,v) -> b.setImage(v) );
         // other properties gets added like as is...
         Map<String, Object> data = (Map<String, Object>) message.getOrDefault(DATUM, Collections.emptyMap());
         data.forEach((key, value) -> builder.putData(key, value.toString()));
         return builder.setNotification( b.build() ).build();
     }
 
-    private MulticastMessage multicastMessage(Map<String,Object> message){
+    static MulticastMessage multicastMessage(Map<String,Object> message){
         MulticastMessage.Builder builder = MulticastMessage.builder();
         List<String> tokens = (List) message.getOrDefault(TOKENS, Collections.emptyList());
         builder.addAllTokens( tokens );
         Notification.Builder b = Notification.builder();
-        Object v = message.get(TITLE);
-        if ( v != null ){
-            b.setTitle( v.toString() );
-        }
-        v = message.get(BODY);
-        if (  v != null ){
-            b.setBody( v.toString() );
-        }
-        v = message.get(IMAGE);
-        if (  v != null ){
-            b.setImage( v.toString() );
-        }
+        computeIfPresent(message, TITLE, (k,v) -> b.setTitle(v) );
+        computeIfPresent(message, BODY, (k,v) -> b.setBody(v) );
+        computeIfPresent(message, IMAGE, (k,v) -> b.setImage(v) );
         // other properties gets added like as is...
         Map<String, Object> data = (Map<String, Object>) message.getOrDefault(DATUM, Collections.emptyMap());
         data.forEach((key, value) -> builder.putData(key, value.toString()));
