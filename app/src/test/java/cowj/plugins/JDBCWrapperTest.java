@@ -3,6 +3,7 @@ package cowj.plugins;
 import cowj.DataSource;
 import cowj.EitherMonad;
 import cowj.Model;
+import cowj.Scriptable;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -21,11 +22,22 @@ import static org.junit.Assert.assertThrows;
 public class JDBCWrapperTest {
 
     static Model model = () -> ".";
+
     static JDBCWrapper derby = null;
+
     static final int UPTO = 5 ;
+
+    static final String TEST_SECRET_MGR_NAME = "_test_" ;
+
+    static Map<String,String> conProp = Map.of(
+            "host", "host", "user", "user",
+            "db", "db", "pass", "pass" );
+
+    static SecretManager SM = () -> conProp;
 
     @BeforeClass
     public static void boot() throws Exception {
+        Scriptable.DATA_SOURCES.put(TEST_SECRET_MGR_NAME, SM );
         final String driverClassName = org.apache.derby.iapi.jdbc.AutoloadedDriver.class.getName();
         // in memory stuff...
         Map<String,Object> config = Map.of("connection_string", "jdbc:derby:memory:cowjdb;create=true" ,
@@ -51,11 +63,13 @@ public class JDBCWrapperTest {
             System.out.println("Row Inserted...: " + i );
         }
     }
+
     @AfterClass
     public static void shutDown() throws Exception {
         if ( derby != null ) {
             derby.connection().close();
         }
+        Scriptable.DATA_SOURCES.remove(TEST_SECRET_MGR_NAME);
     }
 
     @Test
@@ -104,5 +118,15 @@ public class JDBCWrapperTest {
 
         r = derby.getObject(ld);
         Assert.assertTrue( r instanceof Long);
+    }
+
+    @Test
+    public void jdbcWithSecretTest(){
+        Map<String,Object> config = Map.of( "secrets" , TEST_SECRET_MGR_NAME, "properties", conProp);
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            DataSource ds = JDBCWrapper.JDBC.create("foo", config, model);
+        });
+        // TODO make it run properly, not throw exception
+        Assert.assertNotNull(exception);
     }
 }
