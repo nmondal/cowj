@@ -4,6 +4,7 @@ import com.google.cloud.secretmanager.v1.AccessSecretVersionResponse;
 import com.google.cloud.secretmanager.v1.SecretManagerServiceClient;
 import com.google.cloud.secretmanager.v1.SecretVersionName;
 import cowj.DataSource;
+import cowj.Model;
 import zoomba.lang.core.types.ZTypes;
 
 import java.io.IOException;
@@ -23,7 +24,7 @@ public interface SecretManager {
     DataSource.Creator LOCAL = (name, config, parent) -> new DataSource() {
         @Override
         public Object proxy() {
-            return from(System.getenv());
+            return DEFAULT;
         }
 
         @Override
@@ -31,6 +32,8 @@ public interface SecretManager {
             return name;
         }
     };
+
+    SecretManager DEFAULT = System::getenv;
 
     DataSource.Creator GSM = (name, config, parent) -> {
         try (SecretManagerServiceClient client = SecretManagerServiceClient.create()) {
