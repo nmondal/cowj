@@ -1,20 +1,26 @@
 package cowj.plugins;
 
 import cowj.DataSource;
+import cowj.Scriptable;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.UnifiedJedis;
 import zoomba.lang.core.types.ZNumber;
+import zoomba.lang.core.types.ZTypes;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public interface RedisWrapper {
+    String SECRET_MANAGER = "secrets";
     DataSource.Creator REDIS = (name, config, parent) -> {
-        List<String> urls = (List) config.getOrDefault("urls", Collections.emptyList());
+        String urlString = config.getOrDefault("urls", "").toString();
+        String secretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
+        SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.get(secretManagerName);
+
+        List<String> urls = (List<String>) ZTypes.json(sm.getOrDefault(urlString, "").toString());
         if (urls.isEmpty()) throw new IllegalArgumentException("url list is empty!");
         Set<HostAndPort> jedisClusterNodes =
                 urls.stream().map(s -> {
