@@ -2,6 +2,7 @@ package cowj.plugins;
 
 import cowj.DataSource;
 import cowj.EitherMonad;
+import cowj.Model;
 import cowj.Scriptable;
 
 import java.sql.Date;
@@ -15,11 +16,18 @@ public interface JDBCWrapper {
     Connection connection();
 
     String DRIVER = "driver" ;
-    String CONNECTION = "connection" ;
+
     String SECRET_MANAGER = "secrets";
+
+    String BINDINGS = "bindings";
+
     String PROPERTIES = "properties" ;
 
-    String CONNECTION_STRING = "connection_string" ;
+    String CONNECTION_STRING = "connection" ;
+
+    String REDIRECTION = "@" ;
+
+    String DEFAULT_CONNECTION_STRING = "${schema}//${host}/${db}?user=${user}&password=${pass}" ;
 
     default Object getObject(Object value) {
         if (value instanceof java.sql.Date) {
@@ -57,35 +65,49 @@ public interface JDBCWrapper {
         }
     }
 
-    static String connectionString(Map<String, String> map, SecretManager secretManager) {
-        String scheme = map.getOrDefault(CONNECTION, "");
-        String hostKey = map.getOrDefault("host", "");
-        String userKey = map.getOrDefault("user", "");
-        String dbKey = map.getOrDefault("db", "");
-        String passKey = map.getOrDefault("pass", "");
+    static String connectionString(Model parent, final String original, Map<String, String> keyMap, SecretManager secretManager) {
+        final String formattedReturn;
+        if ( original.isEmpty() ){
+            formattedReturn = DEFAULT_CONNECTION_STRING ; // create a default one which works...
+        } else {
+            // trim the 1st char at begin
+            formattedReturn = original.substring(1);
+        }
 
-        String host = secretManager.getOrDefault(hostKey, "");
-        String user = secretManager.getOrDefault(userKey, "");
-        String db = secretManager.getOrDefault(dbKey, "");
-        String pass = secretManager.getOrDefault(passKey, "");
-
-        /// TODO(Hemil): Each db has a different format
-        return String.format("%s://%s/%s?user=%s&password=%s", scheme, host, db, user, pass);
+        Map<String,Object> passedThroughEnvMap = new HashMap<>() {
+            @Override
+            public String getOrDefault(Object key, Object def) {
+                String refKey = keyMap.get(key.toString());
+                if (refKey == null) return null;
+                return secretManager.getOrDefault(refKey, def.toString());
+            }
+        };
+        return parent.template( formattedReturn, passedThroughEnvMap );
     }
+
 
     DataSource.Creator JDBC = (name, config, parent) -> {
         String driverName = config.getOrDefault(DRIVER, "").toString();
-        Map<String, String> props = (Map<String, String>) config.getOrDefault(PROPERTIES, Collections.emptyMap());
+        Map<String, String> bindings = (Map<String, String>) config.getOrDefault(BINDINGS, Collections.emptyMap());
+
         String conString = config.getOrDefault(CONNECTION_STRING, "").toString();
-        if ( conString.isEmpty() ) {
-            String secretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
-            SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.get(secretManagerName);
-            conString = connectionString(props, sm);
+        String secretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
+        SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.getOrDefault(secretManagerName, SecretManager.DEFAULT);
+
+        if ( conString.startsWith(REDIRECTION) || conString.isEmpty() ) {
+            System.out.println("We shall redirect the string to secret manager...");
+            conString = connectionString(parent, conString, bindings, sm);
+        } else {
+            System.out.println("We shall use the connection string as is...");
         }
+
+        Map<String, String> props = (Map<String, String>) config.getOrDefault(PROPERTIES, Collections.emptyMap());
+        Properties properties = new Properties();
+        properties.putAll(props);
 
         try {
             Class.forName(driverName);
-            final Connection con = DriverManager.getConnection(conString);
+            final Connection con = DriverManager.getConnection(conString, properties);
             JDBCWrapper wrapper = () -> con;
             return new DataSource() {
                 @Override

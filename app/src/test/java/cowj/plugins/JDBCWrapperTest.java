@@ -29,18 +29,24 @@ public class JDBCWrapperTest {
 
     static final String TEST_SECRET_MGR_NAME = "_test_" ;
 
-    static Map<String,String> conProp = Map.of(
+    static Map<String,String> connectionBindings = Map.of(
+             "schema", "schema",
             "host", "host", "user", "user",
             "db", "db", "pass", "pass" );
 
-    static SecretManager SM = () -> conProp;
+    static Map<String,String> smMap = Map.of(
+            "schema", "jdbc:oracle:thin:@",
+            "host", "localhost", "user", "u",
+            "db", "local_db", "pass", "p" );
+
+    static SecretManager SM = () -> smMap;
 
     @BeforeClass
     public static void boot() throws Exception {
         Scriptable.DATA_SOURCES.put(TEST_SECRET_MGR_NAME, SM );
         final String driverClassName = org.apache.derby.iapi.jdbc.AutoloadedDriver.class.getName();
         // in memory stuff...
-        Map<String,Object> config = Map.of("connection_string", "jdbc:derby:memory:cowjdb;create=true" ,
+        Map<String,Object> config = Map.of("connection", "jdbc:derby:memory:cowjdb;create=true" ,
                 "driver", driverClassName );
         DataSource ds = JDBCWrapper.JDBC.create("derby", config, model);
         Assert.assertTrue( ds.proxy() instanceof  JDBCWrapper );
@@ -96,9 +102,8 @@ public class JDBCWrapperTest {
 
     @Test
     public void invalidConfigTest(){
-        Map<String,Object> config = Map.of("connection_string", "jdbc:foo:memory:cowjdb;create=true" ,
+        Map<String,Object> config = Map.of("connection", "jdbc:foo:memory:cowjdb;create=true" ,
                 "driver", "" );
-
         Exception exception = assertThrows(RuntimeException.class, () -> {
             DataSource ds = JDBCWrapper.JDBC.create("foo", config, model);
         });
@@ -121,8 +126,19 @@ public class JDBCWrapperTest {
     }
 
     @Test
-    public void jdbcWithSecretTest(){
-        Map<String,Object> config = Map.of( "secrets" , TEST_SECRET_MGR_NAME, "properties", conProp);
+    public void jdbcWithSecretTestNoConnectionStringPassed(){
+        final Map<String,Object> config = Map.of( "secrets" , TEST_SECRET_MGR_NAME, "bindings", connectionBindings);
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            DataSource ds = JDBCWrapper.JDBC.create("foo", config, model);
+        });
+        // TODO make it run properly, not throw exception
+        Assert.assertNotNull(exception);
+    }
+
+    @Test
+    public void jdbcWithSecretTestConnectionStringPassed(){
+        final Map<String,Object> config = Map.of( "connection" , "@" + JDBCWrapper.DEFAULT_CONNECTION_STRING,
+                "secrets" , TEST_SECRET_MGR_NAME, "bindings", connectionBindings);
         Exception exception = assertThrows(RuntimeException.class, () -> {
             DataSource ds = JDBCWrapper.JDBC.create("foo", config, model);
         });
