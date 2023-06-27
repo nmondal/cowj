@@ -170,6 +170,21 @@ https://sparkjava.com/documentation#request
 
 https://sparkjava.com/documentation#response
 
+#### Shared Memory
+
+Cowj supports a global, non session oriented global memory - which can be used
+to double time as a poor substitute for in memory cache -
+and it is a `ConcurrentHashMap` - accessible by the binding variable `_shared`.
+
+The syntax for using this would be:
+
+```scala
+v = _shared.<key_name> // groovy, zoomba 
+v = _shared[<key_name>] // groovy, zoomba, js, python  
+
+```
+
+
 See the document  "A Guide to COWJ Scripting" found here - [Scripting](manual/scripting.md)
 
 ### Filters 
@@ -179,7 +194,6 @@ These are how one can have before and after callback before and after any route 
 A `before` filter gets hit before hitting the actual route, while an `after` filter gets hit after returning from the route, so one can modify the response if need be.
 
 Classic example of `before` filter is for `auth` while `after` filter can be used to modify response type  by adding response headers.
-
 
 
 ### Data Sources 
