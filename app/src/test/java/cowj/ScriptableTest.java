@@ -89,4 +89,14 @@ public class ScriptableTest {
         Assert.assertEquals("my error message", exception.getMessage());
         Assert.assertEquals(500, exception.code);
     }
+
+    @Test
+    public void globalVariableTest() throws Exception {
+        // get variable
+        int v = (int)Scriptable.SHARED_MEMORY.getOrDefault("hhgg", 0 );
+        Scriptable sc = Scriptable.UNIVERSAL.create("hhgg", cowj.plugins.SampleJVMScriptable.class.getName()+ ".class");
+        sc.exec( new SimpleBindings( ) );
+        int n = (int)Scriptable.SHARED_MEMORY.getOrDefault("hhgg", 0 );
+        Assert.assertTrue( v < n );
+    }
 }

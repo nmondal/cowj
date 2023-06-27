@@ -75,9 +75,11 @@ Registration flow of plugin is as follows:
 #### Inside Source Code 
 
 The following code get's a data source back:
+
 ```java
 Object ds = Scriptable.DATA_SOURCES.get("fcm_ds");
 ```
+
 #### Scripting Usage 
 In various scripts the `Scriptable.DATA_SOURCES` gets injected as a `Bindings` variable 
 with variable name `_ds`.
@@ -88,6 +90,7 @@ Thus, based on the language the usage can be:
 fcm_instance = _ds.fcm_ds // zoomba , groovy 
 fcm_instance = _ds["fcm_ds"] // zoomba, js, groovy, python 
 ```
+
 At this point `fcm_instance` is the instance returned by the `proxy()` method
 of the underlying data source.
 
@@ -102,7 +105,6 @@ This is a way to create a monadic container to wrap `result, error` while callin
 public final class EitherMonad<V> {
   public boolean inError();
   public boolean isSuccessful();
-  public boolean isValid();
   public V value();
   public Throwable error();
 }
@@ -145,8 +147,6 @@ public interface CurlWrapper {
 
 }
 ```
-
-
 
 
 ### JDBC 

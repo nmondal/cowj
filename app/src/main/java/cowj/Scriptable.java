@@ -19,6 +19,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public interface Scriptable  {
 
@@ -102,6 +103,8 @@ public interface Scriptable  {
     );
 
     Map<String,Object> DATA_SOURCES = new HashMap<>();
+    // added for the shared memory access
+    Map<String,Object> SHARED_MEMORY = new ConcurrentHashMap<>();
 
 
     String REQUEST = "req" ;
@@ -111,6 +114,7 @@ public interface Scriptable  {
     String DATA_SOURCE = "_ds" ;
 
     String ENVIRON = "_env" ;
+    String SHARED = "_shared" ;
 
     String HALT_ERROR = "_ex" ;
 
@@ -168,6 +172,8 @@ public interface Scriptable  {
         bindings.put(DATA_SOURCE, DATA_SOURCES);
         bindings.put(TestAsserter.ASSERTER, (TestAsserter) () -> bindings);
         bindings.put( ENVIRON, System.getenv());
+        bindings.put( SHARED,  SHARED_MEMORY);
+
         Object r =  cs.eval(bindings);
         if ( r != null ) return r;
         // Jython issue...
@@ -182,6 +188,7 @@ public interface Scriptable  {
         ZContext.FunctionContext fc = new ZContext.FunctionContext( ZContext.EMPTY_CONTEXT , ZContext.ArgContext.EMPTY_ARGS_CONTEXT);
         bindings.put(DATA_SOURCE, DATA_SOURCES);
         bindings.put( ENVIRON, System.getenv());
+        bindings.put( SHARED,  SHARED_MEMORY);
         fc.putAll( bindings);
         zs.runContext(fc);
         Function.MonadicContainer mc = zs.execute();
@@ -229,6 +236,7 @@ public interface Scriptable  {
     Creator BINARY = (path, handler) -> (bindings) -> {
         bindings.put(DATA_SOURCE, DATA_SOURCES);
         bindings.put( ENVIRON, System.getenv());
+        bindings.put( SHARED,  SHARED_MEMORY);
         Scriptable scriptable = loadClass(handler);
         return scriptable.exec(bindings);
     };
