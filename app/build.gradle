@@ -45,7 +45,7 @@ dependencies {
     implementation 'com.google.cloud:google-cloud-storage:2.22.3'
 
     // fcm
-    implementation 'com.google.firebase:firebase-admin:9.1.1'
+    implementation 'com.google.firebase:firebase-admin:9.2.0'
 
     // mysql connector
     implementation 'com.mysql:mysql-connector-j:8.0.33'
@@ -65,6 +65,9 @@ dependencies {
 
 shadowJar {
     archiveBaseName.set('cowj')
+    /// https://stackoverflow.com/questions/55484043/how-to-fix-could-not-find-policy-pick-first-with-google-tts-java-client
+    /// I got this error when I deployed on GCP
+    mergeServiceFiles()
     manifest {
         attributes 'Main-Class' : "cowj.App"
     }
