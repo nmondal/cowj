@@ -19,13 +19,9 @@ public interface JDBCWrapper {
 
     String SECRET_MANAGER = "secrets";
 
-    String BINDINGS = "bindings";
-
     String PROPERTIES = "properties" ;
 
     String CONNECTION_STRING = "connection" ;
-
-    String REDIRECTION = "@" ;
 
     String DEFAULT_CONNECTION_STRING = "${schema}//${host}/${db}?user=${user}&password=${pass}" ;
 
