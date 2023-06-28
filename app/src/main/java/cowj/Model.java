@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 public interface Model {
 
     Pattern TEMPLATE_PATTERN = Pattern.compile("\\$\\{(?<var>[^\\{\\}]+)\\}");
-    default String template(String templateString, Map<String,Object> context){
+    default String template(String templateString, Map context){
         Matcher m = TEMPLATE_PATTERN.matcher(templateString);
         String ret = templateString;
         while ( m.find() ){
