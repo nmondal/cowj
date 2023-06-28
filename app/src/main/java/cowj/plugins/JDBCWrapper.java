@@ -5,6 +5,8 @@ import cowj.EitherMonad;
 import cowj.Model;
 import cowj.Scriptable;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -79,7 +81,8 @@ public interface JDBCWrapper {
             public String getOrDefault(Object key, Object def) {
                 String refKey = keyMap.get(key.toString());
                 if (refKey == null) return null;
-                return secretManager.getOrDefault(refKey, def.toString());
+                String value = secretManager.getOrDefault(refKey, def.toString());
+                return URLEncoder.encode(value, StandardCharsets.UTF_8);
             }
         };
         return parent.template( formattedReturn, passedThroughEnvMap );
