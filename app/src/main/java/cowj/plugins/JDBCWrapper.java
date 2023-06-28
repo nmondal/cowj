@@ -78,7 +78,11 @@ public interface JDBCWrapper {
         }
 
         try {
-            Class.forName(driverName);
+            /// Most modern drivers register themselves on startup.
+            /// We usually don't need to do this
+            if (!driverName.isEmpty()) {
+                Class.forName(driverName);
+            }
             final Connection con = DriverManager.getConnection(substitutedConString, properties);
             JDBCWrapper wrapper = () -> con;
             return new DataSource() {

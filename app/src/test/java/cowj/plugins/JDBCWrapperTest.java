@@ -14,10 +14,11 @@ import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.*;
 
 public class JDBCWrapperTest {
 
@@ -144,5 +145,40 @@ public class JDBCWrapperTest {
         });
         // TODO make it run properly, not throw exception
         Assert.assertNotNull(exception);
+    }
+
+    @Test
+    public void rawConnectionStringIsNotSubstituted() {
+        final Map<String, String> properties = Map.of("foo", "bar");
+        final Map<String,Object> config = Map.of( "connection" , "jdbc:derby:memory:cowjdb",
+                "properties", properties);
+        JDBCWrapper derbyClient = (JDBCWrapper) JDBCWrapper.JDBC.create("foo", config, model).proxy();
+        EitherMonad<List<Map<String,Object>>> resp = derbyClient.select("select count(*) as count from Data", Collections.emptyList());
+        assertTrue(resp.isSuccessful());
+
+        /// Ensure only 1 row and 1 column are returned
+        List<Map<String,Object>> rows = resp.value();
+        assertEquals(rows.get(0).get("COUNT"), UPTO);
+    }
+
+    @Test
+    public void connectionStringIsSubstituted() {
+        String TEST_SM = "__temp_sm__";
+        final Map<String,Object> config = Map.of( "connection" , "${bar}:${baz}", "secrets", TEST_SM);
+
+        SecretManager sm = () -> Map.of("bar", "jdbc:derby", "baz", "memory:cowjdb");
+
+        try {
+            Scriptable.DATA_SOURCES.put(TEST_SM, sm);
+            JDBCWrapper derbyClient = (JDBCWrapper) JDBCWrapper.JDBC.create("foo", config, model).proxy();
+            EitherMonad<List<Map<String,Object>>> resp = derbyClient.select("select count(*) as count from Data", Collections.emptyList());
+            assertTrue(resp.isSuccessful());
+
+            /// Ensure only 1 row and 1 column are returned
+            List<Map<String,Object>> rows = resp.value();
+            assertEquals(rows.get(0).get("COUNT"), UPTO);
+        } finally {
+            Scriptable.DATA_SOURCES.remove(TEST_SM);
+        }
     }
 }
