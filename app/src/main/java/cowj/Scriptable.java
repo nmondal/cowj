@@ -36,7 +36,7 @@ public interface Scriptable  {
                 TestAsserter.HaltException he = (TestAsserter.HaltException) sb.get(HALT_ERROR);
                 Spark.halt(he.code, he.getMessage());
             } else {
-                response.status(500);
+                Spark.halt(500, t.getMessage());
             }
             return t;
         }
