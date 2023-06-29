@@ -2,17 +2,19 @@ package cowj;
 
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.JobListener;
+import org.quartz.*;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-@Ignore
+import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class CronTest {
 
     private final List<JobExecutionException> exceptions = Collections.synchronizedList( new ArrayList<>(4));
@@ -57,4 +59,82 @@ public class CronTest {
         JobExecutionException je = exceptions.get(0);
         Assert.assertTrue(je.getCause() instanceof Scriptable.TestAsserter.HaltException);
     }
+
+    @Test
+    public void errorAtBootTest(){
+        Map<String,Object> cronJob = Map.of(
+                CronModel.Task.EXEC, "samples/test_scripts/error_1_arg.zm",
+                CronModel.Task.BOOT, true,
+                CronModel.Task.SCHEDULE, "0/8 * * * * ? *"
+        );
+        Model model = () -> "." ;
+        Map<String,Object> cron = Map.of("bar", cronJob);
+        CronModel cronModel = CronModel.fromConfig( model, cron);
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            CronModel.schedule(cronModel);
+        });
+        Assert.assertNotNull(exception);
+        Assert.assertTrue(exception.getCause().getCause() instanceof Scriptable.TestAsserter.HaltException );
+    }
+
+    @Test
+    public void getSchedulerErrorTest() throws SchedulerException {
+        Map<String,Object> cronJob = Map.of(
+                CronModel.Task.EXEC, "samples/test_scripts/error_1_arg.zm",
+                CronModel.Task.BOOT, false,
+                CronModel.Task.SCHEDULE, "0/8 * * * * ? *"
+        );
+        Model model = () -> "." ;
+        Map<String,Object> cron = Map.of("bar", cronJob);
+        final CronModel cronModel = CronModel.fromConfig( model, cron);
+        final SchedulerFactory schedulerFactory = mock(SchedulerFactory.class);
+        when( schedulerFactory.getScheduler()).thenThrow( new SchedulerException("bar") );
+        final CronModel wrapped = new CronModel() {
+            @Override
+            public SchedulerFactory factory() {
+                return schedulerFactory;
+            }
+            @Override
+            public Map<String, Task> tasks() {
+                return cronModel.tasks();
+            }
+        };
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            CronModel.schedule(wrapped);
+        });
+        Assert.assertNotNull(exception);
+        Assert.assertTrue(exception.getCause() instanceof SchedulerException );
+    }
+
+    @Test
+    public void setScheduleErrorTest() throws SchedulerException {
+        Map<String,Object> cronJob = Map.of(
+                CronModel.Task.EXEC, "samples/test_scripts/error_1_arg.zm",
+                CronModel.Task.BOOT, false,
+                CronModel.Task.SCHEDULE, "0/8 * * * * ? *"
+        );
+        Model model = () -> "." ;
+        Map<String,Object> cron = Map.of("bar", cronJob);
+        final CronModel cronModel = CronModel.fromConfig( model, cron);
+        final SchedulerFactory schedulerFactory = mock(SchedulerFactory.class);
+        final Scheduler scheduler = mock(Scheduler.class);
+        when(scheduler.scheduleJob(any(), any())).thenThrow( new SchedulerException("bar") );
+        when(schedulerFactory.getScheduler()).thenReturn(scheduler);
+        final CronModel wrapped = new CronModel() {
+            @Override
+            public SchedulerFactory factory() {
+                return schedulerFactory;
+            }
+            @Override
+            public Map<String, Task> tasks() {
+                return cronModel.tasks();
+            }
+        };
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            CronModel.schedule(wrapped);
+        });
+        Assert.assertNotNull(exception);
+        Assert.assertTrue(exception.getCause().getCause() instanceof SchedulerException );
+    }
+
 }

@@ -97,6 +97,8 @@ public interface CronModel {
 
     String SCHEDULER = "_sched";
 
+    SchedulerFactory SCHEDULER_FACTORY = new StdSchedulerFactory();
+
     static CronModel fromConfig(Model model, Map<String, Object> config) {
         final Map<String, Task> tasks = new LinkedHashMap<>();
         config.forEach((name, conf) -> {
@@ -105,11 +107,15 @@ public interface CronModel {
         return () -> tasks;
     }
 
+    default SchedulerFactory factory(){
+        return SCHEDULER_FACTORY ;
+    }
+
     static void schedule(CronModel cronModel) {
         // do not bother if empty
         if (cronModel.tasks().isEmpty()) return;
         // only loaded, then...
-        SchedulerFactory schedulerFactory = new StdSchedulerFactory();
+        SchedulerFactory schedulerFactory = cronModel.factory();
         try {
             final Scheduler scheduler = schedulerFactory.getScheduler();
             // now the rest of the problem...
