@@ -40,6 +40,10 @@ dependencies {
     // jython ???
     implementation 'org.python:jython:2.7.3'
 
+    // Cron
+    // https://mvnrepository.com/artifact/org.quartz-scheduler/quartz
+    implementation 'org.quartz-scheduler:quartz:2.5.0-rc1'
+
     // Storage...
     implementation 'redis.clients:jedis:5.0.0-beta1'
     implementation 'com.google.cloud:google-cloud-storage:2.22.3'

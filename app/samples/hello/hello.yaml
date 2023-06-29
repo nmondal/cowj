@@ -86,3 +86,10 @@ data-sources:
   fcm:
     type: fcm
     credentials_file: _/credentials.json
+
+cron:
+  r:
+    exec: _/cron.zm
+    boot: true
+    at: "0/30 * * * * ? *"
+    # https://stackoverflow.com/questions/35214149/cron-expression-for-every-30-seconds-in-quartz-scheduler

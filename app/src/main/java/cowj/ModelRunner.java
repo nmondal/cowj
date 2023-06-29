@@ -2,7 +2,6 @@ package cowj;
 
 import cowj.plugins.CurlWrapper;
 import spark.*;
-import zoomba.lang.core.io.ZWeb;
 import zoomba.lang.core.types.ZTypes;
 
 import java.util.Collections;
@@ -139,11 +138,15 @@ public interface ModelRunner extends Runnable {
             }
         }
         awaitInitialization();
+        // now everything is done, run cron...
+        CronModel cronModel = CronModel.fromConfig(m, m.cron());
+        CronModel.schedule(cronModel);
     }
 
     default void stop(){
         Spark.stop();
         awaitStop();
+        CronModel.stop();
     }
 
     static ModelRunner fromModel(String path){

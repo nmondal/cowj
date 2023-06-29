@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 public interface Model {
 
     Pattern TEMPLATE_PATTERN = Pattern.compile("\\$\\{(?<var>[^\\{\\}]+)\\}");
+
     default String template(String templateString, Map context){
         Matcher m = TEMPLATE_PATTERN.matcher(templateString);
         String ret = templateString;
@@ -75,8 +76,14 @@ public interface Model {
         return Collections.emptyMap();
     }
 
+    default Map<String, Object> cron(){
+        return Collections.emptyMap();
+    }
+
     String PORT = "port" ;
+
     String STATIC = "static" ;
+
     String ROUTES = "routes" ;
 
     String THREADING = "threading" ;
@@ -92,6 +99,8 @@ public interface Model {
     String PLUGINS = "plugins" ;
 
     String LIB_FOLDER = "lib" ;
+
+    String CRON_JOBS = "cron" ;
 
     static Model from(final Map<String,Object> map, final String baseDir){
 
@@ -133,6 +142,11 @@ public interface Model {
             @Override
             public Map<String, String> auth() {
                 return (Map) map.getOrDefault( AUTH, Model.super.auth());
+            }
+
+            @Override
+            public Map<String, Object> cron() {
+                return (Map) map.getOrDefault( CRON_JOBS, Model.super.auth());
             }
 
             @Override
