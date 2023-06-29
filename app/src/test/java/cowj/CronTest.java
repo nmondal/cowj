@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static cowj.CronModel.SCHEDULER;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -49,7 +50,7 @@ public class CronTest {
                 CronModel.Task.SCHEDULE, "0/8 * * * * ? *"
         );
         Model model = () -> "." ;
-        Map<String,Object> cron = Map.of("bar", cronJob);
+        Map<String,Map<String,Object>> cron = Map.of("bar", cronJob);
         CronModel cronModel = CronModel.fromConfig( model, cron);
         CronModel.schedule(cronModel);
         CronModel.scheduler().getListenerManager().addJobListener(jobListener);
@@ -68,7 +69,7 @@ public class CronTest {
                 CronModel.Task.SCHEDULE, "0/8 * * * * ? *"
         );
         Model model = () -> "." ;
-        Map<String,Object> cron = Map.of("bar", cronJob);
+        Map<String,Map<String,Object>> cron = Map.of("bar", cronJob);
         CronModel cronModel = CronModel.fromConfig( model, cron);
         Exception exception = assertThrows(RuntimeException.class, () -> {
             CronModel.schedule(cronModel);
@@ -85,7 +86,7 @@ public class CronTest {
                 CronModel.Task.SCHEDULE, "0/8 * * * * ? *"
         );
         Model model = () -> "." ;
-        Map<String,Object> cron = Map.of("bar", cronJob);
+        Map<String,Map<String,Object>> cron = Map.of("bar", cronJob);
         final CronModel cronModel = CronModel.fromConfig( model, cron);
         final SchedulerFactory schedulerFactory = mock(SchedulerFactory.class);
         when( schedulerFactory.getScheduler()).thenThrow( new SchedulerException("bar") );
@@ -114,7 +115,7 @@ public class CronTest {
                 CronModel.Task.SCHEDULE, "0/8 * * * * ? *"
         );
         Model model = () -> "." ;
-        Map<String,Object> cron = Map.of("bar", cronJob);
+        Map<String,Map<String,Object>> cron = Map.of("bar", cronJob);
         final CronModel cronModel = CronModel.fromConfig( model, cron);
         final SchedulerFactory schedulerFactory = mock(SchedulerFactory.class);
         final Scheduler scheduler = mock(Scheduler.class);
@@ -137,4 +138,9 @@ public class CronTest {
         Assert.assertTrue(exception.getCause().getCause() instanceof SchedulerException );
     }
 
+    @Test
+    public void noErrorRaiseOnStopTest(){
+        Scriptable.DATA_SOURCES.remove(SCHEDULER);
+        CronModel.stop();
+    }
 }
