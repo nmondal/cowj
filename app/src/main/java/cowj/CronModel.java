@@ -121,7 +121,7 @@ public interface CronModel {
                         System.out.println("Running immediate ... " + name);
                         task.scriptable().exec( new SimpleBindings());
                     }catch (Throwable e){
-                        System.err.println(e);
+                       throw new RuntimeException(e);
                     }
                 }
 
@@ -138,9 +138,13 @@ public interface CronModel {
         }
     }
 
+    static Scheduler scheduler(){
+        return (Scheduler)Scriptable.DATA_SOURCES.get(SCHEDULER);
+    }
+
     static void stop(){
         try {
-            Scheduler scheduler = (Scheduler)Scriptable.DATA_SOURCES.get(SCHEDULER);
+            Scheduler scheduler = scheduler();
             if ( scheduler == null ) return;
             scheduler.clear();
             scheduler.shutdown(true);
