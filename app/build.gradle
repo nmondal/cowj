@@ -23,7 +23,10 @@ version = '0.1-SNAPSHOT'
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
-    mavenLocal()
+    // add sonatype repository
+    maven {
+        url 'https://oss.sonatype.org/content/repositories/snapshots/'
+    }
     gradlePluginPortal()
 }
 
