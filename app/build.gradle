@@ -18,6 +18,7 @@ plugins {
 
 // the maven identifiers
 group = 'org.zoomba-lang'
+archivesBaseName = 'cowj'
 version = '0.1-SNAPSHOT'
 
 repositories {
@@ -74,12 +75,7 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:5.4.0'
 }
 
-jar {
-    archiveBaseName.set('cowj')
-}
-
 shadowJar {
-    archiveBaseName.set('cowj')
     /// https://stackoverflow.com/questions/55484043/how-to-fix-could-not-find-policy-pick-first-with-google-tts-java-client
     /// I got this error when I deployed on GCP
     mergeServiceFiles()
@@ -108,6 +104,7 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
+    withSourcesJar()
 }
 
 application {
