@@ -16,6 +16,10 @@ plugins {
     id 'jacoco'
 }
 
+// the maven identifiers
+group = 'org.zoomba-lang'
+version = '0.1-SNAPSHOT'
+
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
