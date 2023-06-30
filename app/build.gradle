@@ -14,6 +14,8 @@ plugins {
     id 'com.github.johnrengelman.shadow'  version "8.1.1"
     // code coverage jacoco
     id 'jacoco'
+    // maven publish
+    id 'maven-publish'
 }
 
 // the maven identifiers
@@ -110,4 +112,44 @@ java {
 application {
     // Define the main class for the application.
     mainClass = 'cowj.App'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'cowj'
+            from components.java
+            pom {
+                name = 'cowj'
+                description = 'A declarative polyglot http end point creator on JVM'
+                url = 'https://github.com/nmondal/cowj'
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'nmondal'
+                        name = 'Nabarun Mondal'
+                        email = 'nabarun.mondal@gmail.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git@github.com:nmondal/cowj.git'
+                    developerConnection = 'scm:git:git@github.com:nmondal/cowj.git'
+                    url = 'https://github.com/nmondal/cowj'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'ossrh'
+            credentials(PasswordCredentials)
+            url 'https://oss.sonatype.org/content/repositories/snapshots/'
+        }
+    }
 }
