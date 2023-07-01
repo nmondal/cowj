@@ -130,6 +130,11 @@ data-sources:
     url: https://jsonplaceholder.typicode.com
     proxy: _/proxy_transform.zm # responsible for message transform
     
+cron:
+  cache:
+    exec: _/cache.md
+    boot: true
+    at: "*/5 * * * *"
 
 ```
 It simply defines the routes - as well the handler script for such a route.
@@ -194,6 +199,15 @@ These are how one can have before and after callback before and after any route 
 A `before` filter gets hit before hitting the actual route, while an `after` filter gets hit after returning from the route, so one can modify the response if need be.
 
 Classic example of `before` filter is for `auth` while `after` filter can be used to modify response type  by adding response headers.
+
+### Cron 
+In the `cron` section one can specify the "recurring" tasks 
+for a project. The key becomes name of the task, 
+while:
+
+1. `exec` : script that needs to be executed
+2. `boot` : to run while system startup 
+3. `at` : cron expression to define the recurrence
 
 
 ### Data Sources 
@@ -362,9 +376,7 @@ In case the script does not return a map - pushed values will be used to be extr
 
 ## Running 
 
-1. Get the spark-11 cloned in local 
-2. Get ZoomBA cloned in local 
-3. Build the app.
-4. Run the app.
+1. Build the app.
+2. Run the app.
 
 Note: It also has `fat-jar` via `shadowJar()` task, one can have one single fat jar for the whole project.
