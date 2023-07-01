@@ -145,6 +145,15 @@ data-sources:
 ```
 
 Now, one can use this into any other plugin, if need be.
+In a very spcial case the `port` attribute of the main config file
+can be redirected to any variable - because of obvious reason:
+
+```yaml
+port : ${PORT}
+```
+
+In which case system uses the `PORT` variable from the local secret manager
+which is the systems environment variable.
 
 
 ### Web IO - CURL
