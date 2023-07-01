@@ -214,13 +214,18 @@ data-sources:
     config: key-for-config
     project-id: some-project-id
 
-  mysql:
+  mysql: # a mysql connection 
     type: jdbc
     secrets: secret_source # use the secret manager 
     properties:
       user: ${DB_USERNAME_READ}
       password: ${DB_PASSWORD_READ}
     connection: "jdbc:mysql://${DB_HOST_READ}/${DB_DATABASE_READ}"
+
+  druid: # a druid connection 
+    type: jdbc
+    connection: "jdbc:avatica:remote:url=http://localhost:8082/druid/v2/sql/avatica/"
+
 
 ```
 In this implementation, we are using the `SecretManager` named `secret_source`.
@@ -254,9 +259,119 @@ Mostly, we shall be using read.
 
 ### REDIS
 
+A redis ds is pretty straight forward, it is unauthenticated, 
+and we simply specify the `urls` as follows:
+
+```yaml
+plugins:
+  cowj.plugins:
+    redis: RedisWrapper::REDIS
+
+data-sources:
+  local_redis :
+    type : redis
+    urls: [ "localhost:6379"]
+```
+It returns the underlying `UnifiedJedis` instance.
+The key `urls` can also be loaded from `SecretManager` if need be.
+
+```yaml
+prod_redis :
+  type : redis
+  secrets: some-secret-mgr
+  urls: ${REDIS.URLS}
+```
+
 ### Notification - FCM
 
+Firebase notification is included, this is how we use it:
+
+```yaml
+plugins:
+  cowj.plugins:
+    fcm: FCMWrapper::FCM
+    gsm: SecretManager::GSM
+
+data-sources:
+  secret_source:
+    type: gsm
+    config: QA
+    project-id: blox-tech
+
+  fcm:
+    type: fcm
+    secrets: secret_source
+    key: FCM_CREDENTIALS
+```
+The usage is pretty straigtforward:
+
+```scala
+payload = { "tokens" : tokens , "title" : body.title, "body" : body.body, "image": body.image ?? '',"data": body.data ?? dict()}
+response = _ds.fcm.sendMulticast(payload)
+```
+
+The underlying wrapper has methods as follows:
+
+```java
+public interface FCMWrapper {
+  // underlying real object 
+  FirebaseMessaging messaging();
+  // create a single recipient message 
+  static Message message(Map<String, Object> message);
+  // multicast message 
+  static MulticastMessage multicastMessage(Map<String, Object> message);
+  // send messages after creation 
+  BatchResponse sendMulticast(Map<String, Object> data) throws FirebaseMessagingException ;
+  String sendMessage(Map<String, Object> data) throws FirebaseMessagingException;
+}
+```
+
 ### Cloud Storage - Google Storage
+
+We try to avoid all database, because they are the architectural bottleneck, in the end.
+We do directly support cloud storage, specifically google storage as follows:
+
+```yaml
+plugins:
+  cowj.plugins:
+    g_storage: GoogleStorageWrapper::STORAGE
+
+data-sources:
+  storage:
+    type: g_storage
+```
+And if configured properly, we can simply load whatever we want via this:
+
+```scala
+storage = _ds.storage
+data = storage.load(_ds.secret_source.getOrDefault("AWS_BUCKET", ""), "static_data/teams.json")
+_shared["qa:cowj:notification:team"] = data
+panic (empty(data), "teams are empty Please report to on call", 500)
+```
+There are various methods defined on the storage, as follows:
+
+```java
+public interface GoogleStorageWrapper {
+  // underlying storage 
+  Storage storage();
+  // dumps the data to a bucket name with file name 
+  Blob dumps(String bucketName, String fileName, String data);
+  // dumps the object after converting it into json to a bucket name with file name
+  Blob dump(String bucketName, String fileName, Object obj);
+  // loads a bucket, file combo as string 
+  String loads(String bucketName, String fileName);
+  // loads a bucket, file combo - and then try converting to json obj 
+  Object load(String bucketName, String fileName);
+  // Generates a stream of blob objects from the various files in the bucket 
+  Stream<Blob> all(String bucketName);
+  // Gets stream of all string contents.. 
+  Stream<String> allContent(String bucketName);
+  // Gets objects of all ... if can not convert to json retain as string 
+  Stream<Object> allData(String bucketName);
+
+}
+```
+
 
 ## References 
 
@@ -268,4 +383,7 @@ Mostly, we shall be using read.
 6. https://en.wikipedia.org/wiki/Java_Database_Connectivity 
 7. https://en.wikipedia.org/wiki/Redis 
 8. https://redis.io/docs/clients/java/ 
+9. https://firebase.google.com/docs/reference/admin/java/reference/com/google/firebase/messaging/FirebaseMessaging
+10. https://cloud.google.com/storage/docs/reference/libraries
+
    
