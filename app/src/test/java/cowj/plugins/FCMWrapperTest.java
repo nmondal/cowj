@@ -79,11 +79,14 @@ public class FCMWrapperTest {
 
     @Test
     public void mockMessageSendTest() throws Exception {
-        FCMWrapper fcmWrapper = () -> mock(FirebaseMessaging.class);
-        when(fcmWrapper.messaging().send(any())).thenReturn("");
+        FirebaseMessaging firebaseMessaging = mock(FirebaseMessaging.class);
+        when(firebaseMessaging.send(any())).thenReturn("foo");
         BatchResponse br = mock(BatchResponse.class);
-        when(fcmWrapper.messaging().sendMulticast(any())).thenReturn(br);
-        fcmWrapper.sendMessage( Map.of("token", "abcd" ));
-        fcmWrapper.sendMulticast( Map.of("tokens", Arrays.asList("a","b") ) );
+        when(firebaseMessaging.sendEachForMulticast(any())).thenReturn(br);
+        FCMWrapper fcmWrapper = () -> firebaseMessaging;
+        String r = fcmWrapper.sendMessage( Map.of("token", "abcd" ));
+        Assert.assertEquals( "foo", r);
+        BatchResponse ret = fcmWrapper.sendMulticast( Map.of("tokens", Arrays.asList("a","b") ) );
+        Assert.assertEquals( br, ret);
     }
 }
