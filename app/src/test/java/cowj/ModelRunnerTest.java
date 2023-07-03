@@ -65,9 +65,9 @@ public class ModelRunnerTest {
     @Test
     public void bootTest(){
         ModelRunner mr = runModel(hello);
-        Assert.assertTrue( ping("http://localhost:1003", "/hello/z"));
+        Assert.assertTrue( ping("http://localhost:5003", "/hello/z"));
         mr.stop();
-        Assert.assertFalse( ping("http://localhost:1003", "/hello/z"));
+        Assert.assertFalse( ping("http://localhost:5003", "/hello/z"));
     }
 
     @Test
@@ -76,28 +76,28 @@ public class ModelRunnerTest {
         final String expected = "hello, world!" ;
         // get routes
         // Java binary
-        Assert.assertEquals( expected, get("http://localhost:1003", "/hello/b"));
+        Assert.assertEquals( expected, get("http://localhost:5003", "/hello/b"));
         // cache run
-        Assert.assertEquals( expected, get("http://localhost:1003", "/hello/b"));
+        Assert.assertEquals( expected, get("http://localhost:5003", "/hello/b"));
 
         // Groovy
-        Assert.assertEquals( expected, get("http://localhost:1003", "/hello/g"));
+        Assert.assertEquals( expected, get("http://localhost:5003", "/hello/g"));
         // Javascript
-        Assert.assertEquals( expected, get("http://localhost:1003", "/hello/j"));
+        Assert.assertEquals( expected, get("http://localhost:5003", "/hello/j"));
         // python
-        Assert.assertEquals( expected, get("http://localhost:1003", "/hello/p"));
+        Assert.assertEquals( expected, get("http://localhost:5003", "/hello/p"));
         // zoomba
-        Assert.assertEquals( expected, get("http://localhost:1003", "/hello/z"));
+        Assert.assertEquals( expected, get("http://localhost:5003", "/hello/z"));
         // cache run
-        Assert.assertEquals( expected, get("http://localhost:1003", "/hello/j"));
+        Assert.assertEquals( expected, get("http://localhost:5003", "/hello/j"));
         // post routes
-        Assert.assertEquals( expected, post("http://localhost:1003", "/hello", ""));
+        Assert.assertEquals( expected, post("http://localhost:5003", "/hello", ""));
     }
 
     @Test
     public void errorCheckZMB() throws Exception {
         mr = runModel(hello);
-        ZWeb zWeb = new ZWeb("http://localhost:1003");
+        ZWeb zWeb = new ZWeb("http://localhost:5003");
         ZWeb.ZWebCom r = zWeb.get("/error/z", Collections.emptyMap());
         Assert.assertEquals( "boom!", r.body());
         Assert.assertEquals( 418, r.status);
@@ -106,7 +106,7 @@ public class ModelRunnerTest {
     @Test
     public void errorCheckJSR() throws Exception {
         mr = runModel(hello);
-        ZWeb zWeb = new ZWeb("http://localhost:1003");
+        ZWeb zWeb = new ZWeb("http://localhost:5003");
         ZWeb.ZWebCom r = zWeb.get("/error/j", Collections.emptyMap());
         Assert.assertEquals( "boom!", r.body());
         Assert.assertEquals( 418, r.status);
@@ -115,7 +115,7 @@ public class ModelRunnerTest {
     @Test
     public void runTimeErrorJSR() throws Exception {
         mr = runModel(hello);
-        ZWeb zWeb = new ZWeb("http://localhost:1003");
+        ZWeb zWeb = new ZWeb("http://localhost:5003");
         ZWeb.ZWebCom r = zWeb.get("/runtime_error", Collections.emptyMap());
         Assert.assertTrue (r.body().contains("bar"));
         Assert.assertEquals( 500, r.status);
@@ -125,7 +125,7 @@ public class ModelRunnerTest {
     public void proxyTest() {
         mr = runModel(hello);
         // proxy route
-        String resp = get("http://localhost:1003", "/users");
+        String resp = get("http://localhost:5003", "/users");
         Assert.assertNotNull(resp);
         Object r = ZTypes.json(resp);
         Assert.assertTrue( r instanceof List);
@@ -136,7 +136,7 @@ public class ModelRunnerTest {
     public void proxyForwardTransformTest(){
         mr = runModel(proxy);
         // proxy route
-        String resp = post("http://localhost:1004", "/echo", "");
+        String resp = post("http://localhost:5004", "/echo", "");
         Assert.assertNotNull(resp);
         Object r = ZTypes.json(resp);
         Assert.assertTrue( r instanceof Map);
@@ -152,7 +152,7 @@ public class ModelRunnerTest {
     @Test
     public void proxyTransformErrorCheck() throws Exception {
         mr = runModel(proxy);
-        ZWeb zWeb = new ZWeb("http://localhost:1004");
+        ZWeb zWeb = new ZWeb("http://localhost:5004");
         ZWeb.ZWebCom r = zWeb.get("/error", Collections.emptyMap());
         Assert.assertEquals( "proxy transform boom!", r.body());
         Assert.assertEquals( 500, r.status);
@@ -161,7 +161,7 @@ public class ModelRunnerTest {
     @Test
     public void pathRelativeScriptTest() throws Exception {
         mr = runModel(test);
-        ZWeb zWeb = new ZWeb("http://localhost:1234");
+        ZWeb zWeb = new ZWeb("http://localhost:5234");
         ZWeb.ZWebCom r = zWeb.get("/call", Collections.emptyMap());
         Assert.assertFalse( r.body().isEmpty() );
         Assert.assertEquals( 500, r.status);

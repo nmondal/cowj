@@ -2,7 +2,7 @@
 # basic support are given
 
 # port in which to connect
-port: 1003
+port: 5003
 
 # for all static files, js, html pages, pds and what not
 static: _/.
@@ -81,7 +81,7 @@ data-sources:
   # this is the proxy folder service
   local_send:
     type: curl
-    url: "http://localhost:1004"
+    url: "http://localhost:5004"
 
   fcm:
     type: fcm

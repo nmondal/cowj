@@ -24,7 +24,7 @@ public class ModelTest {
         Assert.assertFalse(m.threading().isEmpty());
         Assert.assertFalse(m.filters().isEmpty());
         Assert.assertFalse(m.dataSources().isEmpty());
-        Assert.assertEquals( 1003, m.port());
+        Assert.assertEquals( 5003, m.port());
         Assert.assertTrue( m.base().endsWith("samples/hello"));
         Assert.assertFalse( m.cron().isEmpty() );
     }

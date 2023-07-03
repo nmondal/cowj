@@ -76,7 +76,7 @@ Now, just run `./gradlw build`
 Now in the yaml file add the lib directive with the path to the lib folder
 or the path of a single jar file if you only want to load one jar:
 ```yaml
-port: 1003
+port: 5003
 
 lib: _/path/to/lib
 

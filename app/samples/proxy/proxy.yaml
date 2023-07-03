@@ -2,7 +2,7 @@
 # basic support are given
 
 # port in which to connect
-port: 1004
+port: 5004
 
 # for all static files, js, html pages, pds and what not
 static: _/.
