@@ -121,9 +121,15 @@ public class JDBCWrapperTest {
         Object r = derby.getObject(d);
         Assert.assertTrue( r instanceof Long);
         Assert.assertEquals(o.getTime(), r);
-
         r = derby.getObject(ld);
         Assert.assertTrue( r instanceof Long);
+        // now timestamp
+        java.sql.Timestamp ts = new java.sql.Timestamp( o.getTime());
+        r = derby.getObject(ts);
+        Assert.assertEquals(o.getTime(), r);
+        // Now date itself
+        r = derby.getObject(o);
+        Assert.assertEquals(o.getTime(), r);
     }
 
     @Test

@@ -2,7 +2,6 @@ package cowj.plugins;
 
 import cowj.DataSource;
 import cowj.EitherMonad;
-import cowj.Model;
 import cowj.Scriptable;
 
 import java.sql.Date;
@@ -26,14 +25,16 @@ public interface JDBCWrapper {
     String DEFAULT_CONNECTION_STRING = "${schema}//${host}/${db}?user=${user}&password=${pass}" ;
 
     default Object getObject(Object value) {
-        if (value instanceof java.sql.Date) {
-            return ((Date) value).getTime();
+        if (value instanceof java.util.Date) {
+            /*
+            * This here, catches everything derived from this.
+            * Which automatically solves the problem for sql.Date, sql.Timestamp
+            *
+            * */
+            return ((java.util.Date) value).getTime();
         }
         if (value instanceof LocalDateTime) {
             return ((LocalDateTime) value).atZone(ZoneId.systemDefault()).toEpochSecond() * 1000;
-        }
-        if (value instanceof Timestamp) {
-            return ((Timestamp) value).getTime();
         }
         return value;
     }

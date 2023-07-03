@@ -63,7 +63,7 @@ public interface FCMWrapper {
     }
 
     default BatchResponse sendMulticast(Map<String, Object> data) throws FirebaseMessagingException {
-        return messaging().sendMulticast(multicastMessage(data));
+        return messaging().sendEachForMulticast(multicastMessage(data));
     }
 
     default String sendMessage(Map<String, Object> data) throws FirebaseMessagingException {
