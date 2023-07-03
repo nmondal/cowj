@@ -1,5 +1,7 @@
 # Guide to Write COWJ Plugins
 
+[toc]
+
 ## About : Plugins
 Basic idea of a plugin is one can have sort of LEGO blocks,
 that one can insert into approriate point at will - and thus, 
@@ -117,6 +119,43 @@ EitherMonad<Integer> EitherMonad.value( 42 );
 EitherMonad<Integer> EitherMonad.error( new NumberFormatException("Integer can not be parsed!") );
 ```
 
+### Secrets Manager
+Essentially to read configurations.
+The Plugin implementation is supposed to provide
+access to a Map of type `Map<String,String>` because 
+one really want to serialize the data.
+See https://docs.oracle.com/javase/tutorial/essential/environment/env.html .
+
+Technically, a Secret Manager provides an app to run using some virtual environment.
+
+To define and use:
+
+```yaml
+plugins:
+  cowj.plugins:
+    gsm: SecretManager::GSM # google secret manager impl 
+    local: SecretManager::LOCAL # just the system env variable 
+
+
+data-sources:
+  secret_source:
+    type: gsm
+    config: key-for-config
+    project-id: some-project-id
+```
+
+Now, one can use this into any other plugin, if need be.
+In a very spcial case the `port` attribute of the main config file
+can be redirected to any variable - because of obvious reason:
+
+```yaml
+port : ${PORT}
+```
+
+In which case system uses the `PORT` variable from the local secret manager
+which is the systems environment variable.
+
+
 ### Web IO - CURL
 
 The implementor class is `cowj.plugins.CurlWrapper`.
@@ -141,23 +180,206 @@ The wrapper in essence has 2 interface methods:
 ```java
 public interface CurlWrapper {
   // sends a request to a path for the underlying data source 
-  EitherMonad<ZWeb.ZWebCom> send(String verb, String path, Map<String,String> headers, Map<String,String> params, String body);
+  EitherMonad<ZWeb.ZWebCom> send(String verb, String path, 
+        Map<String,String> headers,
+        Map<String,String> params, 
+        String body);
+  
   Function<Request, EitherMonad<Map<String,Object>>> proxyTransformation();
-  String proxy(String verb, String destPath, Request request, Response response){}
-
+  
+  String proxy(String verb, String destPath, 
+       Request request, Response response){}
 }
 ```
 
+The function `proxy()` gets used in the forward proxying, to modify the request headers, queries, and body to send to the destination server.
+
+The system then returns the response from the destination server verbatim.
+This probably we should change, so that another layer of transformation
+can be applied to the incoming response to produce the final response to the client.
+
+The `curl` plugin can be used programmatically, if need be via:
+
+```scala
+_ds.json_place.send( "get", "/users", {:}, {:} , "" )
+```
 
 ### JDBC 
 
+JDBC abstracts the connection provided by JDBC drivers.
+Typlical usage looks like:
+
+```yaml
+plugins:
+  cowj.plugins:
+    gsm: SecretManager::GSM
+    jdbc: JDBCWrapper::JDBC
+    
+
+data-sources:
+
+  secret_source: # define the secret manager to maintain env 
+    type: gsm
+    config: key-for-config
+    project-id: some-project-id
+
+  mysql: # a mysql connection 
+    type: jdbc
+    secrets: secret_source # use the secret manager 
+    properties:
+      user: ${DB_USERNAME_READ}
+      password: ${DB_PASSWORD_READ}
+    connection: "jdbc:mysql://${DB_HOST_READ}/${DB_DATABASE_READ}"
+
+  druid: # a druid connection 
+    type: jdbc
+    connection: "jdbc:avatica:remote:url=http://localhost:8082/druid/v2/sql/avatica/"
+
+
+```
+In this implementation, we are using the `SecretManager` named `secret_source`.
+The JDBC connection properties are then substituted with the syntax `${key}` 
+where `key` must be present in the environment provided by the secret manager.
+
+`connection` is the typical connection string for JDBC.
+
+```yaml
+connection: "jdbc:derby:memory:cowjdb;create=true"
+```
+is a typical string that we use to test the wrapper itself using derby.
+
+The basic interfacer is as follows:
+
+```java
+public interface JDBCWrapper {
+    // underlying connection object  
+    Connection connection(); 
+    // from sql get the java object
+    Object getObject(Object value);  
+    // fortmatter query, returns a list of json style objects ( map )
+    EitherMonad<List<Map<String,Object>>> select(String query, List<Object> args);
+}
+```
+
+As one can surmise, we do not want to generally use the DB, but in rare cases
+we may want to read, and if write is necessary we can do that with the underlying connection.
+Mostly, we shall be using read.
+
+
 ### REDIS
+
+A redis ds is pretty straight forward, it is unauthenticated, 
+and we simply specify the `urls` as follows:
+
+```yaml
+plugins:
+  cowj.plugins:
+    redis: RedisWrapper::REDIS
+
+data-sources:
+  local_redis :
+    type : redis
+    urls: [ "localhost:6379"]
+```
+It returns the underlying `UnifiedJedis` instance.
+The key `urls` can also be loaded from `SecretManager` if need be.
+
+```yaml
+prod_redis :
+  type : redis
+  secrets: some-secret-mgr
+  urls: ${REDIS.URLS}
+```
 
 ### Notification - FCM
 
+Firebase notification is included, this is how we use it:
+
+```yaml
+plugins:
+  cowj.plugins:
+    fcm: FCMWrapper::FCM
+    gsm: SecretManager::GSM
+
+data-sources:
+  secret_source:
+    type: gsm
+    config: QA
+    project-id: blox-tech
+
+  fcm:
+    type: fcm
+    secrets: secret_source
+    key: FCM_CREDENTIALS
+```
+The usage is pretty straigtforward:
+
+```scala
+payload = { "tokens" : tokens , "title" : body.title, "body" : body.body, "image": body.image ?? '',"data": body.data ?? dict()}
+response = _ds.fcm.sendMulticast(payload)
+```
+
+The underlying wrapper has methods as follows:
+
+```java
+public interface FCMWrapper {
+  // underlying real object 
+  FirebaseMessaging messaging();
+  // create a single recipient message 
+  static Message message(Map<String, Object> message);
+  // multicast message 
+  static MulticastMessage multicastMessage(Map<String, Object> message);
+  // send messages after creation 
+  BatchResponse sendMulticast(Map<String, Object> data) throws FirebaseMessagingException ;
+  String sendMessage(Map<String, Object> data) throws FirebaseMessagingException;
+}
+```
+
 ### Cloud Storage - Google Storage
 
-### Secret Managers
+We try to avoid all database, because they are the architectural bottleneck, in the end.
+We do directly support cloud storage, specifically google storage as follows:
+
+```yaml
+plugins:
+  cowj.plugins:
+    g_storage: GoogleStorageWrapper::STORAGE
+
+data-sources:
+  storage:
+    type: g_storage
+```
+And if configured properly, we can simply load whatever we want via this:
+
+```scala
+storage = _ds.storage
+data = storage.load(_ds.secret_source.getOrDefault("AWS_BUCKET", ""), "static_data/teams.json")
+_shared["qa:cowj:notification:team"] = data
+panic (empty(data), "teams are empty Please report to on call", 500)
+```
+There are various methods defined on the storage, as follows:
+
+```java
+public interface GoogleStorageWrapper {
+  // underlying storage 
+  Storage storage();
+  // dumps the data to a bucket name with file name 
+  Blob dumps(String bucketName, String fileName, String data);
+  // dumps the object after converting it into json to a bucket name with file name
+  Blob dump(String bucketName, String fileName, Object obj);
+  // loads a bucket, file combo as string 
+  String loads(String bucketName, String fileName);
+  // loads a bucket, file combo - and then try converting to json obj 
+  Object load(String bucketName, String fileName);
+  // Generates a stream of blob objects from the various files in the bucket 
+  Stream<Blob> all(String bucketName);
+  // Gets stream of all string contents.. 
+  Stream<String> allContent(String bucketName);
+  // Gets objects of all ... if can not convert to json retain as string 
+  Stream<Object> allData(String bucketName);
+
+}
+```
 
 
 ## References 
@@ -170,4 +392,7 @@ public interface CurlWrapper {
 6. https://en.wikipedia.org/wiki/Java_Database_Connectivity 
 7. https://en.wikipedia.org/wiki/Redis 
 8. https://redis.io/docs/clients/java/ 
+9. https://firebase.google.com/docs/reference/admin/java/reference/com/google/firebase/messaging/FirebaseMessaging
+10. https://cloud.google.com/storage/docs/reference/libraries
+
    

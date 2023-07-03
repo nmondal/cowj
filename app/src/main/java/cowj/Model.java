@@ -76,7 +76,7 @@ public interface Model {
         return Collections.emptyMap();
     }
 
-    default Map<String, Object> cron(){
+    default Map<String, Map<String,Object>> cron(){
         return Collections.emptyMap();
     }
 
@@ -145,8 +145,8 @@ public interface Model {
             }
 
             @Override
-            public Map<String, Object> cron() {
-                return (Map) map.getOrDefault( CRON_JOBS, Model.super.auth());
+            public Map<String, Map<String,Object>> cron() {
+                return (Map) map.getOrDefault( CRON_JOBS, Model.super.cron());
             }
 
             @Override

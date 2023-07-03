@@ -51,11 +51,11 @@ public interface CronModel {
 
         Scriptable scriptable();
 
-        static Task fromConfig(Model model, String name, Map<String, String> config) {
+        static Task fromConfig(Model model, String name, Map<String, Object> config) {
             final boolean boot = ZTypes.bool(config.getOrDefault(BOOT, "false"), false);
-            final String scriptPath = model.interpretPath(config.getOrDefault(EXEC, ""));
+            final String scriptPath = model.interpretPath(config.getOrDefault(EXEC, "").toString());
             // https://stackoverflow.com/questions/8324306/a-cron-job-that-will-never-execute
-            final String cronString = config.getOrDefault(SCHEDULE, "0 0 5 31 2 ?");
+            final String cronString = config.getOrDefault(SCHEDULE, "0 0 5 31 2 ?").toString();
             final Scriptable scriptable = Scriptable.UNIVERSAL.create("cron:" + name,  scriptPath);
             final JobDetail jobDetail = newJob(Task.CronJob.class).withIdentity(name)
                     .usingJobData(EXEC, scriptPath).build();
@@ -97,7 +97,9 @@ public interface CronModel {
 
     String SCHEDULER = "_sched";
 
-    static CronModel fromConfig(Model model, Map<String, Object> config) {
+    SchedulerFactory SCHEDULER_FACTORY = new StdSchedulerFactory();
+
+    static CronModel fromConfig(Model model, Map<String, Map<String,Object>> config) {
         final Map<String, Task> tasks = new LinkedHashMap<>();
         config.forEach((name, conf) -> {
             tasks.put(name, Task.fromConfig(model, name, (Map) conf));
@@ -105,11 +107,15 @@ public interface CronModel {
         return () -> tasks;
     }
 
+    default SchedulerFactory factory(){
+        return SCHEDULER_FACTORY ;
+    }
+
     static void schedule(CronModel cronModel) {
         // do not bother if empty
         if (cronModel.tasks().isEmpty()) return;
         // only loaded, then...
-        SchedulerFactory schedulerFactory = new StdSchedulerFactory();
+        SchedulerFactory schedulerFactory = cronModel.factory();
         try {
             final Scheduler scheduler = schedulerFactory.getScheduler();
             // now the rest of the problem...

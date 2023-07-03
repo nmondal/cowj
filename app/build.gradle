@@ -14,21 +14,31 @@ plugins {
     id 'com.github.johnrengelman.shadow'  version "8.1.1"
     // code coverage jacoco
     id 'jacoco'
+    // maven publish
+    id 'maven-publish'
 }
+
+// the maven identifiers
+group = 'org.zoomba-lang'
+archivesBaseName = 'cowj'
+version = '0.1-SNAPSHOT'
 
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
-    mavenLocal()
+    // add sonatype repository
+    maven {
+        url 'https://oss.sonatype.org/content/repositories/snapshots/'
+    }
     gradlePluginPortal()
 }
 
 dependencies {
     // This dependency is used by the application.
     implementation 'com.google.guava:guava:31.1-jre'
-    // local libraries
+    // local libraries - snapshot moved to org.zoomba-lang
     implementation 'org.zoomba-lang:zoomba.lang.core:0.3-SNAPSHOT'
-    implementation 'com.sparkjava:spark-core:3-JDK17-SNAPSHOT'
+    implementation 'org.zoomba-lang:spark-core:3-JDK17-SNAPSHOT'
     // end of local libraries
     // TODO cron
     implementation 'org.slf4j:slf4j-jdk14:2.0.7'
@@ -68,7 +78,6 @@ dependencies {
 }
 
 shadowJar {
-    archiveBaseName.set('cowj')
     /// https://stackoverflow.com/questions/55484043/how-to-fix-could-not-find-policy-pick-first-with-google-tts-java-client
     /// I got this error when I deployed on GCP
     mergeServiceFiles()
@@ -97,9 +106,50 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
+    withSourcesJar()
 }
 
 application {
     // Define the main class for the application.
     mainClass = 'cowj.App'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'cowj'
+            from components.java
+            pom {
+                name = 'cowj'
+                description = 'A declarative polyglot http end point creator on JVM'
+                url = 'https://github.com/nmondal/cowj'
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'nmondal'
+                        name = 'Nabarun Mondal'
+                        email = 'nabarun.mondal@gmail.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git@github.com:nmondal/cowj.git'
+                    developerConnection = 'scm:git:git@github.com:nmondal/cowj.git'
+                    url = 'https://github.com/nmondal/cowj'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'ossrh'
+            credentials(PasswordCredentials)
+            url 'https://oss.sonatype.org/content/repositories/snapshots/'
+        }
+    }
 }

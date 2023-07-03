@@ -32,6 +32,9 @@ public interface JDBCWrapper {
         if (value instanceof LocalDateTime) {
             return ((LocalDateTime) value).atZone(ZoneId.systemDefault()).toEpochSecond() * 1000;
         }
+        if (value instanceof Timestamp) {
+            return ((Timestamp) value).getTime();
+        }
         return value;
     }
 
