@@ -4,10 +4,9 @@ import cowj.DataSource;
 import cowj.EitherMonad;
 import cowj.Scriptable;
 
-import java.sql.Date;
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.chrono.ChronoLocalDateTime;
 import java.util.*;
 
 public interface JDBCWrapper {
@@ -33,8 +32,8 @@ public interface JDBCWrapper {
             * */
             return ((java.util.Date) value).getTime();
         }
-        if (value instanceof LocalDateTime) {
-            return ((LocalDateTime) value).atZone(ZoneId.systemDefault()).toEpochSecond() * 1000;
+        if (value instanceof ChronoLocalDateTime) {
+            return ((ChronoLocalDateTime<?>) value).atZone(ZoneId.systemDefault()).toEpochSecond() * 1000;
         }
         return value;
     }
@@ -42,7 +41,7 @@ public interface JDBCWrapper {
     default EitherMonad<List<Map<String,Object>>> select(String query, List<Object> args) {
         List<Map<String,Object>> result = new ArrayList<>();
         final Connection con = connection();
-        try (Statement stmt = con.createStatement()) {
+        try (Statement stmt = con.createStatement() ) {
             String q = query.formatted(args.toArray());
             System.out.println(q);
             ResultSet rs = stmt.executeQuery(q);

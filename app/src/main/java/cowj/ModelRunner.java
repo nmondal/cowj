@@ -82,6 +82,10 @@ public interface ModelRunner extends Runnable {
             }
         }
 
+        // now everything is done, run cron...
+        CronModel cronModel = CronModel.fromConfig(m, m.cron());
+        CronModel.schedule(cronModel);
+
         System.out.println("Routes mapping are as follows...");
         Map<String, Map<String, String>> paths = m.routes();
         for (String verb : paths.keySet()) {
@@ -138,9 +142,6 @@ public interface ModelRunner extends Runnable {
             }
         }
         awaitInitialization();
-        // now everything is done, run cron...
-        CronModel cronModel = CronModel.fromConfig(m, m.cron());
-        CronModel.schedule(cronModel);
     }
 
     default void stop(){
