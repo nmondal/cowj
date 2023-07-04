@@ -9,6 +9,8 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.naming.Binding;
+import javax.script.SimpleBindings;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.time.LocalDateTime;
@@ -186,5 +188,15 @@ public class JDBCWrapperTest {
         } finally {
             Scriptable.DATA_SOURCES.remove(TEST_SM);
         }
+    }
+
+    @Test
+    public void varArgsScriptCallTest() throws Exception {
+        JDBCWrapper wrapper = () -> null;
+        Scriptable scriptable = Scriptable.ZMB.create("", "samples/test_scripts/foo.zm");
+        SimpleBindings b = new SimpleBindings();
+        b.put("w", wrapper);
+        Object o = scriptable.exec( b);
+        Assert.assertTrue( o instanceof EitherMonad<?> );
     }
 }

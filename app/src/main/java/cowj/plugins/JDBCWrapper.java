@@ -38,6 +38,10 @@ public interface JDBCWrapper {
         return value;
     }
 
+    default EitherMonad<List<Map<String,Object>>> selectVarArgs(String query, Object... args) {
+        return EitherMonad.value(List.of(Map.of("q", query, "a", args)));
+    }
+
     default EitherMonad<List<Map<String,Object>>> select(String query, List<Object> args) {
         List<Map<String,Object>> result = new ArrayList<>();
         final Connection con = connection();
