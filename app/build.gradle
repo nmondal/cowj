@@ -11,7 +11,7 @@ plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
     // https://imperceptiblethoughts.com/shadow/introduction/
-    id 'com.github.johnrengelman.shadow'  version "8.1.1"
+    // id 'com.github.johnrengelman.shadow'  version "8.1.1"
     // code coverage jacoco
     id 'jacoco'
     // maven publish
@@ -77,6 +77,8 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:5.4.0'
 }
 
+/**
+ * Later will think about it ****************
 shadowJar {
     /// https://stackoverflow.com/questions/55484043/how-to-fix-could-not-find-policy-pick-first-with-google-tts-java-client
     /// I got this error when I deployed on GCP
@@ -85,6 +87,7 @@ shadowJar {
         attributes 'Main-Class' : "cowj.App"
     }
 }
+***********************************/
 
 test {
     testLogging {
