@@ -37,7 +37,8 @@ public interface SecretManager {
 
     DataSource.Creator GSM = (name, config, parent) -> {
         try (SecretManagerServiceClient client = SecretManagerServiceClient.create()) {
-            String secret = config.getOrDefault("config", "").toString();
+            String secretKey = config.getOrDefault("config", "").toString();
+            String secret = parent.envTemplate(secretKey);
             String projectID = config.getOrDefault("project-id", "").toString();
             AccessSecretVersionResponse resp = client.accessSecretVersion(SecretVersionName.of(projectID, secret, "latest"));
             String jsonString = resp.getPayload().getData().toStringUtf8();
