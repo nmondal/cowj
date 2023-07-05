@@ -200,6 +200,50 @@ A `before` filter gets hit before hitting the actual route, while an `after` fil
 
 Classic example of `before` filter is for `auth` while `after` filter can be used to modify response type  by adding response headers.
 
+#### Before
+A typical use case from `auth`:
+
+```yaml
+routes:
+  get:
+    /users: _/users.zm
+filters:
+  before:
+    "*" : _/auth.zm
+```
+Now inside `auth.zm` :
+
+```scala
+// auth.zm
+def validate_token(){ /* verification here */ }
+token = req.headers("auth")
+assert("Invalid Request", 403) as { validate_token(token) } 
+```
+
+#### Finally 
+
+A typical use case to json format error messages:
+
+```yaml
+routes:
+  get:
+    /users: _/users.zm
+filters:
+  finally:
+     "*" : _/finally.zm
+```
+Now inside `finally.zm` :
+
+```scala
+// finally.zm
+if ( resp.status @ [200:400] ){ return }
+error_msg = resp.body
+resp.body( jstr( { "error" : error_msg } ) )
+
+```
+This ensures all errors are formatted as json.
+
+
 ### Cron 
 In the `cron` section one can specify the "recurring" tasks 
 for a project. The key becomes name of the task, 
