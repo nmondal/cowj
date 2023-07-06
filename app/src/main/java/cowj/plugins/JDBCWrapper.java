@@ -3,6 +3,8 @@ package cowj.plugins;
 import cowj.DataSource;
 import cowj.EitherMonad;
 import cowj.Scriptable;
+import zoomba.lang.core.operations.Function;
+import zoomba.lang.core.types.ZNumber;
 
 import java.sql.*;
 import java.time.ZoneId;
@@ -11,7 +13,11 @@ import java.util.*;
 
 public interface JDBCWrapper {
 
-    Connection connection();
+    EitherMonad<Connection> connection();
+
+    default int timeOut(){
+        return 1500;
+    }
 
     String DRIVER = "driver" ;
 
@@ -20,6 +26,8 @@ public interface JDBCWrapper {
     String PROPERTIES = "properties" ;
 
     String CONNECTION_STRING = "connection" ;
+
+    String STALE_CHECK_TIMEOUT = "timeout" ;
 
     String DEFAULT_CONNECTION_STRING = "${schema}//${host}/${db}?user=${user}&password=${pass}" ;
 
@@ -40,7 +48,10 @@ public interface JDBCWrapper {
 
     default EitherMonad<List<Map<String,Object>>> select(String query, List<Object> args) {
         List<Map<String,Object>> result = new ArrayList<>();
-        final Connection con = connection();
+        EitherMonad<Connection> em = connection();
+        if ( em.inError() ) return EitherMonad.error(em.error());
+        final Connection con = em.value();
+
         try (Statement stmt = con.createStatement() ) {
             String q = query.formatted(args.toArray());
             System.out.println(q);
@@ -64,43 +75,71 @@ public interface JDBCWrapper {
         }
     }
 
-
     DataSource.Creator JDBC = (name, config, parent) -> {
-        String driverName = config.getOrDefault(DRIVER, "").toString();
 
-        String conString = config.getOrDefault(CONNECTION_STRING, "").toString();
-        String secretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
-        SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.getOrDefault(secretManagerName, SecretManager.DEFAULT);
+        JDBCWrapper jdbcWrapper = new JDBCWrapper() {
+            final int timeOut = ZNumber.integer(config.getOrDefault(STALE_CHECK_TIMEOUT, JDBCWrapper.super.timeOut())).intValue() ;
+            Connection _connection = null;
 
-        String substitutedConString = parent.template(conString, sm.env());
-
-        Map<String, String> props = (Map<String, String>) config.getOrDefault(PROPERTIES, Collections.emptyMap());
-        Properties properties = new Properties();
-        for (Map.Entry<String, String> entry : props.entrySet()) {
-            properties.put(entry.getKey(), parent.template(entry.getValue(), sm.env()));
-        }
-
-        try {
-            /// Most modern drivers register themselves on startup.
-            /// We usually don't need to do this
-            if (!driverName.isEmpty()) {
-                Class.forName(driverName);
+            boolean isValid(){
+                if ( _connection == null) return false;
+                try {
+                    return _connection.isValid(timeOut());
+                }catch (Exception ignore){
+                    return false;
+                }
             }
-            final Connection con = DriverManager.getConnection(substitutedConString, properties);
-            JDBCWrapper wrapper = () -> con;
-            return new DataSource() {
-                @Override
-                public Object proxy() {
-                    return wrapper;
-                }
+            EitherMonad<Connection> create(){
+                String driverName = config.getOrDefault(DRIVER, "").toString();
+                String conString = config.getOrDefault(CONNECTION_STRING, "").toString();
+                String secretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
+                SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.getOrDefault(secretManagerName, SecretManager.DEFAULT);
 
-                @Override
-                public String name() {
-                    return name;
+                String substitutedConString = parent.template(conString, sm.env());
+
+                Map<String, String> props = (Map<String, String>) config.getOrDefault(PROPERTIES, Collections.emptyMap());
+                Properties properties = new Properties();
+                for (Map.Entry<String, String> entry : props.entrySet()) {
+                    properties.put(entry.getKey(), parent.template(entry.getValue(), sm.env()));
                 }
-            };
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
+                try {
+                    /// Most modern drivers register themselves on startup.
+                    /// We usually don't need to do this
+                    if (!driverName.isEmpty()) {
+                        Class.forName(driverName);
+                    }
+                    _connection = DriverManager.getConnection(substitutedConString, properties);
+                    return EitherMonad.value(_connection);
+                } catch ( Throwable th){
+                    return EitherMonad.error(th);
+                }
+            }
+
+            @Override
+            public int timeOut() {
+                return timeOut;
+            }
+
+            @Override
+            public EitherMonad<Connection> connection() {
+                if ( isValid() ) return EitherMonad.value(_connection);
+                return create();
+            }
+        };
+        EitherMonad<Connection> em = jdbcWrapper.connection();
+        if ( em.inError() ) {
+           throw  Function.runTimeException(em.error());
         }
+        return new DataSource() {
+            @Override
+            public Object proxy() {
+                return jdbcWrapper;
+            }
+
+            @Override
+            public String name() {
+                return name;
+            }
+        };
     };
 }

@@ -54,7 +54,7 @@ public class JDBCWrapperTest {
         Assert.assertEquals( "derby", ds.name() );
 
         derby = (JDBCWrapper) ds.proxy();
-        Connection con = derby.connection();
+        Connection con = derby.connection().value();
         Assert.assertNotNull( con );
         // create table
         String query = "CREATE TABLE Data( "
@@ -74,7 +74,7 @@ public class JDBCWrapperTest {
     @AfterClass
     public static void shutDown() throws Exception {
         if ( derby != null ) {
-            derby.connection().close();
+            derby.connection().value().close();
         }
         Scriptable.DATA_SOURCES.remove(TEST_SECRET_MGR_NAME);
     }
