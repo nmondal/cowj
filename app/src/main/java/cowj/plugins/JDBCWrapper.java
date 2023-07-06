@@ -93,6 +93,7 @@ public interface JDBCWrapper {
                      return true;
                 }catch (Exception ignore){
                     connectionThreadLocal.set(null);
+                    System.err.printf("'%s' db Connection was stale, will try creating one! %n", name );
                     return false;
                 }
             }
@@ -117,6 +118,7 @@ public interface JDBCWrapper {
                     }
                     final Connection _connection = DriverManager.getConnection(substitutedConString, properties);
                     connectionThreadLocal.set(_connection);
+                    System.out.printf("'%s' db Connection got created from thread.%n", name );
                     return EitherMonad.value(_connection);
                 } catch ( Throwable th){
                     return EitherMonad.error(th);
