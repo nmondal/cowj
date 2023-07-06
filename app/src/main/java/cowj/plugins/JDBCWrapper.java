@@ -87,8 +87,8 @@ public interface JDBCWrapper {
             boolean isValid(){
                 final Connection _connection = connectionThreadLocal.get();
                 if ( _connection == null) return false;
-                try {
-                     Statement st = _connection.createStatement();
+
+                try (Statement st = _connection.createStatement()) {
                      st.execute( staleCheckQuery );
                      return true;
                 }catch (Exception ignore){
