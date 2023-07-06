@@ -48,7 +48,7 @@ public class JDBCWrapperTest {
         final String driverClassName = org.apache.derby.iapi.jdbc.AutoloadedDriver.class.getName();
         // in memory stuff...
         Map<String,Object> config = Map.of("connection", "jdbc:derby:memory:cowjdb;create=true" ,
-                "driver", driverClassName );
+                "driver", driverClassName , "stale", "values current_timestamp");
         DataSource ds = JDBCWrapper.JDBC.create("derby", config, model);
         Assert.assertTrue( ds.proxy() instanceof  JDBCWrapper );
         Assert.assertEquals( "derby", ds.name() );
@@ -186,5 +186,27 @@ public class JDBCWrapperTest {
         } finally {
             Scriptable.DATA_SOURCES.remove(TEST_SM);
         }
+    }
+    @Test
+    public void testPooling(){
+        EitherMonad<Connection> db1 = derby.connection();
+        EitherMonad<Connection> db2 = derby.connection();
+        // same thread, they should be same
+        Assert.assertEquals(db1.value(), db2.value());
+        // Let's create another thread
+        EitherMonad<?>[] dbT = new EitherMonad[1];
+        Runnable r = () ->{
+            dbT[0] = derby.connection();
+        };
+        Thread t = new Thread(r);
+        t.start();
+        while(t.isAlive()){
+            try {
+                Thread.sleep(300);
+            }catch (Exception ignore){}
+        }
+        Assert.assertNotNull(dbT[0]);
+        Assert.assertTrue(dbT[0].isSuccessful());
+        Assert.assertNotEquals( db1, dbT[0]);
     }
 }

@@ -4,7 +4,6 @@ import cowj.DataSource;
 import cowj.EitherMonad;
 import cowj.Scriptable;
 import zoomba.lang.core.operations.Function;
-import zoomba.lang.core.types.ZNumber;
 
 import java.sql.*;
 import java.time.ZoneId;
@@ -15,8 +14,12 @@ public interface JDBCWrapper {
 
     EitherMonad<Connection> connection();
 
-    default int timeOut(){
-        return 1500;
+    default String staleCheckQuery(){
+        /*
+        * Druid, MySQL, PGSQL ,AuroraDB
+        * Oracle will not work SELECT 1 FROM DUAL
+        * */
+        return "SELECT 1";
     }
 
     String DRIVER = "driver" ;
@@ -27,7 +30,7 @@ public interface JDBCWrapper {
 
     String CONNECTION_STRING = "connection" ;
 
-    String STALE_CHECK_TIMEOUT = "timeout" ;
+    String STALE_CHECK_TIMEOUT_QUERY = "stale" ;
 
     String DEFAULT_CONNECTION_STRING = "${schema}//${host}/${db}?user=${user}&password=${pass}" ;
 
@@ -78,14 +81,18 @@ public interface JDBCWrapper {
     DataSource.Creator JDBC = (name, config, parent) -> {
 
         JDBCWrapper jdbcWrapper = new JDBCWrapper() {
-            final int timeOut = ZNumber.integer(config.getOrDefault(STALE_CHECK_TIMEOUT, JDBCWrapper.super.timeOut())).intValue() ;
-            Connection _connection = null;
+            final String staleCheckQuery = config.getOrDefault(STALE_CHECK_TIMEOUT_QUERY, JDBCWrapper.super.staleCheckQuery()).toString() ;
+            final ThreadLocal<Connection> connectionThreadLocal = ThreadLocal.withInitial(() -> null);
 
             boolean isValid(){
+                final Connection _connection = connectionThreadLocal.get();
                 if ( _connection == null) return false;
                 try {
-                    return _connection.isValid(timeOut());
+                     Statement st = _connection.createStatement();
+                     st.execute( staleCheckQuery );
+                     return true;
                 }catch (Exception ignore){
+                    connectionThreadLocal.set(null);
                     return false;
                 }
             }
@@ -108,7 +115,8 @@ public interface JDBCWrapper {
                     if (!driverName.isEmpty()) {
                         Class.forName(driverName);
                     }
-                    _connection = DriverManager.getConnection(substitutedConString, properties);
+                    final Connection _connection = DriverManager.getConnection(substitutedConString, properties);
+                    connectionThreadLocal.set(_connection);
                     return EitherMonad.value(_connection);
                 } catch ( Throwable th){
                     return EitherMonad.error(th);
@@ -116,13 +124,13 @@ public interface JDBCWrapper {
             }
 
             @Override
-            public int timeOut() {
-                return timeOut;
+            public String staleCheckQuery() {
+                return staleCheckQuery;
             }
 
             @Override
             public EitherMonad<Connection> connection() {
-                if ( isValid() ) return EitherMonad.value(_connection);
+                if ( isValid() ) return EitherMonad.value(connectionThreadLocal.get());
                 return create();
             }
         };
