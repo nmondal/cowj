@@ -14,6 +14,9 @@ public interface Model {
 
     Pattern TEMPLATE_PATTERN = Pattern.compile("\\$\\{(?<var>[^\\{\\}]+)\\}");
 
+    String IN_THE_SAME_FOLDER_PREFIX  = "_/" ;
+    String BINARY_ROUTE_SUFFIX  = ".class" ;
+
     default String template(String templateString, Map context){
         Matcher m = TEMPLATE_PATTERN.matcher(templateString);
         String ret = templateString;
@@ -193,10 +196,17 @@ public interface Model {
     /// have them all using the same function so any improvements are automatically
     /// propagated to everybody
     default String interpretPath(String path) {
-        if (!path.startsWith("_/")) {
-            return path;
+        if ( path.endsWith(BINARY_ROUTE_SUFFIX)) return path;
+        final String input;
+        if ( path.startsWith(IN_THE_SAME_FOLDER_PREFIX)) {
+            input = base() + path.substring(1) ;
+        } else {
+            input = path;
         }
-
-        return base() + path.substring(1);
+        try {
+            return new File( input ).getCanonicalFile().getPath();
+        } catch (Exception ignore){
+            return input;
+        }
     }
 }
