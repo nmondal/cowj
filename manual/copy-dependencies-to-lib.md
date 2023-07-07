@@ -4,9 +4,23 @@ Cowj supports loading Jars at runtime using the `lib:` directive in the
 yaml file. How do we generate such a folder?
 
 ### Maven
-TODO: Noga add this please
+
+There are simple ways to get it done in `maven` as can be found from :
+
+[java - Make Maven to copy dependencies into target/lib - Stack Overflow](https://stackoverflow.com/questions/97640/make-maven-to-copy-dependencies-into-target-lib)
+
+Simplest way of doing this is as follows:
+
+```shell
+mvn install dependency:copy-dependencies 
+```
+
+This ensures dependencies directory created in target folder with all dependency jars.
+
+
 
 ### Gradle
+
 ```groovy
 plugins {
     id 'application'
@@ -57,6 +71,7 @@ into "${rootDir}/path/where/to/copy"
 }
 build.dependsOn(copyAllDependencies)
 ```
+
 This copied your dependencies to the right folder
 
 and
@@ -69,12 +84,14 @@ tasks.register('deleteLibs') {
 
 build.dependsOn deleteLibs
 ```
+
 This deleted your copied dependencies so every build is clean
 
 Now, just run `./gradlw build`
 
 Now in the yaml file add the lib directive with the path to the lib folder
 or the path of a single jar file if you only want to load one jar:
+
 ```yaml
 port: 5003
 
@@ -82,4 +99,5 @@ lib: _/path/to/lib
 
 ...
 ```
+
 
