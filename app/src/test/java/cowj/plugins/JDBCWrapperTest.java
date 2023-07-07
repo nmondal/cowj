@@ -10,13 +10,14 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
 
@@ -208,5 +209,38 @@ public class JDBCWrapperTest {
         Assert.assertNotNull(dbT[0]);
         Assert.assertTrue(dbT[0].isSuccessful());
         Assert.assertNotEquals( db1, dbT[0]);
+    }
+
+    @Test
+    public void testShutdownHook() throws SQLException {
+        try {
+            Connection[] connections = new Connection[1];
+            AtomicBoolean i = new AtomicBoolean();
+            derby.threadShutdown((con) -> {
+                try {
+                    con.close();
+                    assertEquals(con, connections[0]);
+                    System.out.println("Connection shut down");
+                    i.set(true);
+                } catch (Throwable ignore) {}
+            });
+            Thread t = new Thread(() -> {
+                connections[0] = derby.connection().value();
+            });
+
+            t.start();
+
+            while(t.isAlive()) {}
+
+            /// Ensure thread executed
+            assertNotNull(connections[0]);
+            /// Ensure connection closed
+            assertTrue(connections[0].isClosed());
+            /// Ensure threadShutdown executed to completion
+            assertEquals(i.get(), true);
+        } finally {
+            /// Ensure other tests don't see this change
+            derby.threadShutdown(JDBCWrapper.DEFAULT_SHUTDOWN_HOOK);
+        }
     }
 }

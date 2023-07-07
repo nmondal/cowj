@@ -112,6 +112,16 @@ java {
     withSourcesJar()
 }
 
+tasks.withType(Test).configureEach {
+    jvmArgs += '--add-exports'
+    jvmArgs += 'java.base/jdk.internal.misc=ALL-UNNAMED'
+}
+
+compileJava {
+    options.compilerArgs += '--add-exports'
+    options.compilerArgs += 'java.base/jdk.internal.misc=ALL-UNNAMED'
+}
+
 application {
     // Define the main class for the application.
     mainClass = 'cowj.App'

@@ -1,18 +1,23 @@
 package cowj.plugins;
 
+import com.ziclix.python.sql.connect.Connect;
 import cowj.DataSource;
 import cowj.EitherMonad;
 import cowj.Scriptable;
+import jdk.internal.misc.TerminatingThreadLocal;
 import zoomba.lang.core.operations.Function;
 
+import java.lang.ref.Cleaner;
 import java.sql.*;
 import java.time.ZoneId;
 import java.time.chrono.ChronoLocalDateTime;
 import java.util.*;
+import java.util.function.Consumer;
 
 public interface JDBCWrapper {
-
     EitherMonad<Connection> connection();
+
+    default void threadShutdown(Consumer<Connection> con) {}
 
     EitherMonad<Connection> create();
 
@@ -85,11 +90,35 @@ public interface JDBCWrapper {
         return selectWithConnection(em.value(), query, args);
     }
 
+    Consumer<Connection> DEFAULT_SHUTDOWN_HOOK = (Connection con) -> {
+        try {
+            con.close();
+        } catch (SQLException ignore) {}
+    };
+
     DataSource.Creator JDBC = (name, config, parent) -> {
 
         JDBCWrapper jdbcWrapper = new JDBCWrapper() {
             final String staleCheckQuery = config.getOrDefault(STALE_CHECK_TIMEOUT_QUERY, JDBCWrapper.super.staleCheckQuery()).toString() ;
-            final ThreadLocal<Connection> connectionThreadLocal = ThreadLocal.withInitial(() -> null);
+
+            Consumer<Connection> shutdownHook = DEFAULT_SHUTDOWN_HOOK;
+
+            @Override
+            public void threadShutdown(Consumer<Connection> hook) {
+                if (shutdownHook != DEFAULT_SHUTDOWN_HOOK) {
+                    System.out.printf("Warning: shutdown hook for %s being overwritten %n", name);
+                }
+                shutdownHook = hook;
+            }
+
+            final TerminatingThreadLocal<Connection> connectionThreadLocal = new TerminatingThreadLocal<>() {
+                @Override
+                protected void threadTerminated(Connection value) {
+                    try {
+                        shutdownHook.accept(value);
+                    } catch (Throwable ignore) {}
+                }
+            };
 
             @Override
             public boolean isValid(){
