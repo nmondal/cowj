@@ -1,9 +1,7 @@
 package cowj.plugins;
 
-import cowj.DataSource;
-import cowj.EitherMonad;
-import cowj.Model;
-import cowj.Scriptable;
+import cowj.*;
+import jnr.ffi.Struct;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -13,10 +11,10 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.*;
 
@@ -208,5 +206,37 @@ public class JDBCWrapperTest {
         Assert.assertNotNull(dbT[0]);
         Assert.assertTrue(dbT[0].isSuccessful());
         Assert.assertNotEquals( db1, dbT[0]);
+    }
+
+    @Test
+    public void testPerformance() throws Exception{
+        final int numThreads = 5 ;
+        final int totalQueries = 50;
+        ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+        List<Callable<EitherMonad<?>>> list = new ArrayList<>();
+        for ( int i=0; i < totalQueries; i++ ){
+            list.add( () -> derby.select("select count(*) as count from Data", Collections.emptyList()) );
+        }
+        List<Future<EitherMonad<?>>> futures = executorService.invokeAll(list);
+        EitherMonad<Long> tm = TestUtils.timeIt( () -> {
+            executorService.shutdown();
+            try {
+                executorService.awaitTermination(1 , TimeUnit.MILLISECONDS) ;
+            }catch (InterruptedException ie){
+                throw new RuntimeException(ie);
+            }
+        });
+        Assert.assertTrue(tm.isSuccessful());
+        futures.forEach( f -> {
+            Assert.assertTrue(f.isDone());
+            try {
+                Assert.assertTrue(f.get().isSuccessful());
+            }catch (Throwable t){
+                Assert.fail();
+            }
+        });
+        double tms = tm.value()/1000000.0;
+        System.out.printf( "With %d threads running over %d queries on derby took %.2f milli secs! %n", numThreads, totalQueries, tms );
+        Assert.assertTrue( tms <= 1.5 );
     }
 }
