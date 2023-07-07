@@ -117,6 +117,23 @@ application {
     mainClass = 'cowj.App'
 }
 
+tasks.register('copyAllDependencies', Copy) {
+    from configurations.runtimeClasspath
+    into "${rootDir}/app/build/libs/deps"
+}
+build.dependsOn(copyAllDependencies)
+
+jar {
+    // Keep jar clean:
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF'
+    manifest {
+        attributes 'Main-Class': 'cowj.App',
+                'Class-Path': configurations.runtimeClasspath.files.collect { "deps/$it.name" }.join(' ')
+    }
+    // to execute anything, go to the libs folder, and then do java -jar cowj
+    // the deps folder should have all dependencies
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
