@@ -118,17 +118,17 @@ public class JDBCWrapperTest {
         LocalDateTime ld = o.toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
-        Object r = derby.getObject(d);
+        Object r = JDBCWrapper.getObject(d);
         Assert.assertTrue( r instanceof Long);
         Assert.assertEquals(o.getTime(), r);
-        r = derby.getObject(ld);
+        r = JDBCWrapper.getObject(ld);
         Assert.assertTrue( r instanceof Long);
         // now timestamp
         java.sql.Timestamp ts = new java.sql.Timestamp( o.getTime());
-        r = derby.getObject(ts);
+        r = JDBCWrapper.getObject(ts);
         Assert.assertEquals(o.getTime(), r);
         // Now date itself
-        r = derby.getObject(o);
+        r = JDBCWrapper.getObject(o);
         Assert.assertEquals(o.getTime(), r);
     }
 
