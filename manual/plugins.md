@@ -1,10 +1,11 @@
 # Guide to Write COWJ Plugins
 
-[toc]
+[TOC]
 
 ## About : Plugins
+
 Basic idea of a plugin is one can have sort of LEGO blocks,
-that one can insert into approriate point at will - and thus, 
+that one can insert into appropriate point at will - and thus, 
 can extend the experience of the base engine one created.
 
 A very simple example of plugin is codecs, coder-decoder
@@ -12,9 +13,9 @@ which based on the appropriate media format the media players load.
 
 ## Cowj Plugins
 
-Essentially, COWJ has a plugin baed model.
+Essentially, COWJ has a plugin based model.
 
-### Scriptable 
+### Scriptable
 
 `Scriptable` is very much plug-n-play, although we do not expose the ability 
 to adding custom engine that easy. But we can.
@@ -22,12 +23,12 @@ All `jsr-223` engines are plugin based, while `ZoomBA` is a special plugin.
 
 To add a `Scriptable` plugin:
 
-1.  drop a `JSR-223` engine binary to the `lib` folder with all dependencies
-2.  register the type of the engine - manually - in some way 
-3.  register the type to the `UNIVERRSAL` Scriptable creator
-4.  And you are done.
+1. drop a `JSR-223` engine binary to the `lib` folder with all dependencies
+2. register the type of the engine - manually - in some way 
+3. register the type to the `UNIVERRSAL` Scriptable creator
+4. And you are done.
 
-It is the step [3] that would require one to change Cowj sourece code, 
+It is the step [3] that would require one to change Cowj source code, 
 and thus, technically, the Scriptable are not really a plug-in.
 
 ### Data Sources
@@ -52,13 +53,14 @@ data-sources:
     type: fcm
     credentials_file: _/credentials.json
 ```
+
 So what is happening? the `type` of `data-source` named `fcm_ds` is `fcm` and that is
 the registration name under the plugin `fcm` - hence it would use the static field `FCM`
 of the full class `cowj.plugins.FCMWrapper` to create such a plugin.
 
 All plugins in COWJ are, as of now, always producing `DataSource` type objects.
 
-## Plugin Life Cyle 
+## Plugin Life Cycle
 
 ### Registration And Creation
 
@@ -72,17 +74,18 @@ Registration flow of plugin is as follows:
 6. the `type_registry_name` gets stored as the key in the `Scriptable.DATA_SOURCES` static map 
 7. The created data source object `proxy()` method's result gets stored as the value 
 
-### Usage 
+### Usage
 
-#### Inside Source Code 
+#### Inside Source Code
 
-The following code get's a data source back:
+The following code gets a data source back:
 
 ```java
 Object ds = Scriptable.DATA_SOURCES.get("fcm_ds");
 ```
 
-#### Scripting Usage 
+#### Scripting Usage
+
 In various scripts the `Scriptable.DATA_SOURCES` gets injected as a `Bindings` variable 
 with variable name `_ds`.
 
@@ -96,11 +99,10 @@ fcm_instance = _ds["fcm_ds"] // zoomba, js, groovy, python
 At this point `fcm_instance` is the instance returned by the `proxy()` method
 of the underlying data source.
 
+## Default Plugins
 
-## Default Plugins 
+### Either Monad
 
-
-### Either Monad 
 This is a way to create a monadic container to wrap `result, error` while calling APIs.
 
 ```java
@@ -111,6 +113,7 @@ public final class EitherMonad<V> {
   public Throwable error();
 }
 ```
+
 It is highly encouraged to wrap around plugins exposed APIs with this class.
 Usage is as follows:
 
@@ -120,6 +123,7 @@ EitherMonad<Integer> EitherMonad.error( new NumberFormatException("Integer can n
 ```
 
 ### Secrets Manager
+
 Essentially to read configurations.
 The Plugin implementation is supposed to provide
 access to a Map of type `Map<String,String>` because 
@@ -140,12 +144,12 @@ plugins:
 data-sources:
   secret_source:
     type: gsm
-    config: key-for-config
+    config: ${key-for-config}
     project-id: some-project-id
 ```
 
 Now, one can use this into any other plugin, if need be.
-In a very spcial case the `port` attribute of the main config file
+In a very special case the `port` attribute of the main config file
 can be redirected to any variable - because of obvious reason:
 
 ```yaml
@@ -155,13 +159,18 @@ port : ${PORT}
 In which case system uses the `PORT` variable from the local secret manager
 which is the systems environment variable.
 
+This also is true for any `${key}` directive in any `SecretManager` ,  the problem of bootstrapping or who watches the watcher gets avoided by booting from a bunch of `ENV` variable passed into the system - and then `SecretManager` can be loaded and then the system can use the secret manager.
+
+ 
+
+
 
 ### Web IO - CURL
 
-The implementor class is `cowj.plugins.CurlWrapper`.
+The implementer class is `cowj.plugins.CurlWrapper`.
 
 This does web IO.
-This is how a data souce looks like:
+This is how a data source looks like:
 
 ```yaml
 plugins:
@@ -173,8 +182,8 @@ data-source:
     type: curl # type must match the registered type of the curl plugin
     url: https://jsonplaceholder.typicode.com # base url to connec to
     proxy: _/proxy_transform.zm # use for transforming the request to proxy request
-
 ```
+
 The wrapper in essence has 2 interface methods:
 
 ```java
@@ -184,9 +193,9 @@ public interface CurlWrapper {
         Map<String,String> headers,
         Map<String,String> params, 
         String body);
-  
+
   Function<Request, EitherMonad<Map<String,Object>>> proxyTransformation();
-  
+
   String proxy(String verb, String destPath, 
        Request request, Response response){}
 }
@@ -201,29 +210,35 @@ can be applied to the incoming response to produce the final response to the cli
 The `curl` plugin can be used programmatically, if need be via:
 
 ```scala
-_ds.json_place.send( "get", "/users", {:}, {:} , "" )
+em = _ds.json_place.send( "get", "/users", {:}, {:} , "" )
+assert( em.isSuccessful(), "Got a boom!" )
+result = em.value()
+result.body() // here is the body 
 ```
 
-### JDBC 
+
+
+
+
+### JDBC
 
 JDBC abstracts the connection provided by JDBC drivers.
-Typlical usage looks like:
+Typical usage looks like:
 
 ```yaml
 plugins:
   cowj.plugins:
     gsm: SecretManager::GSM
     jdbc: JDBCWrapper::JDBC
-    
 
 data-sources:
 
-  secret_source: # define the secret manager to maintain env 
+  secret_sorce: # define the secret manager to maintain env 
     type: gsm
     config: key-for-config
     project-id: some-project-id
 
-  mysql: # a mysql connection 
+  mysql: #  mysql connection 
     type: jdbc
     secrets: secret_source # use the secret manager 
     properties:
@@ -231,12 +246,19 @@ data-sources:
       password: ${DB_PASSWORD_READ}
     connection: "jdbc:mysql://${DB_HOST_READ}/${DB_DATABASE_READ}"
 
-  druid: # a druid connection 
+  druid: # druid connection using avatica driver
     type: jdbc
     connection: "jdbc:avatica:remote:url=http://localhost:8082/druid/v2/sql/avatica/"
+  
+  derby: # apache derby connection 
+    type: jdbc
+    stale: "values current_timestamp" # notice the custom stale connection check query
+    connection: "jdbc:derby:memory:cowjdb;create=true"
+
 
 
 ```
+
 In this implementation, we are using the `SecretManager` named `secret_source`.
 The JDBC connection properties are then substituted with the syntax `${key}` 
 where `key` must be present in the environment provided by the secret manager.
@@ -246,16 +268,27 @@ where `key` must be present in the environment provided by the secret manager.
 ```yaml
 connection: "jdbc:derby:memory:cowjdb;create=true"
 ```
+
 is a typical string that we use to test the wrapper itself using derby.
 
-The basic interfacer is as follows:
+The basic interface is as follows:
 
 ```java
 public interface JDBCWrapper {
     // underlying connection object  
-    Connection connection(); 
-    // from sql get the java object
-    Object getObject(Object value);  
+    EitherMonad<Connection> connection(); 
+    // create a connection object  
+    EitherMonad<Connection> create();
+    // check if connection is valid   
+    boolean isValid(); 
+    // how to check if connection is stale?
+    default String staleCheckQuery(){
+        /*
+        * Druid, MySQL, PGSQL ,AuroraDB
+        * Oracle will not work SELECT 1 FROM DUAL
+        * */
+        return "SELECT 1";
+    }
     // fortmatter query, returns a list of json style objects ( map )
     EitherMonad<List<Map<String,Object>>> select(String query, List<Object> args);
 }
@@ -265,6 +298,17 @@ As one can surmise, we do not want to generally use the DB, but in rare cases
 we may want to read, and if write is necessary we can do that with the underlying connection.
 Mostly, we shall be using read.
 
+
+
+`isValid()` is the method that uses some sort of heuristic to figure out if the `connection()` is actually valid.  For that, it relies on `staleCheckQuery()` which is exposed as `stale` parameter as shown in the yaml.
+
+
+
+There will be one guaranteed connection per JDBC, on boot. Then on, if any jetty thread access the db, a dedicated connection will be opened, and will be reused on the lifetime of the thread.
+
+
+
+Work is underway to clean up the connection when the thread ends.
 
 ### REDIS
 
@@ -281,6 +325,7 @@ data-sources:
     type : redis
     urls: [ "localhost:6379"]
 ```
+
 It returns the underlying `UnifiedJedis` instance.
 The key `urls` can also be loaded from `SecretManager` if need be.
 
@@ -312,7 +357,8 @@ data-sources:
     secrets: secret_source
     key: FCM_CREDENTIALS
 ```
-The usage is pretty straigtforward:
+
+The usage is pretty straightforward:
 
 ```scala
 payload = { "tokens" : tokens , "title" : body.title, "body" : body.body, "image": body.image ?? '',"data": body.data ?? dict()}
@@ -349,6 +395,7 @@ data-sources:
   storage:
     type: g_storage
 ```
+
 And if configured properly, we can simply load whatever we want via this:
 
 ```scala
@@ -357,6 +404,7 @@ data = storage.load(_ds.secret_source.getOrDefault("AWS_BUCKET", ""), "static_da
 _shared["qa:cowj:notification:team"] = data
 panic (empty(data), "teams are empty Please report to on call", 500)
 ```
+
 There are various methods defined on the storage, as follows:
 
 ```java
@@ -381,8 +429,7 @@ public interface GoogleStorageWrapper {
 }
 ```
 
-
-## References 
+## References
 
 1. https://en.wikipedia.org/wiki/Plug-in_(computing) 
 2. https://learn.microsoft.com/en-us/dotnet/api/microsoft.visualstudio.data.datasource?view=visualstudiosdk-2022 
@@ -394,5 +441,3 @@ public interface GoogleStorageWrapper {
 8. https://redis.io/docs/clients/java/ 
 9. https://firebase.google.com/docs/reference/admin/java/reference/com/google/firebase/messaging/FirebaseMessaging
 10. https://cloud.google.com/storage/docs/reference/libraries
-
-   
