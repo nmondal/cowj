@@ -1,7 +1,8 @@
 /*
 Just dumps it into some random tmp folder by creating some  unique id
 */
-payload = json( req.body() )
+assert( "_body" @ req.attributes() , "How come req.body failed to verify and come here?" , 409 )
+payload = req.attribute("_body") // this should already have the parsed data
 personId = random("[a-z]+", 8 ) + str(int(time()))
 payload["personId"] = personId
 personsCache = _shared["persons"] ?? dict()
