@@ -403,9 +403,9 @@ The transformation function / script is expected to return a map of the form:
 
 In case the script does not return a map - pushed values will be used to be extracted from the script context and used as a response. 
 
-
 ## Type System
-We support json schema based input validation.
+
+We support `json schema` based input validation.
 To read more see [Writing Input Validations](manual/types.md)
 
 ## Running
@@ -416,5 +416,6 @@ To read more see [Writing Input Validations](manual/types.md)
 ```shell
 java -jar cowj*  <config-file>
 ```
-The jar has been created such as to have classpath propertly set to run
+
+The jar has been created such as to have classpath property set to run
 as long as all the dependencies are in the `deps` folder.
