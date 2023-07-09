@@ -1,4 +1,4 @@
-# Guide to Write COWJ Plugins
+# COWJ Plugin Guide
 
 [TOC]
 
