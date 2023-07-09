@@ -1,25 +1,24 @@
 # cowj
+
 [C]onfiguration [O]nly [Web] on [J]VM 
 
 <img src="https://icons.iconarchive.com/icons/iconarchive/cute-animal/512/Cute-Cow-icon.png" style="zoom:20%;" />
 
-
-[toc]
+[TOC]
 
 ## Goal
 
 COWJ is pronounced as Cows, and stands for:
 
->Configuration-Only-Web-over-JVM
+> Configuration-Only-Web-over-JVM
 
 It should be very clear from the naming that:
 
->objective is to optimise back-end development and replacing it with configurations.
+> objective is to optimize back-end development and replacing it with configurations.
 
+## Back End Development
 
-## Back End Development 
-
-### Development Today 
+### Development Today
 
 It is pretty apparent that a lot of back-end "development" goes under:
 
@@ -29,7 +28,6 @@ It is pretty apparent that a lot of back-end "development" goes under:
 4. Adding random business logic to various section of the API workflows 
 
 COWJ aims to solve all these 4 problems, such that what was accomplished by 100 of developers can be done by less than 10, a ratio of 90% above in being effective.
-
 
 ### How To Do it?
 
@@ -41,12 +39,15 @@ This must stop. The following must be made true:
 1. Creating a service end point should be just adding configuration 
 2. Writing the service should be just typing in scriptable code 
 3. Input / Output parameters are to be assumed typeless JSON at worst 
+4. We can, at best do a lazy type checking to validate Schema - alternatives 
+   1. RAML 
+   2. Open API 
+   3. JSON Schema 
 
-#### "Business" Logic 
+#### "Business" Logic
 
 There should not be any "business logic" in the code. They are susceptible to change,
 hence they should be hosted outside the API end points - DSL should be created to maintain.
-
 
 #### Data Store Access
 
@@ -59,7 +60,7 @@ If one is willing to use this, one must wonder  - what Makes Anything 'Prod Read
 Only suitable answer is the core components must be excessively well tested, 
 and should have really good instruction and branch coverage.
 
-### Cowj All Coverage 
+### Cowj All Coverage
 
 <img src="manual/coverage-all.png" style="zoom:85%;" />
 
@@ -69,13 +70,13 @@ Thus the engine core is immensely tested, and is at per with industry standard q
 
 <img src="manual/coverage-core.png" style="zoom:72%;" />
 
-### Cowj Plugin Coverage 
+### Cowj Plugin Coverage
 
 <img src="manual/coverage-plugin.png" style="zoom:72%;" />
 
 Even plugins are reasonably tested, and are ready for production usage.
 
-## Current Implementation 
+## Current Implementation
 
 ### Service Configuration
 
@@ -129,18 +130,18 @@ data-sources:
     type: curl
     url: https://jsonplaceholder.typicode.com
     proxy: _/proxy_transform.zm # responsible for message transform
-    
+
 cron:
   cache:
     exec: _/cache.md
     boot: true
     at: "*/5 * * * *"
-
 ```
+
 It simply defines the routes - as well the handler script for such a route.
 In this way it is very similar to PHP doctrine, as well as DJango or Play.
 
-### Scripting 
+### Scripting
 
 Is Polyglot.  We support JSR-223 languages - in built support is provided right now for:
 
@@ -169,6 +170,7 @@ Here is one such example of routes being implemented:
 let x = { "id" : req.params("id") };
 x;// return 
 ```
+
 The context is defined as:
 
 https://sparkjava.com/documentation#request
@@ -186,13 +188,11 @@ The syntax for using this would be:
 ```scala
 v = _shared.<key_name> // groovy, zoomba 
 v = _shared[<key_name>] // groovy, zoomba, js, python  
-
 ```
-
 
 See the document  "A Guide to COWJ Scripting" found here - [Scripting](manual/scripting.md)
 
-### Filters 
+### Filters
 
 These are how one can have before and after callback before and after any route pattern gets hit.  
 
@@ -201,6 +201,7 @@ A `before` filter gets hit before hitting the actual route, while an `after` fil
 Classic example of `before` filter is for `auth` while `after` filter can be used to modify response type  by adding response headers.
 
 #### Before
+
 A typical use case from `auth`:
 
 ```yaml
@@ -211,6 +212,7 @@ filters:
   before:
     "*" : _/auth.zm
 ```
+
 Now inside `auth.zm` :
 
 ```scala
@@ -220,7 +222,7 @@ token = req.headers("auth")
 assert("Invalid Request", 403) as { validate_token(token) } 
 ```
 
-#### Finally 
+#### Finally
 
 A typical use case to json format error messages:
 
@@ -232,6 +234,7 @@ filters:
   finally:
      "*" : _/finally.zm
 ```
+
 Now inside `finally.zm` :
 
 ```scala
@@ -239,12 +242,12 @@ Now inside `finally.zm` :
 if ( resp.status @ [200:400] ){ return }
 error_msg = resp.body
 resp.body( jstr( { "error" : error_msg } ) )
-
 ```
+
 This ensures all errors are formatted as json.
 
+### Cron
 
-### Cron 
 In the `cron` section one can specify the "recurring" tasks 
 for a project. The key becomes name of the task, 
 while:
@@ -253,8 +256,7 @@ while:
 2. `boot` : to run while system startup 
 3. `at` : cron expression to define the recurrence
 
-
-### Data Sources 
+### Data Sources
 
 If the idea of COWJ is to do CRUD, where it does CRUD to/from? The underlying data is provided via the data sources.
 
@@ -266,11 +268,9 @@ _ds.redis
 
 Would access the data source which is registered in the name of `redis` .
 
-
-
 Right now there are the following data sources supported:
 
-##### JDBC 
+##### JDBC
 
 JDBC data source - anything that can connect to JDDBC drivers.
 
@@ -283,13 +283,9 @@ some_jdbc:
     x : y # all of them will be added 
 ```
 
-
-
 ##### CURL
 
 External Web Service calling. This is the underlying mechanism to call Proxies to forwarding data.
-
-
 
 ```yaml
 some_curl:
@@ -298,8 +294,6 @@ some_curl:
   headers: # headers we want to pass through
     x : y # all of them will be added 
 ```
-
-
 
 ##### Google Storage
 
@@ -310,9 +304,7 @@ googl_storage:
   type: g_storage # shoule have been registered before
 ```
 
-
-
-##### Redis 
+##### Redis
 
 Exposes Redis cluster  as a data source:
 
@@ -322,13 +314,9 @@ Exposes Redis cluster  as a data source:
    urls: [ "localhost:6379"] # bunch of urls to the cluster 
 ```
 
-
-
-##### Firebase Notification Service 
+##### Firebase Notification Service
 
 Firebase  as a data source.
-
-
 
 ### Plugins
 
@@ -347,7 +335,6 @@ plugins:
     g_storage: GoogleStorageWrapper::STORAGE
     jdbc: JDBCWrapper::JDBC
     redis: RedisWrapper::REDIS
-
 ```
 
 As one can see, we have multiple keys inside the `plugins` which corresponds to multiple packages - and under each package there are `type` of `datasource` we want to register it as, and the right side is the `implementor_class::static_field_name`.
@@ -356,7 +343,7 @@ In plain language it reads:
 
 > A static filed `CURL` of the class `cowj.plugins.CurlWrapper` implements a `DataStore.Creator` class and is being registered as `curl` type of data store creator.
 
-#### Library Folder 
+#### Library Folder
 
 From where plugins should be loaded? If one chose not to compile their code with COWJ - as majority of the case would be - there is a special folder in the base director defaults to `lib`.  All jars in all directories, recursively will be loaded in system boot and would be put into class path,
 
@@ -368,15 +355,13 @@ lib: _/some_other_random_dir
 
 How to author COWJ plugins can be found in here [Writing Custom Plugins](manual/plugins.md)
 
-
-
-### Proxies 
+### Proxies
 
 Path/Packet forwarding. One simply creates a base host - in the data source section of type `curl` and then use that key as base for all forwarding.
 
 In the Yaml example the following routing is done:
 
-``` 
+```
 localhost:5003/users 
 --> https://jsonplaceholder.typicode.com/users
 ```
@@ -385,7 +370,7 @@ System responds back with the same status as of the external web service as well
 
 This `transform` is coded in the `curl` type as follows:
 
-```yaml 
+```yaml
 data-sources:
   json_place:
     type: curl
@@ -418,7 +403,7 @@ The transformation function / script is expected to return a map of the form:
 
 In case the script does not return a map - pushed values will be used to be extracted from the script context and used as a response. 
 
-## Running 
+## Running
 
 1. Build the app.
 2. Run the app.

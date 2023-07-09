@@ -1,0 +1,9 @@
+/*
+Just dumps it into some random tmp folder by creating some  unique id
+*/
+personId = req.params("personId") ?? ""
+personsCache = _shared["persons"] ?? dict()
+assert( personId @ personsCache , jstr( { "error" : str("id '%s' not found!", personId) })  )
+person = personsCache[personId]
+jstr( person ) // return
+

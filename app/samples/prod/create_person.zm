@@ -1,0 +1,13 @@
+/*
+Just dumps it into some random tmp folder by creating some  unique id
+*/
+payload = json( req.body() )
+personId = random("[a-z]+", 8 ) + str(int(time))
+payload["personId"] = personId
+personsCache = _shared["persons"] ?? dict()
+
+personsCache[personId] = payload
+_shared["persons"] = personsCache
+
+ret = { "personId" : personId }
+jstr( ret )

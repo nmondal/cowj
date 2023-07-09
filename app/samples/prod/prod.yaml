@@ -1,0 +1,22 @@
+#########################
+# Schema validation test bed
+# Also, using _shared
+#########################
+
+port: 5042
+
+# threading related stuff
+threading:
+  min: 4
+  max : 8
+  timeout: 30000
+
+# specifying the schema & types for the routes
+schema: _/types/schema.yaml
+
+# path mapping
+routes:
+  post:
+    /person: _/create_person.zm.zm
+  get:
+    /person/:personId : _/fetch_person.zm

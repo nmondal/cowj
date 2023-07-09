@@ -1,0 +1,17 @@
+#####################
+# Defines the Schemas for routes
+# https://json-schema.org/learn/miscellaneous-examples.html
+#####################
+
+types: _/.
+
+post:
+  /person:
+    in: Person.json
+    on:
+      _ : RetVal.json
+get:
+  /person:
+    on:
+      200 : Person.json
+      _ : RetVal.json

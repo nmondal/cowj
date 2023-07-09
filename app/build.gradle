@@ -134,6 +134,15 @@ jar {
     // the deps folder should have all dependencies
 }
 
+gradle.taskGraph.whenReady { // https://stackoverflow.com/questions/75715341/toolchain-from-executable-property-does-not-match-toolchain-from-javalauncher
+    tasks.withType(JavaExec) {
+        if (name.endsWith(".main()")) {
+            println("Setting executable to java launcher for ${name}")
+            it.setExecutable(javaLauncher.get().executablePath.asFile.absolutePath)
+        }
+    }
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
