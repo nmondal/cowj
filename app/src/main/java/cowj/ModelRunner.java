@@ -47,7 +47,7 @@ public interface ModelRunner extends Runnable {
         threadPool(max, min, timeout);
         Scriptable.Creator creator = scriptCreator();
         // load static
-        staticFiles.location(m.staticPath());
+        staticFiles.externalLocation(m.staticPath());
         final String baseDir = m.base();
         // load routes
         System.out.println("Base Directory : " + baseDir);

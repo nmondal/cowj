@@ -48,11 +48,11 @@ public interface Model {
     }
 
     default String staticPath(){
-        return "_/static" ;
+        return interpretPath( "_/static" ) ;
     }
 
     default String schemaPath(){
-        return interpretPath(staticPath() + "/types/schema.yaml") ;
+        return staticPath() + "/types/schema.yaml" ;
     }
 
     default boolean hasProperSchemaDefinition(){
@@ -135,7 +135,7 @@ public interface Model {
 
             @Override
             public String staticPath() {
-                return (String) map.getOrDefault(STATIC, Model.super.staticPath());
+                return interpretPath( map.getOrDefault(STATIC, Model.super.staticPath()).toString());
             }
 
             @Override
