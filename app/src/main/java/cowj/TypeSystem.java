@@ -97,6 +97,8 @@ public interface TypeSystem {
         return validator;
     }
 
+    String PARSED_BODY = "_body" ;
+
     default Filter schemaVerificationFilter(String path){
         // support only input as of now...
         return  (request, response) -> {
@@ -112,8 +114,10 @@ public interface TypeSystem {
             JsonParser validatedParser = API.decorateJsonParser(validator, unvalidatedParser);
             try {
                 Object  parsedBody = OBJECT_MAPPER.readValue(validatedParser, Object.class);
+                // we should also add this to the request to ensure no further parsing for the same?
+                request.attribute(PARSED_BODY, parsedBody );
             } catch (Throwable e) {
-                Spark.halt(409,"Input Schema Validation failed : " + e.getCause());
+                Spark.halt(409,"Input Schema Validation failed : " + e);
             }
         };
     }
