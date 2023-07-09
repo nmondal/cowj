@@ -52,11 +52,11 @@ public interface Model {
     }
 
     default String schemaPath(){
-        return staticPath() + "/types/schema.yaml" ;
+        return interpretPath(staticPath() + "/types/schema.yaml") ;
     }
 
-    default boolean hasSchemaAttached(){
-        File f = new File(schemaPath());
+    default boolean hasProperSchemaDefinition(){
+        File f = new File( schemaPath() );
         return f.exists();
     }
 

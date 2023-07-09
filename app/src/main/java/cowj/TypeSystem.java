@@ -2,6 +2,7 @@ package cowj;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.worldturner.medeia.api.JsonSchemaVersion;
 import com.worldturner.medeia.api.PathSchemaSource;
 import com.worldturner.medeia.api.SchemaSource;
 import com.worldturner.medeia.api.jackson.MedeiaJacksonApi;
@@ -89,7 +90,8 @@ public interface TypeSystem {
         SchemaValidator validator = VALIDATORS.get(jsonSchemaPath);
         if ( validator != null ) return validator;
         Path p = Paths.get(jsonSchemaPath);
-        SchemaSource source = new PathSchemaSource(p);;
+        JsonSchemaVersion jsonSchemaVersion = JsonSchemaVersion.DRAFT07;
+        SchemaSource source = new PathSchemaSource(p,jsonSchemaVersion);
         validator = API.loadSchema(source);
         VALIDATORS.put(jsonSchemaPath,validator);
         return validator;
@@ -116,7 +118,10 @@ public interface TypeSystem {
         };
     }
 
-    default void apply(){
-
+    default void attach(){
+        routes().keySet().forEach( path -> {
+            Filter schemaVerifier = schemaVerificationFilter(path);
+            Spark.before(path,schemaVerifier);
+        });
     }
 }

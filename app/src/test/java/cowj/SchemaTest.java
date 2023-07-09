@@ -11,4 +11,9 @@ public class SchemaTest {
         Assert.assertFalse( typeSystem.routes().isEmpty() );
         Assert.assertEquals( 2, typeSystem.routes().size());
     }
+
+    @Test
+    public void liveSchemaTest(){
+
+    }
 }

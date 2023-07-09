@@ -122,6 +122,14 @@ public interface ModelRunner extends Runnable {
                 System.out.printf("%s -> %s -> %s %n", verb, r.getKey(), r.getValue());
             }
         }
+        if ( m.hasProperSchemaDefinition() ){
+           final String schemaPath =  m.schemaPath();
+           System.out.println("Schema is found in the system. Attaching...: " + schemaPath );
+           TypeSystem typeSystem = TypeSystem.fromFile(schemaPath);
+           typeSystem.attach();
+        }else{
+            System.err.println("No Schema is attached to system!");
+        }
 
         // load filters
         System.out.println("Filters mapping are as follows...");
@@ -142,6 +150,7 @@ public interface ModelRunner extends Runnable {
             }
         }
         awaitInitialization();
+        System.out.println("Cowj is initialized!");
     }
 
     default void stop(){
