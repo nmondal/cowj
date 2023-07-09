@@ -51,6 +51,15 @@ public interface Model {
         return "_/static" ;
     }
 
+    default String schemaPath(){
+        return staticPath() + "/types/schema.yaml" ;
+    }
+
+    default boolean hasSchemaAttached(){
+        File f = new File(schemaPath());
+        return f.exists();
+    }
+
     default String libPath(){
         return "_/lib" ;
     }
@@ -104,6 +113,8 @@ public interface Model {
     String LIB_FOLDER = "lib" ;
 
     String CRON_JOBS = "cron" ;
+
+    String SCHEMA_DEFINITION = "schema" ;
 
     static Model from(final Map<String,Object> map, final String baseDir){
 

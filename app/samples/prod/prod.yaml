@@ -11,12 +11,10 @@ threading:
   max : 8
   timeout: 30000
 
-# specifying the schema & types for the routes
-schema: _/types/schema.yaml
-
 # path mapping
 routes:
   post:
     /person: _/create_person.zm
   get:
     /person/:personId : _/fetch_person.zm
+
