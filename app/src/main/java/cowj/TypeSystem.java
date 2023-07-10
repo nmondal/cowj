@@ -153,6 +153,7 @@ public interface TypeSystem {
     default Filter inputSchemaVerificationFilter(String path){
         // support only input as of now...
         return  (request, response) -> {
+            final long startTime = System.currentTimeMillis();
             final String verb = request.requestMethod().toLowerCase(Locale.ROOT);
             if ( verb.equals("get") ){ return; }
             Signature signature = routes().get(path).get(verb);
@@ -171,6 +172,9 @@ public interface TypeSystem {
                 request.attribute(PARSED_BODY, parsedBody );
             } catch (Throwable e) {
                 Spark.halt(409,"Input Schema Validation failed : " + e);
+            } finally {
+                final long endTime = System.currentTimeMillis();
+                System.err.printf("?? Input Verification took %d ms %n", endTime - startTime);
             }
         };
     }
@@ -178,6 +182,7 @@ public interface TypeSystem {
     default Filter outputSchemaVerificationFilter(String path){
         // support only input as of now...
         return  (request, response) -> {
+            final long startTime = System.currentTimeMillis();
             final String verb = request.requestMethod().toLowerCase(Locale.ROOT);
             Signature signature = routes().get(path).get(verb);
             if ( signature == null ){ return; }
@@ -200,7 +205,10 @@ public interface TypeSystem {
             try {
                 OBJECT_MAPPER.readValue(validatedParser, Object.class);
             } catch (Throwable e) {
-                System.err.printf("Output Schema Validation failed : " + e);
+                System.err.printf("Output Schema Validation failed. Route '%s' : %n %s %n", path, e);
+            } finally {
+                final long endTime = System.currentTimeMillis();
+                System.err.printf("?? Output Verification took %d ms %n", endTime - startTime);
             }
         };
     }
