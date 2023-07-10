@@ -28,18 +28,12 @@ public interface TypeSystem {
     interface Signature{
         Map<String,String> schemas();
         String INPUT = "in" ;
-        String OUT_OK = "ok" ;
-        String OUT_ERR = "err" ;
         default String inputSchema(){
             return schemas().getOrDefault( INPUT, "");
         }
-        default String okSchema(){
-            return schemas().getOrDefault( OUT_OK, "");
+        default String schema(String label){
+            return schemas().getOrDefault( label, "");
         }
-        default String errSchema(){
-            return schemas().getOrDefault( OUT_ERR, "");
-        }
-
     }
 
     Map<String,Map<String,Signature>> routes();
@@ -63,7 +57,6 @@ public interface TypeSystem {
     }
 
     Verification verification();
-
     interface StatusLabel extends BiPredicate<Request,Response> {
         default String name() { return entry().getKey() ; };
         default String expression() { return entry().getValue(); }
@@ -82,6 +75,8 @@ public interface TypeSystem {
 
     }
 
+    Map<String,StatusLabel> statusLabels();
+
     static TypeSystem fromConfig(Map<String,Object> config, String baseDir){
         Map<String,Object> routeConfig = (Map)config.getOrDefault( ROUTES, Collections.emptyMap());
         final Map<String,Map<String,Signature>> routes = new LinkedHashMap<>();
@@ -97,6 +92,11 @@ public interface TypeSystem {
 
         Map<String,Object> verificationConfig = (Map)config.getOrDefault( VERIFICATION, Collections.emptyMap());
         final Verification verification = () -> verificationConfig;
+
+        Map<String,String> statusLabels = (Map)config.getOrDefault( LABELS, Collections.emptyMap());
+        Map<String,StatusLabel> statusLabelMap = new LinkedHashMap<>();
+        statusLabels.entrySet().forEach( e ->  statusLabelMap.put( e.getKey(), () -> e ));
+
         return new TypeSystem() {
             @Override
             public Map<String, Map<String,Signature>> routes() {
@@ -111,6 +111,11 @@ public interface TypeSystem {
             @Override
             public Verification verification() {
                 return verification;
+            }
+
+            @Override
+            public Map<String, StatusLabel> statusLabels() {
+                return statusLabelMap;
             }
         };
     }
@@ -152,7 +157,9 @@ public interface TypeSystem {
             if ( verb.equals("get") ){ return; }
             Signature signature = routes().get(path).get(verb);
             if ( signature == null ){ return; }
-            final String jsonSchemaPath = definitionsDir() + "/"+  signature.inputSchema();
+            final String schemaPath = signature.inputSchema();
+            if ( schemaPath.isEmpty() ) { return; }
+            final String jsonSchemaPath = definitionsDir() + "/"+  schemaPath;
             SchemaValidator validator = loadSchema(jsonSchemaPath);
             final String potentialJsonBody = request.body() ;
             JsonParser unvalidatedParser =
@@ -168,10 +175,49 @@ public interface TypeSystem {
         };
     }
 
-    default void attach(){
-        routes().keySet().forEach( path -> {
-            Filter schemaVerifier = inputSchemaVerificationFilter(path);
-            Spark.before(path,schemaVerifier);
-        });
+    default Filter outputSchemaVerificationFilter(String path){
+        // support only input as of now...
+        return  (request, response) -> {
+            final String verb = request.requestMethod().toLowerCase(Locale.ROOT);
+            Signature signature = routes().get(path).get(verb);
+            if ( signature == null ){ return; }
+            // which pattern matched?
+            Optional<String> optLabel = signature.schemas().keySet().stream().filter( label -> {
+               if ( Signature.INPUT.equals(label)) return false;
+               StatusLabel statusLabel = statusLabels().get( label );
+               if ( statusLabel == null ) return false;
+               return statusLabel.test(request,response);
+            }).findFirst();
+            if ( optLabel.isEmpty() ) return;
+            final String schemaPath = signature.schema(optLabel.get());
+            if ( schemaPath.isEmpty() ) return;
+            final String jsonSchemaPath = definitionsDir() + "/"+  schemaPath;
+            SchemaValidator validator = loadSchema(jsonSchemaPath);
+            final String potentialJsonBody = request.body() ;
+            JsonParser unvalidatedParser =
+                    OBJECT_MAPPER.getFactory().createParser(potentialJsonBody);
+            JsonParser validatedParser = API.decorateJsonParser(validator, unvalidatedParser);
+            try {
+                OBJECT_MAPPER.readValue(validatedParser, Object.class);
+            } catch (Throwable e) {
+                System.err.printf("Output Schema Validation failed : " + e);
+            }
+        };
+    }
+
+    default void attach() {
+        if (verification().in()) { // only if verification is in...
+            routes().keySet().forEach(path -> {
+                Filter schemaVerifier = inputSchemaVerificationFilter(path);
+                Spark.before(path, schemaVerifier);
+            });
+        }
+        if ( verification().out() ){ // only if verification out is set in
+            routes().keySet().forEach(path -> {
+                Filter schemaVerifier = outputSchemaVerificationFilter(path);
+                // this is costly, we should avoid it...
+                Spark.afterAfter(path, schemaVerifier);
+            });
+        }
     }
 }
