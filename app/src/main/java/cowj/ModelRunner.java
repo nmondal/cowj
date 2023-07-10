@@ -128,7 +128,7 @@ public interface ModelRunner extends Runnable {
            TypeSystem typeSystem = TypeSystem.fromFile(schemaPath);
            typeSystem.attach();
         }else{
-            System.err.println("No Schema is attached to system!");
+            System.err.println("No Schema is attached to the system!");
         }
 
         // load filters

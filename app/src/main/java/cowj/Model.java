@@ -52,7 +52,7 @@ public interface Model {
     }
 
     default String schemaPath(){
-        return staticPath() + "/types/schema.yaml" ;
+        return staticPath() + SCHEMA_DEFINITION ;
     }
 
     default boolean hasProperSchemaDefinition(){
@@ -114,7 +114,7 @@ public interface Model {
 
     String CRON_JOBS = "cron" ;
 
-    String SCHEMA_DEFINITION = "schema" ;
+    String SCHEMA_DEFINITION = "/types/schema.yaml" ;
 
     static Model from(final Map<String,Object> map, final String baseDir){
 
@@ -140,7 +140,7 @@ public interface Model {
 
             @Override
             public String libPath() {
-                return (String) map.getOrDefault(LIB_FOLDER, Model.super.libPath());
+                return interpretPath( map.getOrDefault(LIB_FOLDER, Model.super.libPath()).toString()) ;
             }
 
             @Override
