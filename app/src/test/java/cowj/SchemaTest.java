@@ -50,9 +50,20 @@ public class SchemaTest {
     }
 
     @Test
-    public void invalidSchemaTest(){
+    public void invalidJSONSchemaTest(){
         mr = ModelRunnerTest.runModel("samples/prod/prod.yaml" );
+        // NOT EVEN JSON test
         String r = ModelRunnerTest.post( "http://localhost:5042", "/person",  "foo bar!" );
+        Assert.assertNotNull(r);
+        Assert.assertTrue( r.contains("Validation") );
+        // Missing Field Test
+        String body = ZTypes.jsonString(Map.of( "firstName", "foo" ));
+        r = ModelRunnerTest.post( "http://localhost:5042", "/person",  "foo bar!" );
+        Assert.assertNotNull(r);
+        Assert.assertTrue( r.contains("Validation") );
+        // Higher Age than 150 ...
+        body = ZTypes.jsonString(Map.of( "firstName", "foo", "lastName", "bar", "age" , 250 ));
+        r = ModelRunnerTest.post( "http://localhost:5042", "/person",  "foo bar!" );
         Assert.assertNotNull(r);
         Assert.assertTrue( r.contains("Validation") );
     }
