@@ -99,4 +99,26 @@ public class ScriptableTest {
         int n = (int)Scriptable.SHARED_MEMORY.getOrDefault("hhgg", 0 );
         Assert.assertTrue( v < n );
     }
+
+    @Test
+    public void expressionJSRTest() throws Exception {
+        // JS
+        Scriptable sc= Scriptable.JSR.create(Scriptable.INLINE, "2+2 //.js" );
+        Object o = sc.exec( new SimpleBindings( ) );
+        Assert.assertTrue( o instanceof Number);
+        Assert.assertEquals( 4, ((Number) o).intValue() );
+
+        // Python
+        sc= Scriptable.JSR.create(Scriptable.INLINE, "2+2 #.py" );
+        o = sc.exec( new SimpleBindings( ) );
+        Assert.assertTrue( o instanceof Number);
+        Assert.assertEquals( 4, ((Number) o).intValue() );
+
+        // Groovy
+        sc= Scriptable.JSR.create(Scriptable.INLINE, "2+2 //.groovy" );
+        o = sc.exec( new SimpleBindings( ) );
+        Assert.assertTrue( o instanceof Number);
+        Assert.assertEquals( 4, ((Number) o).intValue() );
+
+    }
 }

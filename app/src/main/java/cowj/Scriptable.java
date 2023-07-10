@@ -150,6 +150,8 @@ public interface Scriptable  {
     Map<String, ZScript> zScripts = new HashMap<>(); // TODO ? Should be LRU? What?
 
     static CompiledScript loadScript(String directive, String path) throws IOException, ScriptException {
+        // this now becomes a hack ... expression will be used with "2 + 2 //.js"
+        // and this will load the engine
         if ( scripts.containsKey(path) ) return scripts.get(path);
         String content = INLINE.equals(directive) ? path : new String(Files.readAllBytes(Paths.get(path)));
         final ScriptEngine engine = getEngine(path);
