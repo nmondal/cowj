@@ -9,6 +9,8 @@ import com.worldturner.medeia.api.jackson.MedeiaJacksonApi;
 import com.worldturner.medeia.schema.validation.SchemaValidator;
 import org.jetbrains.annotations.NotNull;
 import spark.Filter;
+import spark.Request;
+import spark.Response;
 import spark.Spark;
 import zoomba.lang.core.types.ZTypes;
 
@@ -16,6 +18,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.BiPredicate;
 
 /*
 * https://stackoverflow.com/questions/7939137/what-http-status-code-should-be-used-for-wrong-input
@@ -43,10 +46,46 @@ public interface TypeSystem {
 
     String definitionsDir();
 
-    static TypeSystem fromConfig(Map<String,Object> config, String baseDir){
+    String ROUTES = "routes" ;
+    String LABELS = "labels" ;
+    String VERIFICATION = "verify" ;
 
+    interface Verification {
+        String INPUT = "in";
+        String OUTPUT = "out";
+        Map<String,Object> conf();
+        default boolean in(){
+           return ZTypes.bool( conf().getOrDefault(INPUT, true), true);
+        }
+        default boolean out(){
+            return ZTypes.bool( conf().getOrDefault(OUTPUT, false), false);
+        }
+    }
+
+    Verification verification();
+
+    interface StatusLabel extends BiPredicate<Request,Response> {
+        default String name() { return entry().getKey() ; };
+        default String expression() { return entry().getValue(); }
+        Map.Entry<String,String> entry();
+
+        @Override
+        default boolean test(Request request, Response response) {
+            try {
+                Scriptable scriptable = Scriptable.ZMB.create(Scriptable.INLINE, expression());
+                Object r = scriptable.exec(request,response);
+                return ZTypes.bool(r,false);
+            }catch (Throwable t){
+                return false;
+            }
+        }
+
+    }
+
+    static TypeSystem fromConfig(Map<String,Object> config, String baseDir){
+        Map<String,Object> routeConfig = (Map)config.getOrDefault( ROUTES, Collections.emptyMap());
         final Map<String,Map<String,Signature>> routes = new LinkedHashMap<>();
-        config.forEach( (path,v) -> {
+        routeConfig.forEach( (path,v) -> {
             Map<String,Map<String,String>> verbMap = (Map)v;
             Map<String,Signature> verbToSigMap = new LinkedHashMap<>();
             verbMap.forEach( (verb,c) -> {
@@ -56,6 +95,8 @@ public interface TypeSystem {
             routes.put(path, verbToSigMap );
         });
 
+        Map<String,Object> verificationConfig = (Map)config.getOrDefault( VERIFICATION, Collections.emptyMap());
+        final Verification verification = () -> verificationConfig;
         return new TypeSystem() {
             @Override
             public Map<String, Map<String,Signature>> routes() {
@@ -65,6 +106,11 @@ public interface TypeSystem {
             @Override
             public String definitionsDir() {
                 return baseDir;
+            }
+
+            @Override
+            public Verification verification() {
+                return verification;
             }
         };
     }
@@ -99,7 +145,7 @@ public interface TypeSystem {
 
     String PARSED_BODY = "_body" ;
 
-    default Filter schemaVerificationFilter(String path){
+    default Filter inputSchemaVerificationFilter(String path){
         // support only input as of now...
         return  (request, response) -> {
             final String verb = request.requestMethod().toLowerCase(Locale.ROOT);
@@ -124,7 +170,7 @@ public interface TypeSystem {
 
     default void attach(){
         routes().keySet().forEach( path -> {
-            Filter schemaVerifier = schemaVerificationFilter(path);
+            Filter schemaVerifier = inputSchemaVerificationFilter(path);
             Spark.before(path,schemaVerifier);
         });
     }

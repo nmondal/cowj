@@ -2,6 +2,7 @@ package cowj;
 
 import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
 import org.mozilla.javascript.engine.RhinoScriptEngineFactory ;
+import org.python.antlr.ast.Str;
 import org.python.core.Options;
 import org.python.jsr223.PyScriptEngineFactory;
 import spark.*;
@@ -106,7 +107,6 @@ public interface Scriptable  {
     // added for the shared memory access
     Map<String,Object> SHARED_MEMORY = new ConcurrentHashMap<>();
 
-
     String REQUEST = "req" ;
     String RESPONSE = "resp" ;
     String RESULT = "_res" ;
@@ -117,7 +117,7 @@ public interface Scriptable  {
     String SHARED = "_shared" ;
 
     String HALT_ERROR = "_ex" ;
-
+    String INLINE = "(.)" ;
 
     static String extension(String path){
         String[] arr = path.split("\\.");
@@ -149,18 +149,18 @@ public interface Scriptable  {
 
     Map<String, ZScript> zScripts = new HashMap<>(); // TODO ? Should be LRU? What?
 
-    static CompiledScript loadScript(String path) throws IOException, ScriptException {
+    static CompiledScript loadScript(String directive, String path) throws IOException, ScriptException {
         if ( scripts.containsKey(path) ) return scripts.get(path);
-        String content = new String(Files.readAllBytes(Paths.get(path)));
+        String content = INLINE.equals(directive) ? path : new String(Files.readAllBytes(Paths.get(path)));
         final ScriptEngine engine = getEngine(path);
         CompiledScript compiled = ((Compilable) engine).compile(content);
         scripts.put(path,compiled);
         return compiled;
     }
 
-    static ZScript loadZScript(String path)  {
+    static ZScript loadZScript(String directive, String path)  {
         if ( zScripts.containsKey(path) ) return zScripts.get(path);
-        final ZScript zScript = new ZScript(path, null); // no parent
+        final ZScript zScript = INLINE.equals( directive) ? new ZScript(path) : new ZScript(path, null); // no parent
         zScripts.put(path,zScript);
         return zScript;
     }
@@ -168,7 +168,7 @@ public interface Scriptable  {
     Creator NOP = (path, handler) -> bindings -> "";
 
     Creator JSR = (path, handler) -> (bindings) -> {
-        CompiledScript cs = loadScript(handler);
+        CompiledScript cs = loadScript(path, handler);
         bindings.put(DATA_SOURCE, DATA_SOURCES);
         bindings.put(TestAsserter.ASSERTER, (TestAsserter) () -> bindings);
         bindings.put( ENVIRON, System.getenv());
@@ -184,7 +184,7 @@ public interface Scriptable  {
     };
 
     Creator ZMB = (path, handler) -> (bindings) -> {
-        ZScript zs = loadZScript(handler);
+        ZScript zs = loadZScript(path, handler);
         ZContext.FunctionContext fc = new ZContext.FunctionContext( ZContext.EMPTY_CONTEXT , ZContext.ArgContext.EMPTY_ARGS_CONTEXT);
         bindings.put(DATA_SOURCE, DATA_SOURCES);
         bindings.put( ENVIRON, System.getenv());
