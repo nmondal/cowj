@@ -8,7 +8,7 @@ labels:
 
 verify:
   in: true
-  out: false
+  out: true
 
 routes:
   /person:

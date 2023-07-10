@@ -5,14 +5,12 @@
     {
       "properties": {
         "personId": {
-          "$id": "#/properties/personId",
           "type": "string"
         }},"required":["personId"]
     },
     {
       "properties": {
         "error": {
-          "$id": "#/properties/error",
           "type": "string"
         }},"required":["error"]
     }
