@@ -130,21 +130,62 @@ Corresponding schema is defined as: `app/samples/prod/types/schema.yaml`
 # Defines the Schemas for routes
 # https://json-schema.org/learn/miscellaneous-examples.html
 #####################
+labels: # how system knows which label to invoke 
+   ok:  "resp.status == 200" # when response status is 200 
+   err:  "resp.status != 200" # when it is not 
 
-/person:
-    post:
-      in: Person.json
-      ok: RetVal.json
-      err: RetVal.json
+verify:
+   in: true # verify input schema 
+   out: true # verify output schema, and log errors 
 
-/person/*:
-  get:
-    ok: Person.json
-    err: RetVal.json
+routes:
+   /person: # the route 
+       post:
+         in: Person.json # the input body schema 
+         ok: RetVal.json
+         err: RetVal.json
+   
+   /person/*:
+     get:
+       ok: Person.json
+       err: RetVal.json
 ```
+### Labels
+
+Special case is of input schema `in`, for the rest, how to know which output schema to map it from?
+This is done by `expression` labels. Under the hood system runs an expression evaluator.
+
+```java
+interface StatusLabel extends BiPredicate<Request,Response> {
+   String name() ;
+   String expression() ;
+}
+```
+This way, way more specific schema mapping can be done & checked with the validator.
+`name()` corresponds to the left hand side, for example `ok` is a name.
+`expression()` is the right hand side, which when evaluated to `true` corresponding schema will be applied.
+This name against schema is stored in the routes. 
+
+### Verify 
+
+This turns `on` and `off` input and output schema verification.
+Once a schema is attached the default configuration is follows:
+
+```yaml
+verify:
+   in: true # verify input schema 
+   out: false # do not verify output schema - classic someone else's problem
+```
+This whole schema verification technically can be done at the proxy API gateway layer.
+Validation takes a little amount, initially from `20ms` to load the schema, on a proper run it would take around 
+0 to 2 ms. 
+
+
+### Routes
 
 As one can see, we invert the `routes` with `path` in front, and then use the verbs.
 As each of these paths can be accessed with multiple `verb` we invert it.
+
 
 ## Type Definitions
 
@@ -162,14 +203,12 @@ This comes from `types/RetVal.json` :
     {
       "properties": {
         "personId": {
-          "$id": "#/properties/personId",
           "type": "string"
         }},"required":["personId"]
     },
     {
       "properties": {
         "error": {
-          "$id": "#/properties/error",
           "type": "string"
         }},"required":["error"]
     }
@@ -229,7 +268,8 @@ Validation errors are responded with `409` as discussed in [SO here](https://sta
 
 ## Output Schema Validation
 
-There is really no need for this, as of now.
+On success, nothing, except time taken gets logged. 
+On failure, the error gets logged, server keeps on running.
 
 ## Schema View
 
