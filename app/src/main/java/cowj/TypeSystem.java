@@ -198,7 +198,7 @@ public interface TypeSystem {
             if ( schemaPath.isEmpty() ) return;
             final String jsonSchemaPath = definitionsDir() + "/"+  schemaPath;
             SchemaValidator validator = loadSchema(jsonSchemaPath);
-            final String potentialJsonBody = request.body() ;
+            final String potentialJsonBody = response.body() ;
             JsonParser unvalidatedParser =
                     OBJECT_MAPPER.getFactory().createParser(potentialJsonBody);
             JsonParser validatedParser = API.decorateJsonParser(validator, unvalidatedParser);
