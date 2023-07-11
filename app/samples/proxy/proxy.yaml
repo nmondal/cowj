@@ -26,6 +26,11 @@ proxies:
   post:
     /echo: postman_echo/post
 
+filters:
+  before: # use for transforming the request to proxy request
+    /error: _/proxy_err.zm
+    /echo: _/proxy.zm
+
 plugins:
   cowj.plugins:
     curl: CurlWrapper::CURL
@@ -34,9 +39,7 @@ data-sources:
   postman_echo:
     type: curl
     url: https://postman-echo.com
-    proxy: _/proxy.zm # use for transforming the request to proxy request
 
   google:
     type: curl
     url: https://google.co.in
-    proxy: _/proxy_err.zm # use for transforming the request to proxy request

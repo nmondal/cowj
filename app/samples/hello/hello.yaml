@@ -76,7 +76,6 @@ data-sources:
   json_place:
     type: curl
     url: https://jsonplaceholder.typicode.com
-    proxy: _/proxy_transform.zm # use for transforming the request to proxy request
 
   # this is the proxy folder service
   local_send:

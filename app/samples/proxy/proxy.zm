@@ -1,2 +1,3 @@
 // return a proper map of headers, and body and query map
-{ "body" : "hello,proxy!" , "headers" : { "cowj" : "42" }, "query" : {:} }
+proxy_payload = { "body" : "hello,proxy!" , "headers" : { "cowj" : "42" }, "query" : {:} }
+req.attribute("_proxy", proxy_payload)
