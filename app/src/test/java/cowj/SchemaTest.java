@@ -29,6 +29,11 @@ public class SchemaTest {
         Assert.assertEquals( 2, typeSystem.routes().size());
     }
 
+    @Test
+    public void loadWrongFile(){
+        TypeSystem ts = TypeSystem.fromFile( "samples/prod/static/types/schema111.yaml");
+        Assert.assertEquals( TypeSystem.NULL, ts);
+    }
     ModelRunner mr;
 
     @Test
@@ -67,4 +72,10 @@ public class SchemaTest {
         Assert.assertNotNull(r);
         Assert.assertTrue( r.contains("Validation") );
     }
+
+    @Test
+    public void invalidExpressionTest(){
+        Assert.assertFalse(TypeSystem.testExpression(null, null, "foo"));
+    }
+
 }

@@ -122,15 +122,9 @@ public interface ModelRunner extends Runnable {
                 System.out.printf("%s -> %s -> %s %n", verb, r.getKey(), r.getValue());
             }
         }
-        if ( m.hasProperSchemaDefinition() ){
-           final String schemaPath =  m.schemaPath();
-           System.out.println("Schema is found in the system. Attaching...: " + schemaPath );
-           TypeSystem typeSystem = TypeSystem.fromFile(schemaPath);
-           typeSystem.attach();
-        }else{
-            System.err.println("No Schema is attached to the system!");
-        }
-
+        // load type system ...
+        TypeSystem typeSystem = TypeSystem.fromFile( m.schemaPath());
+        typeSystem.attach();
         // load filters
         System.out.println("Filters mapping are as follows...");
         Map<String, Map<String, String>> filters = m.filters();

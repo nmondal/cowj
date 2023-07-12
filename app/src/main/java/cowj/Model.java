@@ -55,11 +55,6 @@ public interface Model {
         return staticPath() + SCHEMA_DEFINITION ;
     }
 
-    default boolean hasProperSchemaDefinition(){
-        File f = new File( schemaPath() );
-        return f.exists();
-    }
-
     default String libPath(){
         return "_/lib" ;
     }

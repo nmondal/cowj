@@ -57,25 +57,18 @@ public interface TypeSystem {
     }
 
     Verification verification();
-    interface StatusLabel extends BiPredicate<Request,Response> {
-        default String name() { return entry().getKey() ; };
-        default String expression() { return entry().getValue(); }
-        Map.Entry<String,String> entry();
 
-        @Override
-        default boolean test(Request request, Response response) {
-            try {
-                Scriptable scriptable = Scriptable.ZMB.create(Scriptable.INLINE, expression());
-                Object r = scriptable.exec(request,response);
-                return ZTypes.bool(r,false);
-            }catch (Throwable t){
-                return false;
-            }
+    static boolean testExpression(Request request, Response response, String expression) {
+        try {
+            Scriptable scriptable = Scriptable.ZMB.create(Scriptable.INLINE, expression);
+            Object r = scriptable.exec(request,response);
+            return ZTypes.bool(r,false);
+        }catch (Throwable t){
+            return false;
         }
-
     }
 
-    Map<String,StatusLabel> statusLabels();
+    Map<String,String> statusLabels();
 
     static TypeSystem fromConfig(Map<String,Object> config, String baseDir){
         Map<String,Object> routeConfig = (Map)config.getOrDefault( ROUTES, Collections.emptyMap());
@@ -92,10 +85,7 @@ public interface TypeSystem {
 
         Map<String,Object> verificationConfig = (Map)config.getOrDefault( VERIFICATION, Collections.emptyMap());
         final Verification verification = () -> verificationConfig;
-
         Map<String,String> statusLabels = (Map)config.getOrDefault( LABELS, Collections.emptyMap());
-        Map<String,StatusLabel> statusLabelMap = new LinkedHashMap<>();
-        statusLabels.entrySet().forEach( e ->  statusLabelMap.put( e.getKey(), () -> e ));
 
         return new TypeSystem() {
             @Override
@@ -114,19 +104,25 @@ public interface TypeSystem {
             }
 
             @Override
-            public Map<String, StatusLabel> statusLabels() {
-                return statusLabelMap;
+            public Map<String, String> statusLabels() {
+                return statusLabels;
             }
         };
     }
+
+    TypeSystem NULL = fromConfig( Map.of( VERIFICATION,
+            Map.of( Verification.INPUT, false), Verification.OUTPUT, false) ,"");
 
     static TypeSystem fromFile( String filePath){
         try {
             File f = new File(filePath).getAbsoluteFile().getCanonicalFile();
             Map<String,Object> config = (Map)ZTypes.yaml(f.getPath(),true);
-            return fromConfig( config, f.getParent());
-        }catch (Throwable t){
-            throw new RuntimeException(t);
+            TypeSystem ts =  fromConfig( config, f.getParent());
+            System.out.println("Schema is found in the system. Attaching...: " + filePath );
+            return ts;
+        }catch (Throwable ignore){
+            System.err.println("No Valid Schema is attached to the system - returning NULL Type Checker!");
+            return NULL;
         }
     }
 
@@ -189,9 +185,9 @@ public interface TypeSystem {
             // which pattern matched?
             Optional<String> optLabel = signature.schemas().keySet().stream().filter( label -> {
                if ( Signature.INPUT.equals(label)) return false;
-               StatusLabel statusLabel = statusLabels().get( label );
-               if ( statusLabel == null ) return false;
-               return statusLabel.test(request,response);
+               String statusExpression = statusLabels().get( label );
+               if ( statusExpression == null ) return false;
+               return testExpression(request,response, statusExpression);
             }).findFirst();
             if ( optLabel.isEmpty() ) return;
             final String schemaPath = signature.schema(optLabel.get());
