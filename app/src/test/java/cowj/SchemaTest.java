@@ -4,9 +4,18 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import spark.Filter;
+import spark.Request;
+import spark.Response;
 import zoomba.lang.core.types.ZTypes;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SchemaTest {
 
@@ -78,4 +87,23 @@ public class SchemaTest {
         Assert.assertFalse(TypeSystem.testExpression(null, null, "foo"));
     }
 
+    @Test
+    public void outVerificationBranchesTest() throws Exception {
+        Request request = mock(Request.class);
+        Response response = mock(Response.class);
+        Map<String,Object> nullSig = new HashMap<>();
+        nullSig.put("put", Collections.emptyMap());
+        when(request.requestMethod()).thenReturn("post");
+        TypeSystem ts = TypeSystem.fromConfig( Map.of( TypeSystem.ROUTES,
+                Map.of("/foo", nullSig)) , "");
+        Filter f = ts.inputSchemaVerificationFilter( "/foo");
+        f.handle( request, response); // should be no error here
+        Assert.assertTrue(true);
+
+        ts = TypeSystem.fromConfig( Map.of( TypeSystem.ROUTES,
+                Map.of("/foo", Map.of("post", Map.of( "in", "" )))) , "");
+        f = ts.inputSchemaVerificationFilter( "/foo");
+        f.handle( request, response); // should be no error here
+        Assert.assertTrue(true);
+    }
 }
