@@ -88,7 +88,7 @@ public class SchemaTest {
     }
 
     @Test
-    public void outVerificationBranchesTest() throws Exception {
+    public void inVerificationBranchesTest() throws Exception {
         Request request = mock(Request.class);
         Response response = mock(Response.class);
         Map<String,Object> nullSig = new HashMap<>();
@@ -105,5 +105,42 @@ public class SchemaTest {
         f = ts.inputSchemaVerificationFilter( "/foo");
         f.handle( request, response); // should be no error here
         Assert.assertTrue(true);
+    }
+
+    @Test
+    public void outVerificationBranchesTest() throws Exception {
+        Request request = mock(Request.class);
+        Response response = mock(Response.class);
+        Map<String,Object> nullSig = new HashMap<>();
+        nullSig.put("put", Collections.emptyMap());
+        when(request.requestMethod()).thenReturn("post");
+        TypeSystem ts = TypeSystem.fromConfig( Map.of( TypeSystem.ROUTES,
+                Map.of("/foo", nullSig)) , "");
+        Filter f = ts.outputSchemaVerificationFilter( "/foo");
+        f.handle( request, response); // should be no error here
+        Assert.assertTrue(true);
+
+        ts = TypeSystem.fromConfig( Map.of(
+                TypeSystem.LABELS, Map.of( "xx", "" ),
+                TypeSystem.ROUTES,
+                Map.of("/foo", Map.of("post", Map.of(
+                        "in", "foo.json",
+                        "zz", ""
+                )))) , "");
+        f = ts.outputSchemaVerificationFilter( "/foo");
+        f.handle( request, response); // should be no error here
+        Assert.assertTrue(true);
+
+        ts = TypeSystem.fromConfig( Map.of(
+                TypeSystem.LABELS, Map.of( "xx", "true" ),
+                TypeSystem.ROUTES,
+                Map.of("/foo", Map.of("post", Map.of(
+                        "in", "foo.json",
+                        "xx", ""
+                )))) , "");
+        f = ts.outputSchemaVerificationFilter( "/foo");
+        f.handle( request, response); // should be no error here
+        Assert.assertTrue(true);
+
     }
 }
