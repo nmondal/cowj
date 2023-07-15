@@ -55,6 +55,7 @@ public class AuthTest {
     public void loadWrongFile(){
         AuthSystem as = AuthSystem.fromFile( "samples/auth_demo/auth/auth111.yaml");
         Assert.assertEquals( AuthSystem.NULL, as);
+        Assert.assertTrue( as.policy().isEmpty());
     }
 
     @Test
