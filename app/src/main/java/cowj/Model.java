@@ -63,8 +63,8 @@ public interface Model {
         return Collections.emptyMap();
     }
 
-    default Map<String,String> auth(){
-        return Collections.emptyMap();
+    default String auth(){
+        return interpretPath( AUTH_DEFINITION ) ;
     }
 
     default Map<String, Map<String,String>> filters(){
@@ -111,6 +111,8 @@ public interface Model {
 
     String SCHEMA_DEFINITION = "/types/schema.yaml" ;
 
+    String AUTH_DEFINITION = "_/auth/auth.yaml" ;
+
     static Model from(final Map<String,Object> map, final String baseDir){
 
         return new Model() {
@@ -149,8 +151,8 @@ public interface Model {
             }
 
             @Override
-            public Map<String, String> auth() {
-                return (Map) map.getOrDefault( AUTH, Model.super.auth());
+            public String auth() {
+                return interpretPath(map.getOrDefault( AUTH, Model.super.auth()).toString());
             }
 
             @Override

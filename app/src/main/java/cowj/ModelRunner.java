@@ -122,6 +122,9 @@ public interface ModelRunner extends Runnable {
                 System.out.printf("%s -> %s -> %s %n", verb, r.getKey(), r.getValue());
             }
         }
+        // load auth...
+        AuthSystem authSystem = AuthSystem.fromFile(m.auth());
+        authSystem.attach( m.staticPath() );
         // load type system ...
         TypeSystem typeSystem = TypeSystem.fromFile( m.schemaPath());
         typeSystem.attach();
