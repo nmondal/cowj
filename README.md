@@ -129,8 +129,7 @@ data-sources:
   json_place:
     type: curl
     url: https://jsonplaceholder.typicode.com
-    proxy: _/proxy_transform.zm # responsible for message transform
-
+    
 cron:
   cache:
     exec: _/cache.md
@@ -368,40 +367,47 @@ localhost:5003/users
 
 System responds back with the same status as of the external web service as well as the response from the web service gets transferred back to the original caller.
 
-This `transform` is coded in the `curl` type as follows:
+Proxies can be used to transform the payload to the external server, as well as can be used to transform back the data from the external server.
 
-```yaml
-data-sources:
-  json_place:
-    type: curl
-    url: https://jsonplaceholder.typicode.com
-    proxy: _/proxy_transform.zm # responsible for message transform
-```
+First one we call "forward" transform, and the other one "reverse" transform.
 
-The `proxy` section has the script to transform the following to be forwarded to the destination server :
 
-1. `request` object 
-2. `headers` has a mutable map of request headers 
-3. `queries` has mutable map of all query parameters 
-4. `body` has the string which is `request.body()` 
 
-Evidently at a forward proxy level, these are the parameters one can change before forwarding it to destination.
+#### Forward Transform
 
-The transformation function / script is expected to return a map of the form:
+This is easy with the `before` filter. The idea is as follows:
 
-```javascript
-{
-  headers : {
+```scala
+// before.zm 
+forward_payload = {
+  "headers" : {
     key : value
   },
-  query : {
+  "query" : {
     key : value
   },  
-  body : "request body"
+  "body" : "request body"
 }
+req.attribute("_proxy", forward_payload) 
 ```
 
-In case the script does not return a map - pushed values will be used to be extracted from the script context and used as a response. 
+
+
+As for the payload it has the following to be forwarded to the destination server :
+
+1. `headers` has a mutable map of request headers 
+2. `queries` has mutable map of all query parameters 
+3. `body` as the request body 
+
+The underlying system picks up the request attribute named `_proxy` as present, and then forwards it to the destination server.
+
+
+
+#### Reverse Transform
+
+This is easily doable by the `after` filter.  Just intercept the response, and we can do whatever we want to do with it.
+
+
 
 ## Type System
 
