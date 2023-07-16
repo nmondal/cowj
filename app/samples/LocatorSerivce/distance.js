@@ -20,7 +20,7 @@ person2 = input.person_id_2;
 
 // utilities
 function getDataFromSql(person, jdbc, redis) {
-findPerson = `select * from locationService.locations where person_id = "${person}";`;
+findPerson = `select * from locationService.latestLocation where person_id = "${person}";`;
 con = jdbc.connection().value();
 stmt = con.createStatement()
 data = stmt.executeQuery(findPerson)
@@ -61,6 +61,7 @@ dist = 0
 d1 = isRedisActive ? JSON.parse(redis.get(person1)) : undefined;
 d2 = isRedisActive ? JSON.parse(redis.get(person2)) : undefined;
 
+Test.print('test')
 if(!d1 || !isRedisActive) {
 d1 = getDataFromSql(person1, jdbc, redis);
 }

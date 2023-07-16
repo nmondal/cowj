@@ -12,12 +12,15 @@ update the connection URL for both in the service.yaml file
 
 > **_Run the below table creation command in mysql  :_**  
 > 
-> Create database locationService;
+>Create database locationService; 
 > 
-> CREATE TABLE locations (person_id VARCHAR(255), data JSON);
+>CREATE TABLE latestLocation (person_id VARCHAR(255), data JSON);
 > 
-> alter table locations ADD CONSTRAINT UQ_person_id UNIQUE(person_id);
->
+> alter table latestLocation ADD CONSTRAINT UQ_person_id UNIQUE(person_id); 
+> 
+> CREATE TABLE locations (person_id VARCHAR(255), data JSON, created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); 
+> 
+>alter table locations ADD CONSTRAINT UQ_location_time UNIQUE(person_id, created_date);
 
 APIs -
 

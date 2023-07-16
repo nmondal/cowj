@@ -21,4 +21,9 @@ routes:
       in: registerPersonInput.json
       ok: registerPersonRetVal.json
       err: registerPersonRetVal.json
+  /locations:
+    post:
+      in: locationsInput.json
+      ok: locationsRetVal.json
+      err: locationsRetVal.json
 

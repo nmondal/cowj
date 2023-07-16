@@ -4,28 +4,13 @@
   "oneOf" : [
     {
       "properties": {
-        "distance": {
+        "person_id": {
           "type": "string"
         },
-        "unit": {
-          "type": "string"
-        },
-        "last_seen": {
-          "type": "array",
-          "items": {
-            "additionalProperties": true,
-            "properties": {
-              "person": {
-                "type": "string"
-              },
-              "last_seen": {
-                "type": "string"
-              }
-            },
-            "required": ["person"]
-          }
+        "locations": {
+          "type": "array"
         }
-      },"required":["distance", "unit"]
+      },"required":["person_id", "locations"]
     },
     {
       "properties": {

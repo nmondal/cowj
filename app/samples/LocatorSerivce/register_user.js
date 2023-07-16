@@ -26,7 +26,7 @@ redis.set(input.personId, JSON.stringify( { latitude : input.latitude, longitude
 }
 
 // insert or update the data to mysql table. This can be moved to a async processor to further speed up the API
-findPerson = `select * from locationService.locations where person_id = "${input.personId}";`;
+findPerson = `select * from locationService.latestLocation where person_id = "${input.personId}";`;
 con = jdbc.connection().value();
 stmt = con.createStatement()
 data = stmt.executeQuery(findPerson)
@@ -39,16 +39,30 @@ while (data.next())
 
 if(res == '') {
 // insert a new entry
-insertSql = `insert into locations VALUES( "${input.personId}" ,'{"latitude": "${input.latitude}", "longitude":  "${input.longitude}", "last_seen":  "${lastSeen}"}');`
+insertSql = `insert into latestLocation VALUES( "${input.personId}" ,'{"latitude": "${input.latitude}", "longitude":  "${input.longitude}", "last_seen":  "${lastSeen}"}');`
 stmt = con.createStatement()
 data = stmt.execute(insertSql)
 } else {
 // update existing entry
-updateSql = `UPDATE locations
+updateSql = `UPDATE latestLocation
  set data = '{"latitude": "${input.latitude}", "longitude":  "${input.longitude}", "last_seen":  "${lastSeen}"}'
  where person_id = "${input.personId}" ;`
  stmt = con.createStatement()
  data = stmt.execute(updateSql)
+}
+
+registerLocation = `insert into locations VALUES( "${input.personId}" ,'{"latitude": "${input.latitude}", "longitude":  "${input.longitude}", "last_seen":  "${lastSeen}"}', now());`
+
+try {
+stmt = con.createStatement()
+data = stmt.execute(registerLocation)
+}
+catch(err) {
+// need better way to assert on the err object
+if(err.toString().startsWith('JavaException: java.sql.SQLIntegrityConstraintViolationException')) {
+Test.expect(false, 'duplicate request', 409 )
+}
+throw err;
 }
 
 JSON.stringify( { last_seen : lastSeen})
