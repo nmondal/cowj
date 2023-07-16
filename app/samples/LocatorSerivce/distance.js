@@ -12,11 +12,10 @@ isRedisActive = false
 }
 
 
-// request body as JSON
-// schema validation for GET call not working
-input = JSON.parse(req.body());
-person1 = input.person_id_1;
-person2 = input.person_id_2;
+// request body
+input = req.attribute("_body");
+person1 = input.get("person_id_1");
+person2 = input.get("person_id_2");
 
 // utilities
 function getDataFromSql(person, jdbc, redis) {

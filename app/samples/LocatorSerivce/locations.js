@@ -3,10 +3,10 @@ jdbc = _ds.get('pgsql')
 
 // request body as JSON
 // schema validation for GET call not working
-input = JSON.parse(req.body());
-person = input.person_id;
-startTime = input.start_time;
-endTime = input.end_time;
+input = req.attribute("_body");
+person = input.get('person_id')
+startTime = input.get('start_time')
+endTime = input.get('end_time')
 
 // utilities
 function getDataFromSql(person, startTime, endTime, jdbc) {

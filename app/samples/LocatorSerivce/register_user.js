@@ -12,21 +12,24 @@ isRedisActive = false
 
 
 // request body as JSON
-input = JSON.parse(req.body())
+input = req.attribute("_body");
+latitude = input.get('latitude')
+longitude = input.get('longitude')
+personId = input.get('personId')
 
 //business logic
-invalidLocation = parseInt(input.latitude) > 180 || parseInt(input.latitude) < -180
- || parseInt(input.longitude) > 180 || parseInt(input.longitude) < -180
+invalidLocation = parseInt(latitude) > 180 || parseInt(latitude) < -180
+ || parseInt(longitude) > 180 || parseInt(longitude) < -180
 
 Test.expect(!invalidLocation, "invalid location coordinates", 422 )
 
 lastSeen = Date.now()
 if(isRedisActive) {
-redis.set(input.personId, JSON.stringify( { latitude : input.latitude, longitude : input.longitude, last_seen : lastSeen}))
+redis.set(personId, JSON.stringify( { latitude : latitude, longitude : longitude, last_seen : lastSeen}))
 }
 
 // insert or update the data to mysql table. This can be moved to a async processor to further speed up the API
-findPerson = `select * from locationService.latestLocation where person_id = "${input.personId}";`;
+findPerson = `select * from locationService.latestLocation where person_id = "${personId}";`;
 con = jdbc.connection().value();
 stmt = con.createStatement()
 data = stmt.executeQuery(findPerson)
@@ -39,19 +42,19 @@ while (data.next())
 
 if(res == '') {
 // insert a new entry
-insertSql = `insert into latestLocation VALUES( "${input.personId}" ,'{"latitude": "${input.latitude}", "longitude":  "${input.longitude}", "last_seen":  "${lastSeen}"}');`
+insertSql = `insert into latestLocation VALUES( "${personId}" ,'{"latitude": "${latitude}", "longitude":  "${longitude}", "last_seen":  "${lastSeen}"}');`
 stmt = con.createStatement()
 data = stmt.execute(insertSql)
 } else {
 // update existing entry
 updateSql = `UPDATE latestLocation
- set data = '{"latitude": "${input.latitude}", "longitude":  "${input.longitude}", "last_seen":  "${lastSeen}"}'
- where person_id = "${input.personId}" ;`
+ set data = '{"latitude": "${latitude}", "longitude":  "${longitude}", "last_seen":  "${lastSeen}"}'
+ where person_id = "${personId}" ;`
  stmt = con.createStatement()
  data = stmt.execute(updateSql)
 }
 
-registerLocation = `insert into locations VALUES( "${input.personId}" ,'{"latitude": "${input.latitude}", "longitude":  "${input.longitude}", "last_seen":  "${lastSeen}"}', now());`
+registerLocation = `insert into locations VALUES( "${personId}" ,'{"latitude": "${latitude}", "longitude":  "${longitude}", "last_seen":  "${lastSeen}"}', now());`
 
 try {
 stmt = con.createStatement()
