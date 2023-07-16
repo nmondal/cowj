@@ -2,6 +2,16 @@
 redis = _ds.get('redis')
 jdbc = _ds.get('pgsql')
 
+
+isRedisActive = true
+try {
+redis.ping()
+}
+catch(err) {
+isRedisActive = false
+}
+
+
 // request body as JSON
 // schema validation for GET call not working
 input = JSON.parse(req.body());
@@ -21,8 +31,10 @@ while (data.next())
       res = data.getString('data');
       }
       if(res != '') {
-      redis.set(person, d)
-      res = JSON.parse(d)
+      if(isRedisActive) {
+      redis.set(person, res)
+      }
+      res = JSON.parse(res)
       }
       return res;
 }
@@ -46,13 +58,13 @@ function distance(lat1, lon1, lat2, lon2, unit) {
 //business logic
 
 dist = 0
-d1 = JSON.parse(redis.get(person1));
-d2 = JSON.parse(redis.get(person2));
+d1 = isRedisActive ? JSON.parse(redis.get(person1)) : undefined;
+d2 = isRedisActive ? JSON.parse(redis.get(person2)) : undefined;
 
-if(!d1) {
+if(!d1 || !isRedisActive) {
 d1 = getDataFromSql(person1, jdbc, redis);
 }
-if(!d2) {
+if(!d2 || !isRedisActive) {
 d2 = getDataFromSql(person2, jdbc, redis);
 }
 

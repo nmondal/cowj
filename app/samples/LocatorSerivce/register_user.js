@@ -2,6 +2,15 @@
 redis = _ds.get('redis')
 jdbc = _ds.get('pgsql')
 
+isRedisActive = true
+try {
+redis.ping()
+}
+catch(err) {
+isRedisActive = false
+}
+
+
 // request body as JSON
 input = JSON.parse(req.body())
 
@@ -12,7 +21,9 @@ invalidLocation = parseInt(input.latitude) > 180 || parseInt(input.latitude) < -
 Test.expect(!invalidLocation, "invalid location coordinates", 422 )
 
 lastSeen = Date.now()
+if(isRedisActive) {
 redis.set(input.personId, JSON.stringify( { latitude : input.latitude, longitude : input.longitude, last_seen : lastSeen}))
+}
 
 // insert or update the data to mysql table. This can be moved to a async processor to further speed up the API
 findPerson = `select * from locationService.locations where person_id = "${input.personId}";`;
