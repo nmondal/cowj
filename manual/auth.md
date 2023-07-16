@@ -1,19 +1,15 @@
 # Auth
 
-[toc]
-
+[TOC]
 
 Cowj supports `auth` using `JCasbin`.
-
 
 ## Design Ideas
 
 Design goal of this has been to do authorization verification for  `Request`.
 Cowj is not responsible for Authentication.
 
-
 ### Options
-
 
 ## Special  Location for Auth
 
@@ -25,6 +21,9 @@ then the designated auth file is : `/something/auth/auth.yaml`.
 
 This was done in purpose, to ensure fixed location for `auth`. 
 
+
+
+Although that is not really the design, technically one can override the `auth()` function in the model to move auth to any other file location.
 
 ## Auth Configuration
 
@@ -40,16 +39,18 @@ policy:
   # for a file type, CSV is the way
   file: policy.csv
 message: "thou shall not pass!"
-
 ```
 
 #### Disabled
+
 Is the auth to be disabled - so that it won't be used it `true`. Default value `false`.
 
-#### User Header 
+#### User Header
+
 The header key which shall have the user's id. Default is `username` .
 
-#### Casbin Model 
+#### Casbin Model
+
 There is a fixed location `auth/model.conf` is the location of the model file.
 
 ```toml
@@ -79,19 +80,21 @@ Currently only supports `file` adapter, which must have `file` key to point to t
 be present in the `auth` folder itself.
 
 #### Message
-Used to deliver the un-auth message to the user.
 
+Used to deliver the un-auth message to the user.
 
 ## References
 
-1.  Casbin :  
+1. Casbin :  https://casbin.org 
 
-2. JCasbin : 
+2. JCasbin : [GitHub - casbin/jcasbin: An authorization library that supports access control models like ACL, RBAC, ABAC in Java](https://github.com/casbin/jcasbin)
 
-3. Casbin Adapters : 
+3. Casbin Adapters : https://casbin.org/docs/adapters 
 
-4. RBAC : 
+4. Access Control : [Computer access control - Wikipedia](https://en.wikipedia.org/wiki/Computer_access_control) 
 
-5. ABAC : 
+5. RBAC : [Role-based access control - Wikipedia](https://en.wikipedia.org/wiki/Role-based_access_control)  
 
+6. ABAC :  [Attribute-based access control - Wikipedia](https://en.wikipedia.org/wiki/Attribute-based_access_control) 
+   
    

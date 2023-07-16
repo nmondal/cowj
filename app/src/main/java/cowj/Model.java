@@ -151,11 +151,6 @@ public interface Model {
             }
 
             @Override
-            public String auth() {
-                return interpretPath(map.getOrDefault( AUTH, Model.super.auth()).toString());
-            }
-
-            @Override
             public Map<String, Map<String,Object>> cron() {
                 return (Map) map.getOrDefault( CRON_JOBS, Model.super.cron());
             }
