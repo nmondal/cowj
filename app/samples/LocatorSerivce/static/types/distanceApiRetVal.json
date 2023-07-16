@@ -19,7 +19,7 @@
                 "type": "string"
               },
               "last_seen": {
-                "type": "string"
+                "type": "integer"
               }
             },
             "required": ["person"]
