@@ -1,6 +1,6 @@
 Locator Service - 
 
-This service exposes to two APIs one to be used by the users to update their respective location as longitude and latitude coordinates.
+This service exposes two APIs one to be used by the users to update their respective location as longitude and latitude coordinates.
 The other API to be used to query between two user and get the distance between them in kilometers.
 
 SETUP -
@@ -21,7 +21,7 @@ update the connection URL for both in the service.yaml file
 
 APIs -
 
-1) POST /user/poll : users can poll theis API to update their recent location coordinates.
+1) POST /user/poll : users can poll this API to update their recent location coordinates.
     This API also return a UNIX timestamp stating the time at which service acknowledged there request.
 2) GET /calculateDistance : Query between two users. Also returns a last seen timestamp for both the users.
 
@@ -58,6 +58,8 @@ APIs -
 
 > **_Limitations :_**  
 > person_id needs to unique
+> 
 > request schema validation is not working for GET /calculateDistance. schema validation works when API is converted to POST API.
+>
 > logging not working with console.log or print() for javascript
 
