@@ -61,7 +61,6 @@ dist = 0
 d1 = isRedisActive ? JSON.parse(redis.get(person1)) : undefined;
 d2 = isRedisActive ? JSON.parse(redis.get(person2)) : undefined;
 
-Test.print('test')
 if(!d1 || !isRedisActive) {
 d1 = getDataFromSql(person1, jdbc, redis);
 }

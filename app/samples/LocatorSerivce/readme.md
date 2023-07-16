@@ -26,8 +26,8 @@ APIs -
 
 1) POST /user/poll : users can poll this API to update their recent location coordinates.
     This API also return a UNIX timestamp stating the time at which service acknowledged there request.
-2) GET /calculateDistance : Query between two users. Also returns a last seen timestamp for both the users.
-
+2) POST /calculateDistance : Query between two users. Also returns a last seen timestamp for both the users.
+3) POST /locations : get all the location coordinates for a user between certain time interval
 
 > **_Samples :_**  
 > **POST /user/poll**
@@ -40,7 +40,7 @@ APIs -
 > response - {"last_seen":1689487420383}
 > 
 > 
-> **GET /calculateDistance**
+> **POST /calculateDistance**
 > 
 >curl --location --request GET 'http://localhost:5006/calculateDistance' \
       --header 'Content-Type: text/plain' \
@@ -57,12 +57,19 @@ APIs -
 > 
 > {"distance":"0","unit":"KM","last_seen":[{"person":"tesUser1","last_seen":1689451613443},{"person":"tesUser3"}]} 
 >
-
+> 
+>  **POST /locations**
+> 
+> curl --location 'http://localhost:5006/locations' \
+--header 'Content-Type: text/plain' \
+--data '{ "person_id" : "hardik", "start_time" : "2018-01-01 12:00:00", "end_time" : "2024-01-01 23:30:00" }'
+> 
+> response - {"person_id":"hardik","locations":[{"latitude":"1.001","last_seen":"2023-07-16
+16:55:11","longitude":"111.36"},{"latitude":"1.001","last_seen":"2023-07-16
+17:02:36","longitude":"111.36"}]}
+> 
 
 > **_Limitations :_**  
 > person_id needs to unique
-> 
-> request schema validation is not working for GET /calculateDistance. schema validation works when API is converted to POST API.
->
-> logging not working with console.log or print() for javascript
+
 
