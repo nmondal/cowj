@@ -28,8 +28,6 @@ Cowj let's you build back-end systems :
 
 via configurations and scripts. It's backbone is written using `spark-11`,  `jetty-11` ,  `quartz` and `casbin`. 
 
-
-
 ### Very Fast `Hello World`
 
 1. Download the appropriate binary - or build to that you have the `cowj-jar`  ready with `./deps`  pointing to dependencies.
@@ -41,8 +39,6 @@ via configurations and scripts. It's backbone is written using `spark-11`,  `jet
 4. Inside `static` folder created `index.html` and write down `hello, world!`.
 
 5. Inside the `hello` folder create a `hello.yaml` file as follows:
-
-
 
 ```yaml
 # hello/hello.yaml
@@ -59,13 +55,9 @@ Open browser and visit `localhost:8080/index.html`  you will see `hello,world`.
 
 That is it. That is  all it takes to setup a `Cowj` server.
 
-
-
 What about actual service endpoints?
 
 Just type down these into the `hello.yaml` :
-
-
 
 ```yaml
 # hello/hello.yaml
@@ -88,11 +80,7 @@ You would get back `Hello, World!`.
 
 What is really happening here is Cowj system is detecting an expression written using `js` engine - and evaluating and returning.
 
-
-
 One can of course, for betterment move the expression from inside to outside, e.g. create a file `hello.js` in the `hello` folder, and then update the `hello.yaml` as follows:
-
-
 
 ```yaml
 # hello/hello.yaml
@@ -114,8 +102,6 @@ Now, restart cowj, run the same curl command - and voila, you would have `Hello,
 As you can see, code is configuration and configuration is code in Cowj.
 
 With this note, we shall dive into the world of BED - back end development.
-
-
 
 ## Back End Development
 
@@ -276,6 +262,10 @@ The context is defined as:
 https://sparkjava.com/documentation#request
 
 https://sparkjava.com/documentation#response
+
+A good read about why we try to avoid type systems inside can be found here:
+
+[Clojure vs. The Static Typing World](https://ericnormand.me/article/clojure-and-types)
 
 #### Shared Memory
 
