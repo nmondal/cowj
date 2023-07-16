@@ -18,7 +18,10 @@ data = stmt.executeQuery(findPerson)
 res = [];
 while (data.next())
       {
-      res.push(data.getString('data'));
+      resTemp = JSON.parse(data.getString('data'));
+      timeStamp = data.getString('created_date');
+      resTemp.last_seen = timeStamp;
+      res.push(resTemp)
       }
       return res;
 }
@@ -41,6 +44,7 @@ while (data.next())
 }
 
 //business logic
+
 data = [];
 if(checkIfUserRegistered(person, jdbc) != '') {
 dataTemp = getDataFromSql(person, startTime, endTime, jdbc);
