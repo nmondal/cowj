@@ -1,0 +1,17 @@
+{
+  "$id": "https://github.com/nmondal/cowj/prod/person.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "distanceApiInput",
+  "type": "object",
+  "properties": {
+    "person_id_1": {
+      "type": "string",
+      "description": "user 1 id"
+    },
+    "person_id_2": {
+      "type": "string",
+      "description": "user 2 id"
+    }
+  },
+  "required": ["person_id_1", "person_id_2" ]
+}

@@ -1,0 +1,37 @@
+{
+  "$id": "https://github.com/nmondal/cowj/prod/retval.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "oneOf" : [
+    {
+      "properties": {
+        "distance": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "last_seen": {
+          "type": "array",
+          "items": {
+            "additionalProperties": true,
+            "properties": {
+              "person": {
+                "type": "string"
+              },
+              "last_seen": {
+                "type": "string"
+              }
+            },
+            "required": ["person"]
+          }
+        }
+      },"required":["distance", "unit"]
+    },
+    {
+      "properties": {
+        "error": {
+          "type": "string"
+        }},"required":["error"]
+    }
+  ]
+}
