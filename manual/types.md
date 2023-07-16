@@ -260,6 +260,9 @@ Once we turn on the schema validation, then, the system automatically validates 
 // ZoomBA 
 assert( "_body" @ req.attributes() , "How come req.body failed to verify and come here?" , 409 )
 payload = req.attribute("_body") // this should already have the parsed data
+
+// javascript
+payload = req.body()
 ```
 
 ### On Validation Error

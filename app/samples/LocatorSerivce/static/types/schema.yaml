@@ -11,13 +11,15 @@ verify:
   out: true
 
 routes:
-  /person:
-      post:
-        in: Person.json
-        ok: RetVal.json
-        err: RetVal.json
-
-  /person/*:
+  /calculateDistance:
+#     this does not work for GET calls
     get:
-      ok: Person.json
-      err: RetVal.json
+      in: distanceApiInput.json
+      ok: distanceApiRetVal.json
+      err: distanceApiRetVal.json
+  /user/poll:
+    post:
+      in: registerPersonInput.json
+      ok: registerPersonRetVal.json
+      err: registerPersonRetVal.json
+

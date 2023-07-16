@@ -1,7 +1,7 @@
 {
   "$id": "https://github.com/nmondal/cowj/prod/person.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Person",
+  "title": "registerPersonInput",
   "type": "object",
   "properties": {
     "personId": {
