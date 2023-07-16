@@ -46,6 +46,8 @@ while (data.next())
 //business logic
 
 data = [];
+try {
+
 if(checkIfUserRegistered(person, jdbc) != '') {
 dataTemp = getDataFromSql(person, startTime, endTime, jdbc);
 if(dataTemp != '') {
@@ -53,6 +55,10 @@ data = dataTemp;
 }
 } else {
 Test.expect(false, 'User not found', 404 )
+}
+
+} catch (err) {
+Test.expect(false, err, 400 )
 }
 
 //return value
