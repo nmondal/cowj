@@ -414,6 +414,13 @@ This is easily doable by the `after` filter.  Just intercept the response, and w
 We support `json schema` based input validation.
 To read more see [Writing Input Validations](manual/types.md)
 
+
+## Auth
+
+We support `casbin` based Auth.
+To read more see [Embedding Auth](manual/auth.md)
+
+
 ## Running
 
 1. Build the app.

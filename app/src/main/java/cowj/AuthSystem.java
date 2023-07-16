@@ -28,7 +28,7 @@ public interface AuthSystem {
 
     String MODEL_FILE = "model.conf" ;
     String POLICY_FILE_NAME = "policy.csv" ;
-    String POLICY_FILE_KEY = "name" ;
+    String POLICY_FILE_KEY = "file" ;
 
     String DISABLED = "disabled" ;
     String MESSAGE = "message" ;
