@@ -1,0 +1,21 @@
+{
+  "$id": "https://github.com/nmondal/cowj/prod/person.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Person",
+  "type": "object",
+  "properties": {
+    "personId": {
+      "type": "string",
+      "description": "The person's first name."
+    },
+    "latitude": {
+      "type": "string",
+      "description": "latitude"
+    },
+    "longitude": {
+      "description": "longitude",
+      "type": "string"
+    }
+  },
+  "required": ["personId", "latitude" , "longitude"]
+}

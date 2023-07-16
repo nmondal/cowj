@@ -1,0 +1,23 @@
+#####################
+# Defines the Schemas for routes
+# https://json-schema.org/learn/miscellaneous-examples.html
+#####################
+labels:
+  ok:  "resp.status == 200"
+  err:  "resp.status != 200"
+
+verify:
+  in: true
+  out: true
+
+routes:
+  /person:
+      post:
+        in: Person.json
+        ok: RetVal.json
+        err: RetVal.json
+
+  /person/*:
+    get:
+      ok: Person.json
+      err: RetVal.json

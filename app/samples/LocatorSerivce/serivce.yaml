@@ -1,0 +1,95 @@
+# This is the sample routes file
+# basic support are given
+
+# port in which to connect
+port: 5003
+
+# for all static files, js, html pages, pds and what not
+static: _/.
+
+# to load all external jars which are not part of the distribution
+lib: _/lib
+
+# threading related stuff
+threading:
+  min: 4
+  max : 8
+  timeout: 30000
+
+# path mapping
+routes:
+  get:
+    /hello/g: _/hello.groovy
+    /hello/j: _/hello.js
+    /hello/p: _/hello.py
+    /hello/z: _/hello.zm
+    /hello/b: "cowj.plugins.SampleJVMScriptable.class"
+    /notification: _/notification.zm
+    # error routes
+    /error/z: _/error.zm
+    /error/j: _/error.js
+    /runtime_error: _/../test_scripts/runtime_error.js
+
+  post:
+    /hello: _/hello.zm
+    /users/poll: _/register_user.js
+
+
+proxies:
+  get:
+    /users: json_place/users
+  post:
+    /users: json_place/users
+    /local: local_send/send
+
+filters:
+  before:
+    "*" : _/before.zm
+  after:
+    "*": _/after.zm
+
+plugins:
+  cowj.plugins:
+    curl: CurlWrapper::CURL
+    fcm: FCMWrapper::FCM
+    g_storage: GoogleStorageWrapper::STORAGE
+    jdbc: JDBCWrapper::JDBC
+    redis: RedisWrapper::REDIS
+
+
+data-sources:
+
+  redis :
+    type : redis
+    urls: [ "localhost:6379"]
+
+  pgsql:
+    type: jdbc
+    driver: ""
+    connection : ""
+    properties:
+      a: b
+      x: y
+
+  g_storage:
+    type: g_storage
+
+  json_place:
+    type: curl
+    url: https://jsonplaceholder.typicode.com
+
+  # this is the proxy folder service
+  local_send:
+    type: curl
+    url: "http://localhost:5004"
+
+  fcm:
+    type: fcm
+    credentials_file: _/credentials.json
+
+cron:
+  r:
+    exec: _/cron.zm
+    boot: true
+    at: "0/30 * * * * ? *"
+    # https://stackoverflow.com/questions/35214149/cron-expression-for-every-30-seconds-in-quartz-scheduler
