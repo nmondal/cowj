@@ -71,6 +71,22 @@ public class AuthTest {
     }
 
     @Test
+    public void nonMemberAccessTest(){
+        //  no get entity access
+        EitherMonad<ZWeb.ZWebCom> em = get("http://localhost:6042", "/entity/1111", "foo");
+        Assert.assertFalse( em.inError() );
+        Assert.assertEquals( 403, em.value().status );
+        // should be able to do static access...
+        em = get("http://localhost:6042", "/hello.json", "foo");
+        Assert.assertFalse( em.inError() );
+        Assert.assertEquals( 200, em.value().status );
+        // should not be able to do post access
+        em = post("http://localhost:6042", "/entity", "foo");
+        Assert.assertFalse( em.inError() );
+        Assert.assertEquals( 403, em.value().status );
+    }
+
+    @Test
     public void memberAccessTest(){
         // ok get entity access
         EitherMonad<ZWeb.ZWebCom> em = get("http://localhost:6042", "/entity/1111", "bob");
