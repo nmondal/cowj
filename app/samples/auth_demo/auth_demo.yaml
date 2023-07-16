@@ -1,6 +1,6 @@
 #########################
-# Schema validation test bed
-# Also, using _shared
+# Auth test bed
+# Also, using JCasbin
 #########################
 
 port: 6042

@@ -25,6 +25,12 @@ This was done in purpose, to ensure fixed location for `auth`.
 
 Although that is not really the design, technically one can override the `auth()` function in the model to move auth to any other file location.
 
+
+
+For this manual we point to the `samples/auth_demo` project. 
+
+
+
 ## Auth Configuration
 
 ```yaml
@@ -79,11 +85,83 @@ This comes under policy, plan to support some adapters, specifically the Google 
 Currently only supports `file` adapter, which must have `file` key to point to the policy file, which must 
 be present in the `auth` folder itself.
 
+
+
 #### Message
 
 Used to deliver the un-auth message to the user.
 
-## References
+
+
+### Example
+
+The Cowj configuration file is shown:
+
+```yaml
+# auth_demo/auth_demo.yaml
+
+port: 6042
+
+# path mapping
+routes:
+  post:
+    /entity: _/create.zm
+  get:
+    /entity/:entityId : _/fetch.zm
+
+```
+
+The policy file can be found here: `auth_demo/auth/policy.csv` 
+
+```csv
+g, alice, admin
+g, bob, member
+p, member, /entity/:id, GET
+g, admin, member
+p, admin, /entity, POST
+```
+
+It says `alice` is admin, and `bob` is a member in the first two lines.
+
+Next the policy access : member can access the route `/entity:id`  via `GET`
+
+Admin is also a member.
+
+Finally, admin can access `/entity` route via `POST`.
+
+```shell
+curl -XPOST localhost:6042/entity -H "u:bob" 
+```
+
+Will fail with `403` error. while
+
+```shell
+curl -XPOST localhost:6042/entity -H "u:alice" 
+```
+
+will run through. At the same time:
+
+```shell
+curl -XGET localhost:6042/entity/111 -H "u:bob" 
+```
+
+would work, but :
+
+```shell
+curl -XGET localhost:6042/entity/111
+```
+
+will give `401` due to not having the header `u`.  At the same time:
+
+```shell
+curl -XGET localhost:6042/hello.json  
+```
+
+because it is loaded from `static` - it is exempt - so anyone would be able to access it.
+
+
+
+#### ## References
 
 1. Casbin :  https://casbin.org 
 
