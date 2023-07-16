@@ -1,22 +1,5 @@
-# This is the sample routes file
-# basic support are given
-
-# port in which to connect
 port: 5006
 
-# for all static files, js, html pages, pds and what not
-#static: _/.
-
-# to load all external jars which are not part of the distribution
-lib: _/lib
-
-# threading related stuff
-threading:
-  min: 4
-  max : 8
-  timeout: 30000
-
-# path mapping
 routes:
   get:
     /calculateDistance: _/distance.js
@@ -29,13 +12,10 @@ filters:
   after:
     "*": _/after.zm
 
-
 plugins:
   cowj.plugins:
-    curl: CurlWrapper::CURL
     jdbc: JDBCWrapper::JDBC
     redis: RedisWrapper::REDIS
-
 
 data-sources:
 
@@ -47,15 +27,3 @@ data-sources:
     type: jdbc
     driver: "com.mysql.cj.jdbc.Driver"
     connection : "jdbc:mysql://root:password@localhost:3306/locationService"
-    properties:
-      a: b
-      x: y
-
-  json_place:
-    type: curl
-    url: https://jsonplaceholder.typicode.com
-
-  # this is the proxy folder service
-  local_send:
-    type: curl
-    url: "http://localhost:5004"
