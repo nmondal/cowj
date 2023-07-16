@@ -121,4 +121,10 @@ public class ScriptableTest {
         Assert.assertEquals( 4, ((Number) o).intValue() );
 
     }
+
+    @Test
+    public void nasHornPrintTest() throws Exception {
+        Scriptable sc= Scriptable.JSR.create(Scriptable.INLINE, "Test.print('hello, world!%n'); Test.printe('hello, world!%n'); //.js" );
+        Object o = sc.exec( new SimpleBindings( ) );
+    }
 }

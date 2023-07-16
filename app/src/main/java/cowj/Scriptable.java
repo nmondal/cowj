@@ -14,6 +14,7 @@ import zoomba.lang.core.types.ZNumber;
 
 import javax.script.*;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -59,6 +60,14 @@ public interface Scriptable  {
     interface TestAsserter{
 
         Bindings binding();
+
+        default PrintStream print(String format, Object...args){
+            return System.out.printf(format,args);
+        }
+
+        default PrintStream printe(String format, Object...args){
+            return System.err.printf(format,args);
+        }
 
         class HaltException extends RuntimeException{
             public final int code;

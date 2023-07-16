@@ -1,5 +1,5 @@
 // here is the return value
-print(req)
-print(resp)
+Test.print(req + "\n")
+Test.printe(resp + "\n")
 //Test.panic(true,"Boom!")
 "hello, world!"
