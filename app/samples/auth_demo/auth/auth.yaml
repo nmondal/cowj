@@ -1,0 +1,11 @@
+# The standard location auth file
+# is it enabled?
+disabled: false
+user-header: "u"
+# casbin policy
+policy:
+  # this is adapter type file
+  adapter: file
+  # for a file type, CSV is the way
+  file: policy.csv
+message: "thou shall not pass!"

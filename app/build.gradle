@@ -54,6 +54,15 @@ dependencies {
     // https://mvnrepository.com/artifact/org.quartz-scheduler/quartz
     implementation 'org.quartz-scheduler:quartz:2.5.0-rc1'
 
+    // schema handler
+    implementation 'org.zoomba-lang:medeia-validator-jackson:1.5-SNAPSHOT'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+
+    // Auth
+    implementation 'org.casbin:jcasbin:1.33.1'
+
+    ////////// Plugin Stuff //////////////
+
     // Storage...
     implementation 'redis.clients:jedis:5.0.0-beta1'
     implementation 'com.google.cloud:google-cloud-storage:2.22.3'
@@ -66,10 +75,6 @@ dependencies {
 
     /// secret manager
     implementation 'com.google.cloud:google-cloud-secretmanager:2.19.0'
-
-    // schema handler
-    implementation 'org.zoomba-lang:medeia-validator-jackson:1.5-SNAPSHOT'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
 
     ///// test stuff
     testImplementation 'junit:junit:4.13.2'

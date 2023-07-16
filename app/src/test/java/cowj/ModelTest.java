@@ -53,7 +53,7 @@ public class ModelTest {
         // should it be used.. like at all?
         Model m = Model.from(pj);
         Assert.assertNotNull(m);
-        Assert.assertTrue(m.auth().isEmpty()); // auth should be empty
+        Assert.assertFalse(m.auth().isEmpty()); // auth should be empty
         Assert.assertFalse(m.proxies().isEmpty()); // proxies should not be empty
         // port is redirected and will not be what it is .. so...
         Assert.assertEquals( 8080, m.port());

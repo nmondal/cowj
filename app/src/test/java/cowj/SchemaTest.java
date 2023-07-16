@@ -1,9 +1,6 @@
 package cowj;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import spark.Filter;
 import spark.Request;
 import spark.Response;
@@ -12,20 +9,19 @@ import zoomba.lang.core.types.ZTypes;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SchemaTest {
 
-    @Before
-    public void before(){
-        mr = null;
+    @BeforeClass
+    public static void before(){
+        mr = ModelRunnerTest.runModel("samples/prod/prod.yaml" );
     }
 
-    @After
-    public void after(){
+    @AfterClass
+    public static void after(){
         if ( mr == null ) return;
         mr.stop();
         mr = null;
@@ -43,11 +39,10 @@ public class SchemaTest {
         TypeSystem ts = TypeSystem.fromFile( "samples/prod/static/types/schema111.yaml");
         Assert.assertEquals( TypeSystem.NULL, ts);
     }
-    ModelRunner mr;
+    static ModelRunner mr;
 
     @Test
     public void validSchemaTest(){
-        mr = ModelRunnerTest.runModel("samples/prod/prod.yaml" );
         String r = ModelRunnerTest.get( "http://localhost:5042", "/person/foobar");
         Assert.assertNotNull(r);
         Assert.assertTrue( r.contains("foobar") );
@@ -65,7 +60,6 @@ public class SchemaTest {
 
     @Test
     public void invalidJSONSchemaTest(){
-        mr = ModelRunnerTest.runModel("samples/prod/prod.yaml" );
         // NOT EVEN JSON test
         String r = ModelRunnerTest.post( "http://localhost:5042", "/person",  "foo bar!" );
         Assert.assertNotNull(r);

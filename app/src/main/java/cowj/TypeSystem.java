@@ -18,7 +18,6 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.function.BiPredicate;
 
 /*
 * https://stackoverflow.com/questions/7939137/what-http-status-code-should-be-used-for-wrong-input

@@ -16,6 +16,107 @@ It should be very clear from the naming that:
 
 > objective is to optimize back-end development and replacing it with configurations.
 
+Cowj let's you build back-end systems :
+
+1. APIs
+
+2. Batch processing with Cron 
+
+3. Event Processing 
+
+4. Data Processing 
+
+via configurations and scripts. It's backbone is written using `spark-11`,  `jetty-11` ,  `quartz` and `casbin`. 
+
+
+
+### Very Fast `Hello World`
+
+1. Download the appropriate binary - or build to that you have the `cowj-jar`  ready with `./deps`  pointing to dependencies.
+
+2. Create a directory `hello` 
+
+3. Inside `hello` create a directory `static`
+
+4. Inside `static` folder created `index.html` and write down `hello, world!`.
+
+5. Inside the `hello` folder create a `hello.yaml` file as follows:
+
+
+
+```yaml
+# hello/hello.yaml
+port: 8080
+```
+
+ Now run the hello project as :
+
+```shell
+java -jar cowj-*.jar hello/hello.yaml
+```
+
+Open browser and visit `localhost:8080/index.html`  you will see `hello,world`. 
+
+That is it. That is  all it takes to setup a `Cowj` server.
+
+
+
+What about actual service endpoints?
+
+Just type down these into the `hello.yaml` :
+
+
+
+```yaml
+# hello/hello.yaml
+port: 8080
+
+routes:
+  get:
+    /hello: "'Hello,World!'//.js"
+```
+
+And restart cowj again. 
+
+Hit this endpoint in curl:
+
+```shell
+curl -XGET "http://localhost:8080/hello"
+```
+
+You would get back `Hello, World!`.
+
+What is really happening here is Cowj system is detecting an expression written using `js` engine - and evaluating and returning.
+
+
+
+One can of course, for betterment move the expression from inside to outside, e.g. create a file `hello.js` in the `hello` folder, and then update the `hello.yaml` as follows:
+
+
+
+```yaml
+# hello/hello.yaml
+port: 8080
+routes:
+  get:
+    /hello: _/hello.js
+```
+
+And the `hello.js` :
+
+```js
+// hello.js
+"Hello, World!"
+```
+
+Now, restart cowj, run the same curl command - and voila, you would have `Hello, World` again.
+
+As you can see, code is configuration and configuration is code in Cowj.
+
+With this note, we shall dive into the world of BED - back end development.
+
+
+
 ## Back End Development
 
 ### Development Today
@@ -129,7 +230,6 @@ data-sources:
   json_place:
     type: curl
     url: https://jsonplaceholder.typicode.com
-    proxy: _/proxy_transform.zm # responsible for message transform
 
 cron:
   cache:
@@ -368,45 +468,49 @@ localhost:5003/users
 
 System responds back with the same status as of the external web service as well as the response from the web service gets transferred back to the original caller.
 
-This `transform` is coded in the `curl` type as follows:
+Proxies can be used to transform the payload to the external server, as well as can be used to transform back the data from the external server.
 
-```yaml
-data-sources:
-  json_place:
-    type: curl
-    url: https://jsonplaceholder.typicode.com
-    proxy: _/proxy_transform.zm # responsible for message transform
-```
+First one we call "forward" transform, and the other one "reverse" transform.
 
-The `proxy` section has the script to transform the following to be forwarded to the destination server :
+#### Forward Transform
 
-1. `request` object 
-2. `headers` has a mutable map of request headers 
-3. `queries` has mutable map of all query parameters 
-4. `body` has the string which is `request.body()` 
+This is easy with the `before` filter. The idea is as follows:
 
-Evidently at a forward proxy level, these are the parameters one can change before forwarding it to destination.
-
-The transformation function / script is expected to return a map of the form:
-
-```javascript
-{
-  headers : {
+```scala
+// before.zm 
+forward_payload = {
+  "headers" : {
     key : value
   },
-  query : {
+  "query" : {
     key : value
   },  
-  body : "request body"
+  "body" : "request body"
 }
+req.attribute("_proxy", forward_payload) 
 ```
 
-In case the script does not return a map - pushed values will be used to be extracted from the script context and used as a response. 
+As for the payload it has the following to be forwarded to the destination server :
+
+1. `headers` has a mutable map of request headers 
+2. `queries` has mutable map of all query parameters 
+3. `body` as the request body 
+
+The underlying system picks up the request attribute named `_proxy` as present, and then forwards it to the destination server.
+
+#### Reverse Transform
+
+This is easily doable by the `after` filter.  Just intercept the response, and we can do whatever we want to do with it.
 
 ## Type System
 
 We support `json schema` based input validation.
 To read more see [Writing Input Validations](manual/types.md)
+
+## Auth
+
+We support `casbin` based Auth.
+To read more see [Embedding Auth](manual/auth.md)
 
 ## Running
 
