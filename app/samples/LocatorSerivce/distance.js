@@ -74,4 +74,4 @@ dist = distance(d1.latitude, d1.longitude, d2.latitude, d2.longitude, 'K' )
 }
 
 //return value
-JSON.stringify({ distance : Math.abs(dist).toString(), unit : 'KM', last_seen : [{ person : person1, last_seen: d1 ? d1.last_seen : undefined }, {person : person2, last_seen: d2 ? d2.last_seen : undefined}]})
+JSON.stringify({ distance : Math.abs(dist).toString(), unit : 'KM', last_seen : [{ person : person1, last_seen: d1 ? d1.last_seen.toString() : undefined }, {person : person2, last_seen: d2 ? d2.last_seen.toString() : undefined}]})

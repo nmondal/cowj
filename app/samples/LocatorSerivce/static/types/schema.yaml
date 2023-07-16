@@ -12,8 +12,7 @@ verify:
 
 routes:
   /calculateDistance:
-#     this does not work for GET calls
-    get:
+    post:
       in: distanceApiInput.json
       ok: distanceApiRetVal.json
       err: distanceApiRetVal.json

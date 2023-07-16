@@ -1,16 +1,10 @@
 port: 5006
 
 routes:
-  get:
-    /calculateDistance: _/distance.js
   post:
     /user/poll: _/register_user.js
-
-filters:
-  before:
-    "*" : _/before.zm
-  after:
-    "*": _/after.zm
+    /locations: _/locations.js
+    /calculateDistance: _/distance.js
 
 plugins:
   cowj.plugins:
