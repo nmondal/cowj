@@ -92,9 +92,9 @@ public interface Scriptable  {
         }
     }
 
-    /*
-    * If the condition is true, halts, with message and error code
-    * */
+    /**
+     * Abstraction for Raising Errors which then propagates to Clients from Scriptable
+     */
     interface TestAsserter{
 
         /**

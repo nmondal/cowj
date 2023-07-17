@@ -11,15 +11,57 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Abstraction for a HTTP[s] web call
+ */
 public interface CurlWrapper {
 
+    /**
+     * Sends a payload to a remote server
+     * @param verb HTTP verb ( get, post, etc )
+     * @param path non server portion of the URI, e.g. <a href="http://localhost:8080/foo/bar">...</a>
+     *             /foo/bar is the path
+     * @param headers to be sent
+     * @param params to be sent
+     * @param body to be sent
+     * @return EitherMonad of type ZWeb.ZWebCom
+     */
     EitherMonad<ZWeb.ZWebCom> send(String verb, String path, Map<String, String> headers, Map<String, String> params, String body);
+
+    /**
+     * Key for the query to be used in the proxy payload
+     */
     String QUERY = "query";
+
+    /**
+     * Key for the headers to be used in the proxy payload
+     */
     String HEADER = "headers";
+
+    /**
+     * Key for the body to be used in the proxy payload
+     */
     String BODY = "body";
+
+    /**
+     * Key for the base url for the CurlWrapper
+     * for : <a href="http://localhost:8080/foo/bar">...</a>
+     * it is  <a href="http://localhost:8080">...</a>
+     *
+     */
     String DESTINATION_URL = "url";
+
+    /**
+     * Key for the proxy payload to be added on the spark.Request.attribute()
+     */
     String PROXY_ATTRIBUTE = "_proxy";
 
+    /**
+     * Create a payload for proxy from spark.Request
+     * @param request the spark.Request
+     * @return a map of the form
+     *  { "query" : { }, "headers" : {} , "body" : ""  }
+     */
     static Map<String,Map<String,String>> payload(Request request){
         final Map<String,Map<String,String>> forwardPayload = new HashMap<>();
         // add request
@@ -32,6 +74,14 @@ public interface CurlWrapper {
         return forwardPayload;
     }
 
+    /**
+     * Method for forward proxy
+     * @param verb HTTP verb
+     * @param destPath destination path
+     * @param request spark.Request
+     * @param response spark.Response
+     * @return response body of the proxy request
+     */
     default String proxy(String verb, String destPath, Request request, Response response) {
         String body = request.body() != null ? request.body() : "";
         Object proxyPayload = request.attribute( PROXY_ATTRIBUTE ) ;
@@ -55,6 +105,9 @@ public interface CurlWrapper {
         return curlResponse.value().body();
     }
 
+    /**
+     * A DataSource.Creator for the CurlWrapper
+     */
     DataSource.Creator CURL = (name, config, parent) -> {
         String baseUrl = config.getOrDefault(DESTINATION_URL, "").toString();
 
