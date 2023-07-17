@@ -10,34 +10,76 @@ import java.time.ZoneId;
 import java.time.chrono.ChronoLocalDateTime;
 import java.util.*;
 
+/**
+ * Abstraction for JDBC Connection
+ */
 public interface JDBCWrapper {
 
+    /**
+     * Gets the EitherMonad for Connection
+     * @return EitherMonad for Connection
+     */
     EitherMonad<Connection> connection();
 
+    /**
+     * Creates the Connection
+     * In case of failure, puts the creation error into EitherMonad
+     * @return EitherMonad for Connection
+     */
     EitherMonad<Connection> create();
 
+    /**
+     * Checks if the underlying Connection is valid or not
+     * @return true if Connection is ok, false otherwise
+     */
     boolean isValid();
 
+    /**
+     * This is the query which used to check if the underlying Connection is valid or not
+     * Druid, MySQL, PGSQL ,AuroraDB :: SELECT 1
+*    * Oracle ::  SELECT 1 FROM DUAL
+     * @return  a query which can be used to check underlying db connection health
+     */
     default String staleCheckQuery(){
-        /*
-        * Druid, MySQL, PGSQL ,AuroraDB
-        * Oracle will not work SELECT 1 FROM DUAL
-        * */
         return "SELECT 1";
     }
 
+    /**
+     * Key for the driver class
+     */
     String DRIVER = "driver" ;
 
+    /**
+     * Key for the SecretManager
+     */
     String SECRET_MANAGER = "secrets";
 
+    /**
+     * Key for the JDBC Connection Properties
+     */
     String PROPERTIES = "properties" ;
 
+    /**
+     * Key for the JDBC Connection String
+     */
     String CONNECTION_STRING = "connection" ;
 
+    /**
+     * Key for the staleCheckQuery() query string
+     */
     String STALE_CHECK_TIMEOUT_QUERY = "stale" ;
 
+    /**
+     * Constant for the default JDBC Connection String
+     */
     String DEFAULT_CONNECTION_STRING = "${schema}//${host}/${db}?user=${user}&password=${pass}" ;
 
+    /**
+     * Converts java.sql.* object into java object
+     * Essentially take temporal SQL Column values and convert them into numeric
+     * @param value java.sql.* object
+     * @return normal java object
+     */
     static Object getObject(Object value) {
         if (value instanceof java.util.Date) {
             /*
@@ -53,6 +95,13 @@ public interface JDBCWrapper {
         return value;
     }
 
+    /**
+     * Runs Select Query using connection and args
+     * @param con the Connection to use
+     * @param query to be executed
+     * @param args the arguments to be passed
+     * @return a EitherMonad of type List of Map - rather list of json objects
+     */
     static EitherMonad<List<Map<String,Object>>> selectWithConnection( Connection con, String query, List<Object> args) {
         try (Statement stmt = con.createStatement() ) {
             List<Map<String,Object>> result = new ArrayList<>();
@@ -78,6 +127,13 @@ public interface JDBCWrapper {
         }
     }
 
+    /**
+     * Runs Select Query using underlying connection and args
+     * Does automatic retry for stale/invalid connection
+     * @param query to be executed
+     * @param args the arguments to be passed
+     * @return a EitherMonad of type List of Map - rather list of json objects
+     */
     default EitherMonad<List<Map<String,Object>>> select(String query, List<Object> args) {
         EitherMonad<List<Map<String,Object>>> res = selectWithConnection(connection().value(), query, args);
         if ( res.isSuccessful() || isValid() ) return res;
@@ -85,6 +141,9 @@ public interface JDBCWrapper {
         return selectWithConnection(em.value(), query, args);
     }
 
+    /**
+     * DataSource.Creator for JDBCWrapper type
+     */
     DataSource.Creator JDBC = (name, config, parent) -> {
 
         JDBCWrapper jdbcWrapper = new JDBCWrapper() {

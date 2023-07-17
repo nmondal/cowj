@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Abstraction for REDIS vis JEDIS
+ * Abstraction for REDIS via JEDIS
  */
 public interface RedisWrapper {
 
