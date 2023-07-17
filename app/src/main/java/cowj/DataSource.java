@@ -3,18 +3,52 @@ package cowj;
 import java.lang.reflect.Field;
 import java.util.*;
 
+/**
+ * Cowj abstraction for anything which deals with data
+ */
 public interface DataSource {
 
+    /**
+     * Underlying Actual Mechanism
+     * @return Actual Object to be used as a DataSource
+     */
     Object proxy();
 
+    /**
+     * The name via which _ds can use the proxy()
+     * @return name of the data source
+     */
     String name();
 
+    /**
+     * Creator for a DataSource
+     */
     interface Creator {
+        /**
+         * Creates a data source
+         * @param name of the data source
+         * @param config the configuration parameters
+         * @param parent the model object hosting the DataSource
+         * @return a DataSource
+         */
         DataSource create(String name, Map<String, Object> config, Model parent);
     }
 
+    /**
+     * Type Registry for the Creators to Cache Creators
+     * Key - name/type of the creator
+     * Value  - Creator itself
+     */
     Map<String,Creator> REGISTRY = new HashMap<>();
 
+    /**
+     * Registering a type into the Type Registry
+     * @param type of the Creator
+     * @param path from which one should create the Creator
+     *             it is a static field of some class with className::fieldName
+     *             Separated via "::"
+     * @return an EitherMonad abstracting the Creator
+     */
     static EitherMonad<Creator> registerType(String type, String path){
         String[] paths = path.split("::");
         try {
@@ -33,6 +67,10 @@ public interface DataSource {
         }
     }
 
+    /**
+     * Universal Creator,
+     * Creating from the Type Registry
+     */
     Creator UNIVERSAL = (name, config, parent) -> {
         String type = config.getOrDefault("type", "").toString();
         Creator creator = REGISTRY.get(type);
