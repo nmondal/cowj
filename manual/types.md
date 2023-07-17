@@ -128,15 +128,18 @@ Special case is of input schema `in`, for the rest, how to know which output sch
 This is done by `expression` labels. Under the hood system runs an expression evaluator.
 
 ```java
-interface StatusLabel extends BiPredicate<Request,Response> {
-   String name() ;
-   String expression() ;
-}
+boolean testExpression(Request request, Response response, String expression)
 ```
 
 This way, way more specific schema mapping can be done & checked with the validator.
-`name()` corresponds to the left hand side, for example `ok` is a name.
-`expression()` is the right hand side, which when evaluated to `true` corresponding schema will be applied.
+Name of the label corresponds to the left hand side, for example `ok` is a name.
+Expression is the right hand side, which when evaluated to `true` corresponding schema will be applied.
+For example in case of `ok` it is:
+
+```scala
+resp.status == 200
+```
+
 This name against schema is stored in the routes. 
 
 ### Verify
@@ -233,6 +236,7 @@ Once we turn on the schema validation, then, the system automatically validates 
 assert( "_body" @ req.attributes() , "How come req.body failed to verify and come here?" , 409 )
 payload = req.attribute("_body") // this should already have the parsed data
 ```
+This is added so that developers do not need to again re-parse the already parsed JSON body - done during the validation phase.
 
 ### On Validation Error
 
