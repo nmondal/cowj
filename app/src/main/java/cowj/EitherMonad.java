@@ -18,14 +18,14 @@ public final class EitherMonad<V> {
     }
 
     /**
-     * Is the instance success type ? Does it contain Result of type <V>?
-     * @return true if <V> type, else false
+     * Is the instance success type ? Does it contain Result of type V?
+     * @return true if V type, else false
      */
     public boolean isSuccessful(){ return  err == null; }
 
     /**
      * Gets the value
-     * @return underlying value of type <V>
+     * @return underlying value of type V
      */
     public V value() { return value; }
 
@@ -52,7 +52,7 @@ public final class EitherMonad<V> {
 
     /**
      * Creates an EitherMonad of error
-     * @param value underlying <V>
+     * @param value underlying value of type V
      * @return an EitherMonad
      * @param <V> of type
      */
