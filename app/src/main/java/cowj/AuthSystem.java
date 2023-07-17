@@ -10,15 +10,48 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ *  Auth System - essentially integrates JCasbin into the system
+ */
 public interface AuthSystem {
 
+    /**
+     * Disables or Enables auth
+     * @return true if auth is disabled, false if auth is enabled
+     */
     default boolean disabled(){ return true; }
 
+    /**
+     * Policy setting of the Auth
+     * Currently only support is for "file" type
+     * @return bunch of properties
+     */
     default Map<String, Object> policy(){ return Collections.emptyMap(); }
 
+    /**
+     * Gets the directory where all auth related files are kept
+     * @return directory of the auth files
+     */
     String definitionsDir();
+
+    /**
+     * User Header, from which user-id should be extracted
+     * @return name of the header which has users id
+     */
     default String userHeader(){ return "username" ; }
+
+    /**
+     * In case of Un-Auth, what message users would see
+     * @return un-auth message
+     */
     default String haltMessage(){ return "thou shall not pass!" ; }
+
+    /**
+     * Creates a JCasbin policy adapter
+     * @param conf properties which will be used to create the adapter
+     * @param baseDir base directory of the auth files
+     * @return a JCasbin policy adapter
+     */
     static Adapter adapter( Map<String,Object> conf, String baseDir){
         // fow now do only FileAdapter
         final String policyFileName = conf.getOrDefault(POLICY_FILE_KEY, POLICY_FILE_NAME).toString();
@@ -26,20 +59,55 @@ public interface AuthSystem {
         return new FileAdapter( filePath);
     }
 
+    /**
+     * Name of the fixed model file
+     */
     String MODEL_FILE = "model.conf" ;
+
+    /**
+     * Name of the default policy file for JCasbin file CSV adapter
+     */
     String POLICY_FILE_NAME = "policy.csv" ;
+
+    /**
+     * Key for the file name for CSV adapter
+     */
     String POLICY_FILE_KEY = "file" ;
 
+    /**
+     * Name for the Auth Disabled key
+     */
     String DISABLED = "disabled" ;
+
+    /**
+     * Name for the Un-Auth Message key
+     */
     String MESSAGE = "message" ;
+
+    /**
+     * Name for the policy settings key
+     */
     String POLICY = "policy" ;
 
+    /**
+     * Name for the User ID Header key
+     */
     String USER_HEADER = "user-header" ;
 
+    /**
+     * Name for  UnAuthenticated
+     */
     String UN_AUTHENTICATED = "UnAuthenticated" ;
 
+    /**
+     * Name for  UnAuthorized
+     */
     String UN_AUTHORIZED = "UnAuthorized" ;
 
+    /**
+     * Attaches an Auth System to Spark-Java
+     * @param unprotected directory prefix which should not be protected by Auth System
+     */
     default void attach( String unprotected){
         if ( disabled() ){ return; }
         final String authDefDir = definitionsDir();
@@ -62,8 +130,16 @@ public interface AuthSystem {
         }));
     }
 
+    /**
+     *  A NULL, pointless Auth system which does not do anything
+     */
     AuthSystem NULL = () -> ".";
 
+    /**
+     * Creates an AuthSystem
+     * @param file from this file
+     * @return AuthSystem
+     */
     static AuthSystem fromFile(String file){
         try {
             File f = new File(file).getCanonicalFile().getAbsoluteFile();
