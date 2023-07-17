@@ -11,14 +11,29 @@ import java.util.function.BiConsumer;
 
 import static spark.Spark.*;
 
+/**
+ * This is where Cowj really runs
+ */
 public interface ModelRunner extends Runnable {
 
+    /**
+     * Underlying model
+     * @return a Model, which is running currently
+     */
     Model model();
 
+    /**
+     * Underlying Creator for Scriptable
+     * @return a Scriptable.Creator
+     */
     default Scriptable.Creator scriptCreator(){
         return Scriptable.UNIVERSAL;
     }
 
+    /**
+     * Underlying Creator for DataSource
+     * @return a DataSource.Creator
+     */
     default DataSource.Creator dsCreator(){
         return DataSource.UNIVERSAL;
     }
@@ -150,12 +165,20 @@ public interface ModelRunner extends Runnable {
         System.out.println("Cowj is initialized!");
     }
 
+    /**
+     * Stops the Cowj Instance from Running
+     */
     default void stop(){
         Spark.stop();
         awaitStop();
         CronModel.stop();
     }
 
+    /**
+     * Creates a ModelRunner instance from a file
+     * @param path the file yaml, json
+     * @return a ModelRunner
+     */
     static ModelRunner fromModel(String path){
         final Model model = Model.from(path);
         return () -> model;
