@@ -14,10 +14,25 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Abstraction for REDIS vis JEDIS
+ */
 public interface RedisWrapper {
+
+    /**
+     * Key for the SecretManager to be used
+     */
     String SECRET_MANAGER = "secrets";
+
+    /**
+     * Key for the hosted REDIS urls to be used
+     * They should be of host:port notation
+     */
     String URLS = "urls";
 
+    /**
+     * A DataSource.Creator which returns proxy() as redis.clients.jedis.UnifiedJedis
+     */
     DataSource.Creator REDIS = (name, config, parent) -> {
         Object urlObject = config.getOrDefault(URLS, "");
         List<String> urls = new ArrayList<>();
