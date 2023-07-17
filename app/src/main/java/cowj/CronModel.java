@@ -11,18 +11,43 @@ import java.util.Map;
 
 import static org.quartz.JobBuilder.newJob;
 
+/**
+ * Integrates Quartz Scheduler into Cowj
+ */
 public interface CronModel {
 
+    /**
+     * A Cowj Task
+     */
     interface Task {
 
+        /**
+         * Name of the boot key
+         * If true, task gets executed in system startup
+         */
         String BOOT = "boot";
 
+        /**
+         * Name of the exec key
+         * This points to the executable script - which is the cron job
+         */
         String EXEC = "exec";
 
+        /**
+         * Name of the cron expression key
+         * This points to the cron expression
+         * See <a href="https://docs.oracle.com/cd/E12058_01/doc/doc.1014/e12030/cron_expressions.htm">Cron Expression</a>
+         */
         String SCHEDULE = "at";
 
+        /**
+         * Scriptable Context key for the JobContext
+         */
         String JOB_EXEC_CONTEXT = "_ctx";
 
+        /**
+         * Concrete Job Class for the Scriptable Support
+         */
         final class CronJob implements Job {
 
             @Override
@@ -41,16 +66,43 @@ public interface CronModel {
             }
         }
 
+        /**
+         * Name of the Task
+         * @return name of the Task
+         */
         String name();
 
+        /**
+         * Should the task be run at boot time for Cowj ?
+         * @return true if task needs to run on boot also, false if no
+         */
         boolean boot();
 
+        /**
+         * Details for the Job
+         * @return a JobDetail object
+         */
         JobDetail jobDetail();
 
+        /**
+         * Trigger for the Job
+         * @return a Trigger object
+         */
         Trigger trigger();
 
+        /**
+         * Underlying Scriptable responsible for the Job
+         * @return a Scriptable object
+         */
         Scriptable scriptable();
 
+        /**
+         * Creates a task from config
+         * @param model Cowj Data Model
+         * @param name of the task
+         * @param config actual configuration
+         * @return a Task
+         */
         static Task fromConfig(Model model, String name, Map<String, Object> config) {
             final boolean boot = ZTypes.bool(config.getOrDefault(BOOT, "false"), false);
             final String scriptPath = model.interpretPath(config.getOrDefault(EXEC, "").toString());
@@ -93,12 +145,28 @@ public interface CronModel {
         }
     }
 
+    /**
+     * Gets all the Tasks
+     * @return a Map of Tasks, keyed by their name
+     */
     Map<String, Task> tasks();
 
+    /**
+     * Name of the key via which Scheduler is accessible inside any Scriptable
+     */
     String SCHEDULER = "_sched";
 
+    /**
+     * Global SchedulerFactory
+     */
     SchedulerFactory SCHEDULER_FACTORY = new StdSchedulerFactory();
 
+    /**
+     * Creates a CronModel
+     * @param model the Cowj data model
+     * @param config actual configuration
+     * @return a CronModel
+     */
     static CronModel fromConfig(Model model, Map<String, Map<String,Object>> config) {
         final Map<String, Task> tasks = new LinkedHashMap<>();
         config.forEach((name, conf) -> {
@@ -107,10 +175,18 @@ public interface CronModel {
         return () -> tasks;
     }
 
+    /**
+     * The Default Factory for Scheduler
+     * @return whatever factory one may wants to use
+     */
     default SchedulerFactory factory(){
         return SCHEDULER_FACTORY ;
     }
 
+    /**
+     * Schedules the model
+     * @param cronModel to be scheduled
+     */
     static void schedule(CronModel cronModel) {
         // do not bother if empty
         if (cronModel.tasks().isEmpty()) return;
@@ -144,10 +220,17 @@ public interface CronModel {
         }
     }
 
+    /**
+     * Quick Method to get the underlying Scheduler
+     * @return Underlying Scheduler
+     */
     static Scheduler scheduler(){
         return (Scheduler)Scriptable.DATA_SOURCES.get(SCHEDULER);
     }
 
+    /**
+     * Stops the Cron Jobs
+     */
     static void stop(){
         try {
             Scheduler scheduler = scheduler();

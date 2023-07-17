@@ -3,7 +3,15 @@
  */
 package cowj;
 
+/**
+ * Entry point for the Cowj Application
+ */
 public class App {
+
+    /**
+     * Runs the Cowj App
+     * @param args must be at least 1, pointing to a yaml config file
+     */
     public static void main(String[] args) {
         if ( args.length < 1 ){
             System.out.println("Usage : java -jar cowj.jar <config_file_path>");
