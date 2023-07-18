@@ -24,11 +24,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Scripting Abstraction for Cowj
+ * @see <a href="https://en.wikipedia.org/wiki/Scripting_for_the_Java_Platform">JSR-223</a>
  */
 public interface Scriptable  {
 
     /**
      * Basal method to run any scripts
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.scripting/javax/script/Bindings.html">Bindings</a>
      * @param bindings Bindings of  javax.Scripting.Binding
      * @return result of the Script
      * @throws Exception any error happened while running the script
@@ -37,6 +39,10 @@ public interface Scriptable  {
 
     /**
      * Abstraction to be used for spark.Route and spark.Filter
+     * @see <a href="https://sparkjava.com/documentation#filters">Filters</a>
+     * @see <a href="https://sparkjava.com/documentation#request">Request</a>
+     * @see <a href="https://sparkjava.com/documentation#response">Response</a>
+     *
      * @param request a spark.Request object available as "req" in the script env
      * @param response a spark.Response object available as "resp" in the script env
      * @return result of the computation
@@ -71,6 +77,7 @@ public interface Scriptable  {
 
         /**
          * Creates a Scriptable as spark.Route
+         * @see <a href="https://sparkjava.com/documentation#routes">Routes</a>
          * @param path for this route path
          * @param handler from this script path
          * @return a Scriptable as spark.Route
@@ -82,6 +89,7 @@ public interface Scriptable  {
 
         /**
          * Creates a Scriptable as spark.Filter
+         * @see <a href="https://sparkjava.com/documentation#filters">Filters</a>
          * @param path for this route path
          * @param handler from this script path
          * @return a Scriptable as spark.Filter
@@ -312,6 +320,7 @@ public interface Scriptable  {
 
     /**
      * Get engine from path
+     * @see <a href="https://docs.oracle.com/javase/9/docs/api/javax/script/ScriptEngine.html">ScriptEngine</a>
      * @param path file location
      * @return a ScriptEngine
      */
@@ -325,6 +334,7 @@ public interface Scriptable  {
 
     /**
      * Cached map of all CompiledScript
+     * @see <a href="https://docs.oracle.com/javase/9/docs/api/javax/script/CompiledScript.html">CompiledScript</a>
      * Key - location of the scripts
      * Value - CompiledScript
      */
@@ -333,14 +343,15 @@ public interface Scriptable  {
 
     /**
      * Cached map of all ZScript
+     * @see <a href="https://gitlab.com/non.est.sacra/zoomba/-/blob/master/src/main/java/zoomba/lang/core/interpreter/ZScript.java">ZScript</a>
      * Key - location of the scripts
      * Value - ZScript
      */
     Map<String, ZScript> zScripts = new HashMap<>(); // TODO ? Should be LRU? What?
 
-
     /**
      * Loads a script for JSR-223 Engine
+     * @see <a href="https://docs.oracle.com/javase/9/docs/api/javax/script/CompiledScript.html">CompiledScript</a>
      * @param directive ignored unless it is INLINE, then use the path as executable string
      * @param path file location from which script needs to be created, if INLINE then comment the extension in the end
      *             example: "2+2; //.js" will load js engine
@@ -362,6 +373,7 @@ public interface Scriptable  {
 
     /**
      * Loads a script for ZoomBA Engine
+     * @see <a href="https://gitlab.com/non.est.sacra/zoomba/-/blob/master/src/main/java/zoomba/lang/core/interpreter/ZScript.java">ZScript</a>
      * @param directive ignored unless it is INLINE, then use the path as executable string
      * @param path file location from which script needs to be created
      * @return a ZScript

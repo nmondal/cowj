@@ -3,6 +3,7 @@ package cowj;
 /**
  * Abstraction over Result of any operation
  * Either The result of Type V, or that of Throwable
+ * @see <a href="https://hackage.haskell.org/package/category-extras-0.53.5/docs/Control-Monad-Either.html">Haskell : Either</a>
  * @param <V> type of the Result
  */
 public final class EitherMonad<V> {
