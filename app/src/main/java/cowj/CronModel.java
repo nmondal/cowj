@@ -13,6 +13,7 @@ import static org.quartz.JobBuilder.newJob;
 
 /**
  * Integrates Quartz Scheduler into Cowj
+ * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.3.0/quick-start.html#starting-a-sample-application">Quartz Scheduler</a>
  */
 public interface CronModel {
 
@@ -36,7 +37,8 @@ public interface CronModel {
         /**
          * Name of the cron expression key
          * This points to the cron expression
-         * See <a href="https://docs.oracle.com/cd/E12058_01/doc/doc.1014/e12030/cron_expressions.htm">Cron Expression</a>
+         * @see <a href="https://docs.oracle.com/cd/E12058_01/doc/doc.1014/e12030/cron_expressions.htm">Oracle : Cron Expression</a>
+         * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html">Quartz: Cron Expression</a>
          */
         String SCHEDULE = "at";
 
@@ -47,6 +49,7 @@ public interface CronModel {
 
         /**
          * Concrete Job Class for the Scriptable Support
+         * @see <a href="https://www.javadoc.io/doc/org.quartz-scheduler/quartz/2.3.0/org/quartz/Job.html">Job</a>
          */
         final class CronJob implements Job {
 
@@ -80,12 +83,14 @@ public interface CronModel {
 
         /**
          * Details for the Job
+         * @see <a href="https://www.quartz-scheduler.org/api/2.3.0/org/quartz/JobDetail.html">JobDetail</a>
          * @return a JobDetail object
          */
         JobDetail jobDetail();
 
         /**
          * Trigger for the Job
+         * @see <a href="https://www.javadoc.io/doc/org.quartz-scheduler/quartz/2.3.0/org/quartz/Trigger.html">Trigger</a>
          * @return a Trigger object
          */
         Trigger trigger();
@@ -158,6 +163,7 @@ public interface CronModel {
 
     /**
      * Global SchedulerFactory
+     * @see <a href="https://www.quartz-scheduler.org/api/2.3.0/org/quartz/SchedulerFactory.html">SchedulerFactory</a>
      */
     SchedulerFactory SCHEDULER_FACTORY = new StdSchedulerFactory();
 
@@ -177,6 +183,7 @@ public interface CronModel {
 
     /**
      * The Default Factory for Scheduler
+     * @see <a href="https://www.quartz-scheduler.org/api/2.3.0/org/quartz/SchedulerFactory.html">SchedulerFactory</a>
      * @return whatever factory one may wants to use
      */
     default SchedulerFactory factory(){
@@ -222,6 +229,7 @@ public interface CronModel {
 
     /**
      * Quick Method to get the underlying Scheduler
+     * @see <a href="https://www.javadoc.io/doc/org.quartz-scheduler/quartz/2.3.0/org/quartz/Scheduler.html">Scheduler</a>
      * @return Underlying Scheduler
      */
     static Scheduler scheduler(){

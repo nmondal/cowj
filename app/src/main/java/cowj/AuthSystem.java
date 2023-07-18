@@ -11,7 +11,8 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- *  Auth System - essentially integrates JCasbin into the system
+ * Auth System - essentially integrates JCasbin into the system
+ * @see <a href="https://github.com/casbin/jcasbin">JCasbin</a>
  */
 public interface AuthSystem {
 
@@ -48,6 +49,7 @@ public interface AuthSystem {
 
     /**
      * Creates a JCasbin policy adapter
+     * @see <a href="https://casbin.org/docs/adapters">Casbin Policy Adapters</a>
      * @param conf properties which will be used to create the adapter
      * @param baseDir base directory of the auth files
      * @return a JCasbin policy adapter
