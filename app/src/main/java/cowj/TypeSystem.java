@@ -237,6 +237,10 @@ public interface TypeSystem {
     ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
 
+    /**
+     * A FileWatcher to reload JSON Schemas in case dev mode is on ( prod mode is off )
+     * One should be careful, interim syntax errors will be caught and will be logged
+     */
     FileWatcher RELOADER = new FileWatcher() {
         @Override
         public boolean test(String s) {

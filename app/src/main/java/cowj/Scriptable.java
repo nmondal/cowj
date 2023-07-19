@@ -304,6 +304,10 @@ public interface Scriptable  {
      */
     ScriptEngineManager MANAGER = new ScriptEngineManager();
 
+    /**
+     * A FileWatcher to reload scripts in case dev mode is on ( prod mode is off )
+     * One should be careful, interim syntax errors will be caught and will be logged
+     */
     FileWatcher RELOADER = new FileWatcher() {
         @Override
         public boolean test(String s) {

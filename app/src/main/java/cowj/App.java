@@ -11,6 +11,13 @@ import zoomba.lang.core.types.ZTypes;
 public class App {
 
     private static boolean PROD_MODE = true;
+
+    /**
+     * Is the Cowj system running in the prod mode ?
+     * If the 2nd command line is specified as 'true'
+     * then it would be running in non prod mode, i.e. dev mode.
+     * @return true if prod, i.e. non dev mode, false if dev mode
+     */
     public static boolean isProdMode(){ return PROD_MODE ; }
 
     /**
