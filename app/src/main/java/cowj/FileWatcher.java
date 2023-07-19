@@ -24,7 +24,7 @@ interface FileWatcher extends Consumer<String>, Predicate<String> {
      * @param args arguments to format the string
      */
     static void log(String format, Object...args){
-        String resp = new ZDate() + "=>" + String.format(format,args);
+        String resp = new ZDate() + " => " + String.format(format,args);
         System.out.println(resp);
     }
 
@@ -34,7 +34,7 @@ interface FileWatcher extends Consumer<String>, Predicate<String> {
      * @param args arguments to format the string
      */
     static void err(String format, Object...args){
-        String resp = new ZDate() + "=>" + String.format(format,args);
+        String resp = new ZDate() + " => " + String.format(format,args);
         System.err.println(resp);
     }
 
@@ -83,5 +83,50 @@ interface FileWatcher extends Consumer<String>, Predicate<String> {
         };
         Thread watcherThread = new Thread(runnable);
         watcherThread.start();
+    }
+
+    interface FileResourceLoaderFunction<T> {
+        T load(String filePath) throws Throwable;
+    }
+
+    /**
+     * Creates a FileWatcher which can reload resource
+     * @param cache a map containing the cached resources, keyed against file path
+     * @param load a loader function which can recreate resource from a file path
+     * @return a FileWatcher which reloads resources
+     * @param <T> type of the resource
+     */
+    static <T> FileWatcher ofCache(Map<String,T> cache, FileResourceLoaderFunction<T> load){
+        return new FileWatcher() {
+            @Override
+            public boolean test(String s) {
+                try {
+                    return cache.containsKey(s);
+                }catch (Throwable ignore){}
+                return false;
+            }
+
+            @Override
+            public void accept(String s) {
+                try {
+                    T resource = load.load(s);
+                    cache.put(s,resource);
+                    FileWatcher.log("File was reloaded : " + s);
+                } catch ( Throwable error){
+                    FileWatcher.err("File Loading Error : " + error);
+                }
+            }
+        };
+    }
+
+    /**
+     * Creates a FileWatcher which can reload resource & register it
+     * @param cache a map containing the cached resources, keyed against file path
+     * @param load a loader function which can recreate resource from a file path
+     * @param <T> type of the resource
+     */
+    static <T> void ofCacheAndRegister( Map<String,T> cache, FileResourceLoaderFunction<T> load ){
+        final FileWatcher fileWatcher = ofCache(cache,load);
+        FILE_WATCHERS.add(fileWatcher);
     }
 }

@@ -18,6 +18,7 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -305,37 +306,6 @@ public interface Scriptable  {
     ScriptEngineManager MANAGER = new ScriptEngineManager();
 
     /**
-     * A FileWatcher to reload scripts in case dev mode is on ( prod mode is off )
-     * One should be careful, interim syntax errors will be caught and will be logged
-     */
-    FileWatcher RELOADER = new FileWatcher() {
-        @Override
-        public boolean test(String s) {
-            try {
-                return scripts.containsKey(s) || zScripts.containsKey(s);
-            }catch (Throwable ignore){}
-            return false;
-        }
-
-        @Override
-        public void accept(String s) {
-            try {
-                if ( scripts.containsKey(s)){
-                    scripts.remove(s);
-                    loadScript("reload", s);
-                }
-                else if ( zScripts.containsKey(s)){
-                    zScripts.remove(s);
-                    loadZScript("reload", s);
-                }
-                FileWatcher.log("Script was reloaded : " + s);
-            } catch ( Throwable error){
-                FileWatcher.err("Script Loading Error : " + error);
-            }
-        }
-    };
-
-    /**
      * Basal hack to load Jython and other Engines
      */
     Serializable JythonLoad = new Serializable() { // simplest hack to load Jython ...
@@ -346,7 +316,8 @@ public interface Scriptable  {
             MANAGER.registerEngineName( "JavaScript", new RhinoScriptEngineFactory());
             MANAGER.registerEngineName( "groovy", new GroovyScriptEngineFactory());
             MANAGER.registerEngineName( "python", new PyScriptEngineFactory());
-            FileWatcher.FILE_WATCHERS.add(RELOADER);
+            FileWatcher.ofCacheAndRegister( zScripts, (path) -> loadZScript("reload", path));
+            FileWatcher.ofCacheAndRegister( scripts, (path) -> loadScript("reload", path));
         }
     };
 

@@ -12,11 +12,10 @@ import spark.Filter;
 import spark.Request;
 import spark.Response;
 import spark.Spark;
-import zoomba.lang.core.interpreter.ZScript;
 import zoomba.lang.core.types.ZTypes;
 
-import javax.script.CompiledScript;
 import java.io.File;
+import java.io.Serializable;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -236,32 +235,6 @@ public interface TypeSystem {
      */
     ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-
-    /**
-     * A FileWatcher to reload JSON Schemas in case dev mode is on ( prod mode is off )
-     * One should be careful, interim syntax errors will be caught and will be logged
-     */
-    FileWatcher RELOADER = new FileWatcher() {
-        @Override
-        public boolean test(String s) {
-            try {
-                return VALIDATORS.containsKey(s) ;
-            }catch (Throwable ignore){}
-            return false;
-        }
-
-        @Override
-        public void accept(String s) {
-            try {
-                VALIDATORS.remove(s);
-                loadSchema(s);
-                FileWatcher.log("Schema Reloaded : " + s);
-            } catch ( Throwable error){
-                FileWatcher.err("Schema Loading Error : " + error);
-            }
-        }
-    };
-
     /**
      * Cached SchemaValidator
      * Key - file name
@@ -269,6 +242,14 @@ public interface TypeSystem {
      */
     Map<String,SchemaValidator> VALIDATORS = new HashMap<>();
 
+    /**
+     * Stale Static call to register auto reload for type system schemas
+     */
+    Serializable staticInitHack = new Serializable() {
+        static {
+            FileWatcher.ofCacheAndRegister( VALIDATORS, TypeSystem::loadSchema);
+        }
+    };
 
     /**
      * Creates a SchemaValidator from a Json schema file
@@ -370,7 +351,6 @@ public interface TypeSystem {
      * Attaches the TypeSystem to a Spark instance
      */
     default void attach() {
-        FileWatcher.FILE_WATCHERS.add(RELOADER);
         if (verification().in()) { // only if verification is in...
             routes().keySet().forEach(path -> {
                 Filter schemaVerifier = inputSchemaVerificationFilter(path);
