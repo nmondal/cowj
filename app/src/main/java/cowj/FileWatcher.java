@@ -97,6 +97,8 @@ interface FileWatcher extends Consumer<String>, Predicate<String> {
      * @param <T> type of the resource
      */
     static <T> FileWatcher ofCache(Map<String,T> cache, FileResourceLoaderFunction<T> load){
+        Objects.requireNonNull(cache);
+        Objects.requireNonNull(load);
         return new FileWatcher() {
             @Override
             public boolean test(String s) {
@@ -109,6 +111,7 @@ interface FileWatcher extends Consumer<String>, Predicate<String> {
             @Override
             public void accept(String s) {
                 try {
+                    cache.remove(s);
                     T resource = load.load(s);
                     cache.put(s,resource);
                     FileWatcher.log("File was reloaded : " + s);

@@ -306,6 +306,22 @@ public interface Scriptable  {
     ScriptEngineManager MANAGER = new ScriptEngineManager();
 
     /**
+     * Cached map of all CompiledScript
+     * @see <a href="https://docs.oracle.com/javase/9/docs/api/javax/script/CompiledScript.html">CompiledScript</a>
+     * Key - location of the scripts
+     * Value - CompiledScript
+     */
+    Map<String, CompiledScript> scripts = new HashMap<>(); // TODO ? Should be LRU? What?
+
+    /**
+     * Cached map of all ZScript
+     * @see <a href="https://gitlab.com/non.est.sacra/zoomba/-/blob/master/src/main/java/zoomba/lang/core/interpreter/ZScript.java">ZScript</a>
+     * Key - location of the scripts
+     * Value - ZScript
+     */
+    Map<String, ZScript> zScripts = new HashMap<>(); // TODO ? Should be LRU? What?
+
+    /**
      * Basal hack to load Jython and other Engines
      */
     Serializable JythonLoad = new Serializable() { // simplest hack to load Jython ...
@@ -334,23 +350,6 @@ public interface Scriptable  {
         final ScriptEngine engine = MANAGER.getEngineByName(engineName);
         return engine;
     }
-
-    /**
-     * Cached map of all CompiledScript
-     * @see <a href="https://docs.oracle.com/javase/9/docs/api/javax/script/CompiledScript.html">CompiledScript</a>
-     * Key - location of the scripts
-     * Value - CompiledScript
-     */
-    Map<String, CompiledScript> scripts = new HashMap<>(); // TODO ? Should be LRU? What?
-
-
-    /**
-     * Cached map of all ZScript
-     * @see <a href="https://gitlab.com/non.est.sacra/zoomba/-/blob/master/src/main/java/zoomba/lang/core/interpreter/ZScript.java">ZScript</a>
-     * Key - location of the scripts
-     * Value - ZScript
-     */
-    Map<String, ZScript> zScripts = new HashMap<>(); // TODO ? Should be LRU? What?
 
     /**
      * Loads a script for JSR-223 Engine
