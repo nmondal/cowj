@@ -4,9 +4,7 @@ import cowj.plugins.CurlWrapper;
 import spark.*;
 import zoomba.lang.core.types.ZTypes;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 import static spark.Spark.*;
@@ -162,6 +160,7 @@ public interface ModelRunner extends Runnable {
             }
         }
         awaitInitialization();
+        FileWatcher.startWatchDog( baseDir );
         System.out.println("Cowj is initialized!");
     }
 

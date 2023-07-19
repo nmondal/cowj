@@ -304,6 +304,33 @@ public interface Scriptable  {
      */
     ScriptEngineManager MANAGER = new ScriptEngineManager();
 
+    FileWatcher RELOADER = new FileWatcher() {
+        @Override
+        public boolean test(String s) {
+            try {
+                return scripts.containsKey(s) || zScripts.containsKey(s);
+            }catch (Throwable ignore){}
+            return false;
+        }
+
+        @Override
+        public void accept(String s) {
+            try {
+                if ( scripts.containsKey(s)){
+                    scripts.remove(s);
+                    loadScript("reload", s);
+                }
+                else if ( zScripts.containsKey(s)){
+                    zScripts.remove(s);
+                    loadZScript("reload", s);
+                }
+                FileWatcher.log("Script was reloaded : " + s);
+            } catch ( Throwable error){
+                FileWatcher.err("Script Loading Error : " + error);
+            }
+        }
+    };
+
     /**
      * Basal hack to load Jython and other Engines
      */
@@ -315,6 +342,7 @@ public interface Scriptable  {
             MANAGER.registerEngineName( "JavaScript", new RhinoScriptEngineFactory());
             MANAGER.registerEngineName( "groovy", new GroovyScriptEngineFactory());
             MANAGER.registerEngineName( "python", new PyScriptEngineFactory());
+            FileWatcher.FILE_WATCHERS.add(RELOADER);
         }
     };
 

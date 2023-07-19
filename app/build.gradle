@@ -61,6 +61,9 @@ dependencies {
     // Auth
     implementation 'org.casbin:jcasbin:1.33.1'
 
+    // File Watching ....
+    implementation 'io.methvin:directory-watcher:0.18.0'
+
     ////////// Plugin Stuff //////////////
 
     // Storage...

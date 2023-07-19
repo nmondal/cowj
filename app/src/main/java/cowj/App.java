@@ -3,10 +3,15 @@
  */
 package cowj;
 
+import zoomba.lang.core.types.ZTypes;
+
 /**
  * Entry point for the Cowj Application
  */
 public class App {
+
+    private static boolean PROD_MODE = true;
+    public static boolean isProdMode(){ return PROD_MODE ; }
 
     /**
      * Runs the Cowj App
@@ -14,8 +19,14 @@ public class App {
      */
     public static void main(String[] args) {
         if ( args.length < 1 ){
-            System.out.println("Usage : java -jar cowj.jar <config_file_path>");
+            System.err.println("Usage : java -jar cowj.jar <config_file_path> [true|false(default)]");
+            System.err.println("If the 2nd arg is 'true', then automatically reloads script,json schema resources on save.");
+            System.err.println("Default is 'false'. Do not run with 'true' in production");
             return;
+        }
+        if ( args.length > 1 ){
+            PROD_MODE = !ZTypes.bool(args[1],false);
+            System.out.printf("Casted 2nd arg '%s' as DEV_MODE=%s %n", args[1], !PROD_MODE);
         }
         final String path = args[0];
         ModelRunner mr = ModelRunner.fromModel(path) ;
