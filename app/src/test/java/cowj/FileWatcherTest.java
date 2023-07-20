@@ -82,4 +82,10 @@ public class FileWatcherTest {
         fileWatcher.accept("foo");
     }
 
+    @Test
+    public void simulateSetupErrorTest() throws Exception {
+        FileWatcher.startWatchDog(null);
+        Thread.sleep(1000);
+        Assert.assertTrue(true);
+    }
 }
