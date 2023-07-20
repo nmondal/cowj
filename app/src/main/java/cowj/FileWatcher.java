@@ -104,7 +104,9 @@ interface FileWatcher extends Consumer<String>, Predicate<String> {
             public boolean test(String s) {
                 try {
                     return cache.containsKey(s);
-                }catch (Throwable ignore){}
+                }catch (Throwable error){
+                    FileWatcher.err("File Testing Error : " + error);
+                }
                 return false;
             }
 
