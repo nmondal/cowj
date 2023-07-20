@@ -502,14 +502,53 @@ To read more see [Writing Input Validations](manual/types.md)
 We support `casbin` based Auth.
 To read more see [Embedding Auth](manual/auth.md)
 
-## Running
+## Using Stand Alone 
 
-1. Build the app.
-2. Run the app by going to the `app/build/libs` folder by:
+
+### Building 
+
+1. Clone the repo to a local directory  
+2. Install / Download java 17 from adoptium ( https://adoptium.net ) 
+3. If you do no have `gradle` install/download gradle  ( https://gradle.org/install ) 
+4. Open command promt and run `gradle`, if it runs you are good.
+5. Go to the local directory where cowj is cloned and issue the command `gradle build`
+6. It would take some time and will be build.
+
+
+### Running 
+
+1. Build the app. 
+2. Go to the `app/build/libs` folder.
+3. Run the stand-alone binary by:
 
 ```shell
-java -jar cowj*  <config-file>
+java -jar cowj-0.1-SNAPSHOT.jar  <config-file>
+```
+
+where you can chose any yaml config file. There are variety of files in the `app/samples` folder.
+For example to run the `hello` app :
+
+```shell
+# you are in the folder app/build/libs 
+java -jar cowj-0.1-SNAPSHOT.jar  ../../samples/hello/hello.yaml 
 ```
 
 The jar has been created such as to have classpath property set to run
 as long as all the dependencies are in the `deps` folder.
+
+### Auto Load on Save for Development & Testing 
+
+It was suggested that for development and testing it is better to have automatic reloading of some of the 
+files on save. In a full configuration based system this pose a problem. 
+However, we have implemented load on save for 
+
+1. Scripts 
+2. JSON Schema 
+
+Any other configuration file have implication and needs to reload the entire app.
+
+```shell
+# you are in the folder app/build/libs 
+java -jar cowj-0.1-SNAPSHOT.jar  ../../samples/hello/hello.yaml true # the last argument true ensures it is running in DEV mode  
+```
+And will load script and schema files automatically on save.
