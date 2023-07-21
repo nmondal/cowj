@@ -4,12 +4,14 @@ import com.google.api.gax.paging.Page;
 import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.*;
 import cowj.DataSource;
+import cowj.Model;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 import zoomba.lang.core.types.ZTypes;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -21,6 +23,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class GoogleStorageWrapperTest {
+    private static final Model model = () -> ".";
+    @Test
+    public void initTest(){
+        DataSource ds = GoogleStorageWrapper.STORAGE.create("foo", Collections.emptyMap(), model);
+        Assert.assertNotNull( ds.proxy() );
+        Assert.assertTrue( ds.proxy() instanceof GoogleStorageWrapper );
+        Assert.assertNotNull( ((GoogleStorageWrapper) ds.proxy()).storage() );
+    }
 
     @Test
     public void dumpWhenDoesExistTest(){
