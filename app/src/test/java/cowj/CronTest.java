@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
 
 public class CronTest {
 
-    private final List<JobExecutionException> exceptions = Collections.synchronizedList( new ArrayList<>(4));
+    private final List<EitherMonad<Object>> results = Collections.synchronizedList( new ArrayList<>(4));
 
     private final JobListener jobListener = new JobListener() {
         @Override
@@ -33,13 +33,36 @@ public class CronTest {
 
         @Override
         public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
-            exceptions.add(jobException);
+            if ( jobException != null ){
+                results.add( EitherMonad.error(jobException));
+            } else {
+                results.add( EitherMonad.value( context.getResult() ));
+            }
         }
     };
 
     @After
     public void cleanUp(){
-        exceptions.clear();
+        results.clear();
+    }
+
+    @Test
+    public void runTest() throws Exception {
+        Map<String,Object> cronJob = Map.of(
+                CronModel.Task.EXEC, "samples/auth_demo/fetch.zm",
+                CronModel.Task.BOOT, false,
+                CronModel.Task.SCHEDULE, "0/8 * * * * ? *"
+        );
+        Model model = () -> "." ;
+        Map<String,Map<String,Object>> cron = Map.of("bar", cronJob);
+        CronModel cronModel = CronModel.fromConfig( model, cron);
+        CronModel.schedule(cronModel);
+        CronModel.scheduler().getListenerManager().addJobListener(jobListener);
+        Thread.sleep(15000);
+        CronModel.stop();
+        Assert.assertFalse( results.isEmpty() );
+        Assert.assertTrue( results.get(0).isSuccessful() );
+        Assert.assertEquals("fetch done!", results.get(0).value() );
     }
 
     @Test
@@ -56,8 +79,9 @@ public class CronTest {
         CronModel.scheduler().getListenerManager().addJobListener(jobListener);
         Thread.sleep(15000);
         CronModel.stop();
-        Assert.assertFalse( exceptions.isEmpty() );
-        JobExecutionException je = exceptions.get(0);
+        Assert.assertFalse( results.isEmpty() );
+        Assert.assertTrue( results.get(0).inError() );
+        JobExecutionException je = (JobExecutionException)results.get(0).error();
         Assert.assertTrue(je.getCause() instanceof Scriptable.TestAsserter.HaltException);
     }
 

@@ -62,7 +62,8 @@ public interface CronModel {
                 try {
                     Bindings b = new SimpleBindings();
                     b.put(JOB_EXEC_CONTEXT, context);
-                    scriptable.exec(b);
+                    Object result = scriptable.exec(b);
+                    context.setResult(result); // set the result
                 } catch (Throwable t) {
                     throw new JobExecutionException(t);
                 }
