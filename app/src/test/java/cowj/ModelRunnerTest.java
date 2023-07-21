@@ -1,5 +1,6 @@
 package cowj;
 
+import cowj.plugins.CurlWrapper;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -125,11 +126,11 @@ public class ModelRunnerTest {
     public void proxyTest() {
         mr = runModel(hello);
         // proxy route
-        String resp = get("http://localhost:5003", "/users");
+        String resp = get("http://localhost:5003", "/users?id=1");
         Assert.assertNotNull(resp);
         Object r = ZTypes.json(resp);
         Assert.assertTrue( r instanceof List);
-        Assert.assertFalse( ((List<?>) r).isEmpty());
+        Assert.assertEquals( 1, ((List<?>) r).size());
     }
 
     @Test
@@ -156,6 +157,16 @@ public class ModelRunnerTest {
         ZWeb.ZWebCom r = zWeb.get("/error", Collections.emptyMap());
         Assert.assertEquals( "proxy transform boom!", r.body());
         Assert.assertEquals( 500, r.status);
+    }
+
+    @Test
+    public void proxyDestinationErrorCheck() throws Exception {
+        mr = runModel(proxy);
+        ZWeb zWeb = new ZWeb("http://localhost:5004");
+        ZWeb.ZWebCom r = zWeb.get("/wp", Collections.emptyMap());
+        Assert.assertEquals( 500, r.status);
+        Assert.assertNotNull(r.body());
+        Assert.assertTrue( r.body().contains(CurlWrapper.PROXY_ROUTE_FAILED_ERROR_PREFIX) );
     }
 
     @Test

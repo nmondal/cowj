@@ -43,3 +43,7 @@ data-sources:
   google:
     type: curl
     url: https://google.co.in
+  foo:
+    type: curl
+    url : https://foo.bar.com
+

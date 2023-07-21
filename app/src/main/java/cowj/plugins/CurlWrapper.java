@@ -2,14 +2,18 @@ package cowj.plugins;
 
 import cowj.DataSource;
 import cowj.EitherMonad;
+import cowj.Scriptable;
 import spark.Request;
 import spark.Response;
 import spark.Spark;
 import zoomba.lang.core.io.ZWeb;
 
+import javax.script.Bindings;
+import javax.script.SimpleBindings;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Abstraction for a HTTP[s] web call
@@ -75,6 +79,11 @@ public interface CurlWrapper {
     }
 
     /**
+     * Constant string prefix for error when proxy destination route failed to execute
+     */
+    String PROXY_ROUTE_FAILED_ERROR_PREFIX = "Proxy route failed executing!" ;
+
+    /**
      * Method for forward proxy
      * @param verb HTTP verb
      * @param destPath destination path
@@ -83,7 +92,8 @@ public interface CurlWrapper {
      * @return response body of the proxy request
      */
     default String proxy(String verb, String destPath, Request request, Response response) {
-        String body = request.body() != null ? request.body() : "";
+        Objects.requireNonNull(request.body()); // this, according to code, can never be bull
+        String body = request.body() ;
         Object proxyPayload = request.attribute( PROXY_ATTRIBUTE ) ;
         // now here...
         final Map<String, Object> resp ;
@@ -97,8 +107,8 @@ public interface CurlWrapper {
         Map<String, String> headerMap = (Map) resp.getOrDefault(HEADER, originalPayload.getOrDefault(HEADER, Collections.emptyMap()));
         body = resp.getOrDefault(BODY, body).toString();
         EitherMonad<ZWeb.ZWebCom> curlResponse = send(verb, destPath, headerMap, queryMap, body);
-        if (curlResponse.inError()) {
-            Spark.halt(500, "Proxy route failed executing!\n" + curlResponse.error());
+        if ( curlResponse.inError() ){
+            Spark.halt(500, PROXY_ROUTE_FAILED_ERROR_PREFIX + "\n" + curlResponse.error()) ;
         }
         response.status(curlResponse.value().status);
         // no mapping of response headers from destination forward...
