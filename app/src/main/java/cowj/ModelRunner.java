@@ -137,7 +137,7 @@ public interface ModelRunner extends Runnable {
         }
         // load auth...
         AuthSystem authSystem = AuthSystem.fromFile(m.auth());
-        authSystem.attach( m.staticPath() );
+        authSystem.attach();
         // load type system ...
         TypeSystem typeSystem = TypeSystem.fromFile( m.schemaPath());
         typeSystem.attach();

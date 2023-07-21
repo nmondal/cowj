@@ -108,9 +108,11 @@ public interface AuthSystem {
 
     /**
      * Attaches an Auth System to Spark-Java
-     * @param unprotected directory prefix which should not be protected by Auth System
+     * Note :
+     * Any route not explicitly not allowed in the policy will be accessible by guests automatically
+     * So we need to be careful about it while defining policy
      */
-    default void attach( String unprotected){
+    default void attach(){
         if ( disabled() ){ return; }
         final String authDefDir = definitionsDir();
         final Adapter adapter = adapter(policy(), authDefDir);
@@ -118,13 +120,12 @@ public interface AuthSystem {
         final Enforcer enforcer = new Enforcer(casBinModel, adapter);
         final String userHeader = userHeader();
         Spark.before("*", ((request, response) -> {
+            final String pathInfo = request.pathInfo();
+            final String verb = request.requestMethod();
             final String userName = request.headers(userHeader);
             if ( userName == null ){
                 Spark.halt(401, UN_AUTHENTICATED + " : " +  haltMessage());
             }
-            final String pathInfo = request.pathInfo();
-            final String verb = request.requestMethod();
-            if( pathInfo.startsWith(unprotected)) return;
             final boolean thouShallPass = enforcer.enforce( userName, pathInfo, verb);
             if ( !thouShallPass){
                 Spark.halt(403, UN_AUTHORIZED + " : " +  haltMessage());
