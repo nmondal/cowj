@@ -1,20 +1,18 @@
 package cowj.plugins;
 
 import cowj.*;
-import jnr.ffi.Struct;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.junit.Assert.*;
 
@@ -91,6 +89,28 @@ public class JDBCWrapperTest {
            Assert.assertTrue( age instanceof Integer );
        });
     }
+
+    @Test
+    public void queryTestWithInvalidConnection() throws SQLException {
+        // Check validity
+        Assert.assertEquals( "values current_timestamp", derby.staleCheckQuery() );
+        EitherMonad<Connection> connectionEitherMonad = derby.connection();
+        // destroy it
+        connectionEitherMonad.value().close();
+        // now let's do a query
+        EitherMonad<List<Map<String,Object>>> resp = derby.select("select * from Data" , Collections.emptyList());
+        Assert.assertTrue(resp.isSuccessful());
+        List<Map<String,Object>> rows = resp.value();
+        Assert.assertEquals( UPTO, rows.size() );
+        // SQL has poor sense of casing...
+        rows.forEach( m -> {
+            Object name = m.get("NAME");
+            Assert.assertTrue( name instanceof String );
+            Object age = m.get("AGE");
+            Assert.assertTrue( age instanceof Integer );
+        });
+    }
+
 
     @Test
     public void injectError(){
@@ -194,6 +214,7 @@ public class JDBCWrapperTest {
         // Let's create another thread
         EitherMonad<?>[] dbT = new EitherMonad[1];
         Runnable r = () ->{
+            Assert.assertFalse( derby.isValid() );
             dbT[0] = derby.connection();
         };
         Thread t = new Thread(r);
