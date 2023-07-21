@@ -114,6 +114,13 @@ jacocoTestReport {
         csv.required = false
         html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
     }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    "cowj/App.class"
+            ])
+        }))
+    }
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
