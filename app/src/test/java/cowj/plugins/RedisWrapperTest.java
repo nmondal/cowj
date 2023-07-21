@@ -5,6 +5,8 @@ import cowj.Model;
 import cowj.Scriptable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.MockedConstruction;
+import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.UnifiedJedis;
 import redis.embedded.RedisServer;
@@ -17,8 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.Mockito.mockConstruction;
 
 
 public class RedisWrapperTest {
@@ -45,12 +47,25 @@ public class RedisWrapperTest {
     }
 
     @Test
+    public void bootMultipleTest(){
+        MockedConstruction<JedisCluster> mock = mockConstruction(JedisCluster.class);
+        UnifiedJedis jedis = boot(List.of("localhost:4242", "localhost:5555" ));
+        Assert.assertTrue(jedis instanceof JedisCluster);
+    }
+
+    @Test
     public void invalidConfigTest() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             DataSource ds = RedisWrapper.REDIS.create("foo", Collections.emptyMap(), model);
         });
         Assert.assertNotNull(exception);
         Assert.assertTrue(exception.getMessage().contains("empty"));
+
+        exception = assertThrows(IllegalArgumentException.class, () -> {
+            DataSource ds = RedisWrapper.REDIS.create("foo", Map.of("urls", false), model);
+        });
+        Assert.assertNotNull(exception);
+        Assert.assertTrue(exception.getMessage().contains("urls"));
     }
 
     // Hack to get unused port https://stackoverflow.com/a/2675416/21970403

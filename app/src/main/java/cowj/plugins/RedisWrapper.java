@@ -35,13 +35,15 @@ public interface RedisWrapper {
      */
     DataSource.Creator REDIS = (name, config, parent) -> {
         Object urlObject = config.getOrDefault(URLS, "");
-        List<String> urls = new ArrayList<>();
+        final List<String> urls;
         if (urlObject instanceof List) {
             urls = (List<String>) urlObject;
         } else if (urlObject instanceof String) {
             SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.getOrDefault(SECRET_MANAGER, SecretManager.DEFAULT);
             String urlJson = sm.getOrDefault(urlObject.toString(), "[]");
             urls = (List<String>) ZTypes.json(urlJson);
+        } else {
+            throw new IllegalArgumentException("urls - value is neither string or list!");
         }
 
         if (urls.isEmpty()) throw new IllegalArgumentException("url list is empty!");
