@@ -8,6 +8,8 @@ import zoomba.lang.core.io.ZFileSystem;
 import zoomba.lang.core.operations.ZJVMAccess;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,9 +52,10 @@ public class FileWatcherTest {
     }
 
     @AfterClass
-    public static void afterClass(){
+    public static void afterClass() throws Exception {
         ZJVMAccess.setProperty( new App(), "PROD_MODE", true);
         Assert.assertTrue( App.isProdMode() );
+        Files.delete(Paths.get(FILE_MOD_DIR + "/bar.txt"));
     }
 
     @Test
@@ -60,6 +63,8 @@ public class FileWatcherTest {
         String absPath = getAbsFilePath(FILE_MOD_DIR + "/foo.txt" );
         ZFileSystem.write(absPath, "42");
         FileWatcher.log("Modified File Externally!");
+        Files.createFile(Paths.get(FILE_MOD_DIR + "/bar.txt"));
+        FileWatcher.log("Created File Externally!");
         // give it sometime to propagate...
         Thread.sleep(1500);
         final long val = contentMap.getOrDefault(absPath, 0L);
