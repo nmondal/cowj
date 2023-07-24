@@ -359,17 +359,21 @@ public interface Scriptable  {
      *             example: "2+2; //.js" will load js engine
      * @return a CompiledScript
      * @throws IOException in case file not found
-     * @throws ScriptException in case error happened while running the script
      */
-    static CompiledScript loadScript(String directive, String path) throws IOException, ScriptException {
+    static CompiledScript loadScript(String directive, String path) throws IOException {
         // this now becomes a hack ... expression will be used with "2 + 2 //.js"
         // and this will load the engine
         if ( scripts.containsKey(path) ) return scripts.get(path);
         String content = INLINE.equals(directive) ? path : new String(Files.readAllBytes(Paths.get(path)));
         final ScriptEngine engine = getEngine(path);
-        CompiledScript compiled = ((Compilable) engine).compile(content);
-        scripts.put(path,compiled);
-        return compiled;
+        try {
+            CompiledScript compiled = ((Compilable) engine).compile(content);
+            scripts.put(path,compiled);
+            return compiled;
+        }catch (ScriptException sc){
+            System.err.printf("Script Load Error: %s ==> %s %n", sc.getMessage(), path);
+            throw new RuntimeException("Script Loading Failed!");
+        }
     }
 
 
