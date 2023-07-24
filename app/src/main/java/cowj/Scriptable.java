@@ -382,9 +382,14 @@ public interface Scriptable  {
      */
     static ZScript loadZScript(String directive, String path)  {
         if ( zScripts.containsKey(path) ) return zScripts.get(path);
-        final ZScript zScript = INLINE.equals( directive) ? new ZScript(path) : new ZScript(path, null); // no parent
-        zScripts.put(path,zScript);
-        return zScript;
+        try {
+            final ZScript zScript = INLINE.equals( directive) ? new ZScript(path) : new ZScript(path, null); // no parent
+            zScripts.put(path,zScript);
+            return zScript;
+        }catch (RuntimeException rt){
+            System.err.printf("Script Load Error: %s ==> %s %n", rt.getMessage(), path);
+            throw new RuntimeException("Script Loading Failed!");
+        }
     }
 
     /**
