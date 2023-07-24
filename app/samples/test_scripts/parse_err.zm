@@ -1,0 +1,2 @@
+// produce parse error
+foo = (
