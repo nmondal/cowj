@@ -9,7 +9,7 @@ import redis.clients.jedis.UnifiedJedis;
 import zoomba.lang.core.types.ZNumber;
 import zoomba.lang.core.types.ZTypes;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -35,13 +35,20 @@ public interface RedisWrapper {
      */
     DataSource.Creator REDIS = (name, config, parent) -> {
         Object urlObject = config.getOrDefault(URLS, "");
-        final List<String> urls;
+        List<String> urls;
         if (urlObject instanceof List) {
             urls = (List<String>) urlObject;
         } else if (urlObject instanceof String) {
-            SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.getOrDefault(SECRET_MANAGER, SecretManager.DEFAULT);
-            String urlJson = sm.getOrDefault(urlObject.toString(), "[]");
-            urls = (List<String>) ZTypes.json(urlJson);
+            final String mySecretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
+            SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.getOrDefault(mySecretManagerName, SecretManager.DEFAULT);
+            String urlJson = parent.template(urlObject.toString(), sm.env());
+            try {
+                urls = (List<String>) ZTypes.json(urlJson);
+            }catch (Throwable t){
+                System.err.println("There was an error loading redis 'urls' from secret manager : " + t.getMessage());
+                urls = Collections.emptyList();
+            }
+
         } else {
             throw new IllegalArgumentException("urls - value is neither string or list!");
         }
