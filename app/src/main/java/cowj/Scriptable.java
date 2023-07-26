@@ -397,7 +397,8 @@ public interface Scriptable  {
             zScripts.put(path,zScript);
             return zScript;
         }catch (RuntimeException rt){
-            logger.error("Script Load Error: {} ==> {}", rt.getMessage(), path);
+            // zmb has support for detecting script path
+            logger.error("Script Load Error: {}", rt.getMessage());
             throw new RuntimeException("Script Loading Failed!");
         }
     }
