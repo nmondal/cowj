@@ -4,6 +4,8 @@ import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
 import org.mozilla.javascript.engine.RhinoScriptEngineFactory ;
 import org.python.core.Options;
 import org.python.jsr223.PyScriptEngineFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import spark.*;
 import zoomba.lang.core.interpreter.ZContext;
 import zoomba.lang.core.interpreter.ZScript;
@@ -18,7 +20,6 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,6 +29,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * @see <a href="https://en.wikipedia.org/wiki/Scripting_for_the_Java_Platform">JSR-223</a>
  */
 public interface Scriptable  {
+
+    /**
+     * Logger for the Cowj ModelRunner
+     */
+    Logger logger = LoggerFactory.getLogger(Scriptable.class);
 
     /**
      * Basal method to run any scripts
@@ -371,7 +377,7 @@ public interface Scriptable  {
             scripts.put(path,compiled);
             return compiled;
         }catch (ScriptException sc){
-            System.err.printf("Script Load Error: %s ==> %s %n", sc.getMessage(), path);
+            logger.error("Script Load Error: {} ==> {}", sc.getMessage(), path);
             throw new RuntimeException("Script Loading Failed!");
         }
     }
@@ -391,7 +397,7 @@ public interface Scriptable  {
             zScripts.put(path,zScript);
             return zScript;
         }catch (RuntimeException rt){
-            System.err.printf("Script Load Error: %s ==> %s %n", rt.getMessage(), path);
+            logger.error("Script Load Error: {} ==> {}", rt.getMessage(), path);
             throw new RuntimeException("Script Loading Failed!");
         }
     }
@@ -477,7 +483,7 @@ public interface Scriptable  {
             binaryInstances.put(path, (Scriptable) instance);
             return (Scriptable) instance;
         }catch (Throwable t){
-            System.err.println( "Error registering type for Scriptable... : " + t);
+            logger.error( "Error registering type for Scriptable... : " + t);
         }
         return NOP.create(path,path);
     }
@@ -505,7 +511,7 @@ public interface Scriptable  {
             case  "js", "groovy", "py" -> JSR;
             case "class" -> BINARY;
             default -> {
-                System.err.printf("No pattern matched for path '%s' -> For handler '%s' Using NOP!%n", path, handler);
+                logger.error("No pattern matched for path '{}' -> For handler '{}' Using NOP!", path, handler);
                 yield NOP;
             }
         };

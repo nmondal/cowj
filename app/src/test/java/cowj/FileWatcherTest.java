@@ -62,9 +62,9 @@ public class FileWatcherTest {
     public void fileWatcherNoErrorTest() throws Exception {
         String absPath = getAbsFilePath(FILE_MOD_DIR + "/foo.txt" );
         ZFileSystem.write(absPath, "42");
-        FileWatcher.log("Modified File Externally!");
+        FileWatcher.logger.info("Modified File Externally!");
         Files.createFile(Paths.get(FILE_MOD_DIR + "/bar.txt"));
-        FileWatcher.log("Created File Externally!");
+        FileWatcher.logger.info("Created File Externally!");
         // give it sometime to propagate...
         Thread.sleep(1500);
         final long val = contentMap.getOrDefault(absPath, 0L);

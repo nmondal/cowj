@@ -3,6 +3,8 @@ package cowj;
 import org.casbin.jcasbin.main.Enforcer;
 import org.casbin.jcasbin.persist.Adapter;
 import org.casbin.jcasbin.persist.file_adapter.FileAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import spark.Spark;
 import zoomba.lang.core.types.ZTypes;
 
@@ -15,6 +17,11 @@ import java.util.Map;
  * @see <a href="https://github.com/casbin/jcasbin">JCasbin</a>
  */
 public interface AuthSystem {
+
+    /**
+     * Logger for the Auth
+     */
+    Logger logger = LoggerFactory.getLogger(AuthSystem.class);
 
     /**
      * Disables or Enables auth
@@ -149,7 +156,7 @@ public interface AuthSystem {
             final String filePath = f.getAbsolutePath();
             final String baseDir = f.getParent();
             Map<String,Object> conf = (Map)ZTypes.yaml( filePath, true);
-            System.out.println("Found AuthSystem, attaching : " + filePath );
+            logger.info("Found AuthSystem, attaching : " + filePath );
             return new AuthSystem() {
                 @Override
                 public boolean disabled() {
@@ -177,7 +184,7 @@ public interface AuthSystem {
                 }
             };
         }catch (Exception ignore){
-            System.err.println("AuthSystem was not found, returning NULL Auth!");
+            logger.error("AuthSystem was not found, returning NULL Auth!");
             return NULL;
         }
     }

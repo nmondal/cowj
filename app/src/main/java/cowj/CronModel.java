@@ -2,6 +2,8 @@ package cowj;
 
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zoomba.lang.core.types.ZTypes;
 
 import javax.script.Bindings;
@@ -16,6 +18,11 @@ import static org.quartz.JobBuilder.newJob;
  * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.3.0/quick-start.html#starting-a-sample-application">Quartz Scheduler</a>
  */
 public interface CronModel {
+
+    /**
+     * Logger for the Cron
+     */
+    Logger logger = LoggerFactory.getLogger(CronModel.class);
 
     /**
      * A Cowj Task
@@ -203,13 +210,18 @@ public interface CronModel {
         try {
             final Scheduler scheduler = schedulerFactory.getScheduler();
             // now the rest of the problem...
-            System.out.println("Cron Jobs are...");
+            logger.info("Cron Jobs are...");
             cronModel.tasks().forEach((name, task) -> {
-                System.out.printf("%s --> %s %n", task.name(), task.trigger());
+                logger.info( "{} --> {}", task.name(), task.trigger());
                 if ( task.boot() ){ // run immediately...
                     try {
-                        System.out.println("Running immediate ... " + name);
-                        task.scriptable().exec( new SimpleBindings());
+                        logger.info("Running immediate : " + name);
+                        try {
+                            task.scriptable().exec( new SimpleBindings());
+                        }finally {
+                            logger.error("Error Running Task : " + name);
+                            logger.error("This will terminate/hang the instance...");
+                        }
                     }catch (Throwable e){
                        throw new RuntimeException(e);
                     }

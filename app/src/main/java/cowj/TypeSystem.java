@@ -8,6 +8,8 @@ import com.worldturner.medeia.api.SchemaSource;
 import com.worldturner.medeia.api.jackson.MedeiaJacksonApi;
 import com.worldturner.medeia.schema.validation.SchemaValidator;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import spark.Filter;
 import spark.Request;
 import spark.Response;
@@ -25,6 +27,11 @@ import java.util.*;
  * <a href="https://stackoverflow.com/questions/7939137/what-http-status-code-should-be-used-for-wrong-input">...</a>
  */
 public interface TypeSystem {
+
+    /**
+     * Logger for the Cowj TypeSystem
+     */
+    Logger logger = LoggerFactory.getLogger(TypeSystem.class);
 
     /**
      * Route Signature Abstraction
@@ -217,10 +224,10 @@ public interface TypeSystem {
             File f = new File(filePath).getAbsoluteFile().getCanonicalFile();
             Map<String,Object> config = (Map)ZTypes.yaml(f.getPath(),true);
             TypeSystem ts =  fromConfig( config, f.getParent());
-            System.out.println("Schema is found in the system. Attaching...: " + filePath );
+            logger.info("Schema is found in the system. Attaching...: " + filePath );
             return ts;
         }catch (Throwable ignore){
-            System.err.println("No Valid Schema is attached to the system - returning NULL Type Checker!");
+            logger.error("No Valid Schema is attached to the system - returning NULL Type Checker!");
             return NULL;
         }
     }
@@ -302,7 +309,7 @@ public interface TypeSystem {
                 Spark.halt(409,"Input Schema Validation failed : " + e);
             } finally {
                 final long endTime = System.currentTimeMillis();
-                System.err.printf("?? Input Verification took %d ms %n", endTime - startTime);
+                logger.error("?? Input Verification took {} ms", endTime - startTime);
             }
         };
     }
@@ -339,10 +346,10 @@ public interface TypeSystem {
             try {
                 OBJECT_MAPPER.readValue(validatedParser, Object.class);
             } catch (Throwable e) {
-                System.err.printf("Output Schema Validation failed. Route '%s' : %n %s %n", path, e);
+                logger.error("Output Schema Validation failed. Route '{}' : \n {}", path, e.toString());
             } finally {
                 final long endTime = System.currentTimeMillis();
-                System.err.printf("?? Output Verification took %d ms %n", endTime - startTime);
+                logger.error("?? Output Verification took {} ms", endTime - startTime);
             }
         };
     }

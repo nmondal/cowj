@@ -3,6 +3,8 @@ package cowj.plugins;
 import cowj.DataSource;
 import cowj.EitherMonad;
 import cowj.Scriptable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zoomba.lang.core.operations.Function;
 
 import java.sql.*;
@@ -14,6 +16,11 @@ import java.util.*;
  * Abstraction for JDBC Connection
  */
 public interface JDBCWrapper {
+
+    /**
+     * Logger for the wrapper
+     */
+    Logger logger = LoggerFactory.getLogger(JDBCWrapper.class);
 
     /**
      * Gets the EitherMonad for Connection
@@ -106,7 +113,7 @@ public interface JDBCWrapper {
         try (Statement stmt = con.createStatement() ) {
             List<Map<String,Object>> result = new ArrayList<>();
             String q = query.formatted(args.toArray());
-            System.out.println(q);
+            logger.info(q);
             ResultSet rs = stmt.executeQuery(q);
             ResultSetMetaData rsmd = rs.getMetaData();
             int count = rsmd.getColumnCount();
@@ -160,7 +167,7 @@ public interface JDBCWrapper {
                      return true;
                 }catch (Exception ignore){
                     connectionThreadLocal.set(null);
-                    System.err.printf("'%s' db Connection was stale, will try creating one! %n", name );
+                    logger.error("'{}' db Connection was stale, will try creating one!", name );
                     return false;
                 }
             }
@@ -186,7 +193,7 @@ public interface JDBCWrapper {
                     }
                     final Connection _connection = DriverManager.getConnection(substitutedConString, properties);
                     connectionThreadLocal.set(_connection);
-                    System.out.printf("'%s' db Connection got created from thread.%n", name );
+                    logger.info("'{}' db Connection got created from thread.", name );
                     return EitherMonad.value(_connection);
                 } catch ( Throwable th){
                     return EitherMonad.error(th);

@@ -6,10 +6,11 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.messaging.*;
 import cowj.DataSource;
 import cowj.Scriptable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
@@ -20,6 +21,11 @@ import java.util.function.BiConsumer;
  * Abstraction for Googles Notification Service Firebase Messaging
  */
 public interface FCMWrapper {
+
+    /**
+     * Logger for the wrapper
+     */
+    Logger logger = LoggerFactory.getLogger(FCMWrapper.class);
 
     /**
      * Underlying FirebaseMessaging
@@ -157,7 +163,7 @@ public interface FCMWrapper {
             }
 
         } catch (IllegalStateException e) {
-            System.err.println("Firebase is already initialized!");
+            logger.warn("Firebase is already initialized!");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

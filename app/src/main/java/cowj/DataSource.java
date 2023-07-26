@@ -1,5 +1,8 @@
 package cowj;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Field;
 import java.util.*;
 
@@ -7,6 +10,11 @@ import java.util.*;
  * Cowj abstraction for anything which deals with data
  */
 public interface DataSource {
+
+    /**
+     * Logger for the DataSource
+     */
+    Logger logger = LoggerFactory.getLogger(DataSource.class);
 
     /**
      * Underlying Actual Mechanism
@@ -59,10 +67,10 @@ public interface DataSource {
                 throw new IllegalArgumentException("Error registering type... not a creator object : " + r.getClass());
             }
             REGISTRY.put(type,(Creator) r);
-            System.out.printf("Registered '%s::%s' as provider type for '%s' %n", clazz.getName(), f.getName(), type );
+            logger.info( "Registered '{}::{}' as provider type for '{}'", clazz.getName(), f.getName(), type );
             return EitherMonad.value((Creator) r);
         }catch (Throwable t){
-            System.err.println( "Error registering type... : " + t);
+            logger.error( "Error registering type... : " + t);
             return EitherMonad.error(t);
         }
     }

@@ -1,5 +1,7 @@
 package cowj;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zoomba.lang.core.types.ZNumber;
 import zoomba.lang.core.types.ZTypes;
 
@@ -14,6 +16,11 @@ import java.util.regex.Pattern;
  * Cowj Application Model Abstraction
  */
 public interface Model {
+
+    /**
+     * Logger for the Cowj Model
+     */
+    Logger logger = LoggerFactory.getLogger(Model.class);
 
     /**
      * Pattern that defines ENV Substitution
@@ -248,10 +255,10 @@ public interface Model {
             public int port() {
                 Object p = map.getOrDefault(PORT, Model.super.port());
                 if ( p instanceof Integer ) return (int)p;
-                System.out.printf("Port is possibly redirected : '%s' %n", p );
+                logger.info("Port is possibly redirected : '{}'", p );
                 String ps = p.toString();
                 String subP = envTemplate(ps);
-                System.out.printf("Port is redirected to : '%s' %n", subP );
+                logger.info("Port is redirected to : '{}'", subP );
                 return ZNumber.integer(subP, Model.super.port()).intValue();
             }
 

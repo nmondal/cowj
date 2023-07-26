@@ -2,7 +2,8 @@ package cowj;
 
 import io.methvin.watcher.DirectoryChangeEvent;
 import io.methvin.watcher.DirectoryWatcher;
-import zoomba.lang.core.types.ZDate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.*;
@@ -19,24 +20,9 @@ import java.util.function.Predicate;
 interface FileWatcher extends Consumer<String>, Predicate<String> {
 
     /**
-     * Logs with timestamp, formatted print, but always with newline to standard out
-     * @param format format specifier string
-     * @param args arguments to format the string
+     * Logger for the DataSource
      */
-    static void log(String format, Object...args){
-        String resp = new ZDate() + " => " + String.format(format,args);
-        System.out.println(resp);
-    }
-
-    /**
-     * Logs with timestamp, formatted print, but always with newline to standard err
-     * @param format format specifier string
-     * @param args arguments to format the string
-     */
-    static void err(String format, Object...args){
-        String resp = new ZDate() + " => " + String.format(format,args);
-        System.err.println(resp);
-    }
+    Logger logger = LoggerFactory.getLogger(FileWatcher.class);
 
     /**
      * Default implementation for if string path is acceptable
@@ -51,7 +37,7 @@ interface FileWatcher extends Consumer<String>, Predicate<String> {
     /**
      * A FileWatcher to be used for logging changes in file - all files
      */
-    FileWatcher FILE_MODIFICATION_LOGGER = s -> log("File Modified : %s", s);
+    FileWatcher FILE_MODIFICATION_LOGGER = s -> logger.info("File Modified : {}", s);
 
     /**
      * Registry for  FileWatcher
@@ -78,7 +64,7 @@ interface FileWatcher extends Consumer<String>, Predicate<String> {
                 watcher.watch();
 
             } catch (Throwable t) {
-                err("Error Setting up File Watcher : " + t);
+                logger.error("Error Setting up File Watcher : " + t);
             }
         };
         Thread watcherThread = new Thread(runnable);
@@ -105,7 +91,7 @@ interface FileWatcher extends Consumer<String>, Predicate<String> {
                 try {
                     return cache.containsKey(s);
                 }catch (Throwable error){
-                    FileWatcher.err("File Testing Error : " + error);
+                    logger.error("File Testing Error for file '{}' : {}", s, error.toString());
                 }
                 return false;
             }
@@ -116,9 +102,9 @@ interface FileWatcher extends Consumer<String>, Predicate<String> {
                     cache.remove(s);
                     T resource = load.load(s);
                     cache.put(s,resource);
-                    FileWatcher.log("File was reloaded : " + s);
+                    logger.info("File was reloaded : " + s);
                 } catch ( Throwable error){
-                    FileWatcher.err("File Loading Error : " + error);
+                    logger.error("File Loading Error for file '{}' : {}", s, error.toString());
                 }
             }
         };

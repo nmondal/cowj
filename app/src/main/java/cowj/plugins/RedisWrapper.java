@@ -2,6 +2,8 @@ package cowj.plugins;
 
 import cowj.DataSource;
 import cowj.Scriptable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPooled;
@@ -18,6 +20,11 @@ import java.util.stream.Collectors;
  * Abstraction for REDIS via JEDIS
  */
 public interface RedisWrapper {
+
+    /**
+     * Logger for the wrapper
+     */
+    Logger logger = LoggerFactory.getLogger(RedisWrapper.class);
 
     /**
      * Key for the SecretManager to be used
@@ -45,7 +52,7 @@ public interface RedisWrapper {
             try {
                 urls = (List<String>) ZTypes.json(urlJson);
             }catch (Throwable t){
-                System.err.println("There was an error loading redis 'urls' from secret manager : " + t.getMessage());
+                logger.error("There was an error loading redis 'urls' from secret manager : " + t.getMessage());
                 urls = Collections.emptyList();
             }
 
