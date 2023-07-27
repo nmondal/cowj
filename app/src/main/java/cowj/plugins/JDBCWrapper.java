@@ -110,6 +110,11 @@ public interface JDBCWrapper {
      * @return a EitherMonad of type List of Map - rather list of json objects
      */
     static EitherMonad<List<Map<String,Object>>> selectWithConnection( Connection con, String query, List<Object> args) {
+        if ( con == null ){
+            final String errorMessage = "Connection was passed as null, why?" ;
+            logger.error(errorMessage);
+            return EitherMonad.error( new NullPointerException(errorMessage));
+        }
         try (Statement stmt = con.createStatement() ) {
             List<Map<String,Object>> result = new ArrayList<>();
             String q = query.formatted(args.toArray());
@@ -142,9 +147,14 @@ public interface JDBCWrapper {
      * @return a EitherMonad of type List of Map - rather list of json objects
      */
     default EitherMonad<List<Map<String,Object>>> select(String query, List<Object> args) {
+        EitherMonad<Connection> em = connection();
+        if ( em.inError() ) {
+            logger.error("Connection creation error - returning the error, will not do query!");
+            return EitherMonad.error(em.error());
+        }
         EitherMonad<List<Map<String,Object>>> res = selectWithConnection(connection().value(), query, args);
         if ( res.isSuccessful() || isValid() ) return res;
-        EitherMonad<Connection> em  = create();
+        em  = create();
         return selectWithConnection(em.value(), query, args);
     }
 
@@ -160,7 +170,10 @@ public interface JDBCWrapper {
             @Override
             public boolean isValid(){
                 final Connection _connection = connectionThreadLocal.get();
-                if ( _connection == null) return false;
+                if ( _connection == null) {
+                    logger.warn("Connection is null!");
+                    return false;
+                }
 
                 try (Statement st = _connection.createStatement()) {
                      st.execute( staleCheckQuery );
@@ -192,10 +205,12 @@ public interface JDBCWrapper {
                         Class.forName(driverName);
                     }
                     final Connection _connection = DriverManager.getConnection(substitutedConString, properties);
+                    Objects.requireNonNull(_connection);
                     connectionThreadLocal.set(_connection);
                     logger.info("'{}' db Connection got created from thread.", name );
                     return EitherMonad.value(_connection);
                 } catch ( Throwable th){
+                    logger.error("Connection stays null for the thread due to : " + th);
                     return EitherMonad.error(th);
                 }
             }
