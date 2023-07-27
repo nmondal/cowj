@@ -1,6 +1,7 @@
 package cowj.plugins;
 
 import cowj.*;
+import org.checkerframework.checker.units.qual.A;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -227,6 +228,32 @@ public class JDBCWrapperTest {
         Assert.assertNotNull(dbT[0]);
         Assert.assertTrue(dbT[0].isSuccessful());
         Assert.assertNotEquals( db1, dbT[0]);
+    }
+
+    @Test
+    public void underStressNullConnectionCheckTest(){
+        final EitherMonad<Connection> errorCon = EitherMonad.error(new Throwable("Too much load!"));
+        JDBCWrapper broken = new JDBCWrapper() {
+            @Override
+            public EitherMonad<Connection> connection() {
+                return errorCon;
+            }
+            @Override
+            public EitherMonad<Connection> create() {
+                return errorCon;
+            }
+            @Override
+            public boolean isValid() {
+                return false;
+            }
+        };
+        EitherMonad<?> res = broken.select("whatever", List.of());
+        Assert.assertTrue( res.inError());
+        Assert.assertEquals(errorCon.error() , res.error() );
+        // now generic error test on static
+        res = JDBCWrapper.selectWithConnection(null, "whatever", List.of());
+        Assert.assertTrue( res.inError());
+        Assert.assertTrue( res.error() instanceof NullPointerException );
     }
 
     @Test
