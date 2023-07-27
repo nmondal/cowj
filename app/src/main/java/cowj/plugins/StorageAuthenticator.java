@@ -27,11 +27,11 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
 
     public StorageAuthenticator(Map<String,Object> config){
         this.config = config;
-        tokenExpression = config.getOrDefault( TOKEN_EXPRESSION, "").toString();
-        userColumnName = config.getOrDefault(USER_COLUMN,"").toString();
-        expColumnName = config.getOrDefault(EXPIRY_COLUMN,"").toString();
-        storageWrapperKey = config.getOrDefault( STORAGE, "").toString();
-        userQuery = config.getOrDefault( USER_QUERY, "").toString();
+        tokenExpression = config.getOrDefault( TOKEN_EXPRESSION, "body:token").toString();
+        userColumnName = config.getOrDefault(USER_COLUMN,"user").toString();
+        expColumnName = config.getOrDefault(EXPIRY_COLUMN,"expiry").toString();
+        storageWrapperKey = config.getOrDefault( STORAGE, "auth-jdbc").toString();
+        userQuery = config.getOrDefault( USER_QUERY, "query").toString();
         storage = Scriptable.DATA_SOURCES.get(storageWrapperKey);
     }
 
@@ -51,7 +51,7 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
         return UserInfo.userInfo(userId.toString(), token, expiry);
     }
 
-    DataSource.Creator JDBC = (name, config, parent) -> {
+    public static DataSource.Creator JDBC = (name, config, parent) -> {
         final StorageAuthenticator authenticator = new StorageAuthenticator(config) {
             @Override
             Map<String, Object> userData(String token) throws Exception {
@@ -65,14 +65,28 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
         };
         return DataSource.dataSource(name, authenticator);
     };
-
-    DataSource.Creator REDIS = (name, config, parent) -> {
+    public static DataSource.Creator REDIS = (name, config, parent) -> {
         final StorageAuthenticator authenticator = new StorageAuthenticator(config) {
             @Override
             Map<String, Object> userData(String token) throws Exception {
                 UnifiedJedis jedis = (UnifiedJedis) storage;
                 Map<String,String> data = jedis.hgetAll(userQuery);
                 return Map.of( userColumnName, data.get(userColumnName), expColumnName, data.get(expColumnName));
+            }
+        };
+        return DataSource.dataSource(name, authenticator);
+    };
+    public static DataSource.Creator GOOGLE_STORAGE = (name, config, parent) -> {
+        final StorageAuthenticator authenticator = new StorageAuthenticator(config) {
+            @Override
+            Map<String, Object> userData(String token) throws Exception {
+                GoogleStorageWrapper googleStorageWrapper = (GoogleStorageWrapper) storage;
+                String[] arr = userQuery.split(":");
+                Object o = googleStorageWrapper.load(arr[0], arr[1] );
+                if ( o instanceof Map){
+                    return (Map)o;
+                }
+                throw new RuntimeException("Resulting Object is not Map!");
             }
         };
         return DataSource.dataSource(name, authenticator);
