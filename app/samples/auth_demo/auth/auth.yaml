@@ -2,13 +2,14 @@
 # is it enabled?
 disabled: false
 
-authenticator:
-  type: "auth-jdbc"
-  jdbc: ""
-  token: "body:token"
-  query: ""
-  user: "user"
-  expiry: "expiry"
+
+#provider:
+#  type: "auth-jdbc"
+#  jdbc: ""
+#  token: "body:token"
+#  query: ""
+#  user: "user"
+#  expiry: "expiry"
 
 user-header: "u"
 # casbin policy

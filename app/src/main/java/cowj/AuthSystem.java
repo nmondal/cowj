@@ -90,6 +90,12 @@ public interface AuthSystem {
      */
     String DISABLED = "disabled" ;
 
+
+    /**
+     * Name for the Authenticator key
+     */
+    String AUTHENTICATOR_PROVIDER = "provider" ;
+
     /**
      * Name for the Un-Auth Message key
      */
@@ -150,6 +156,12 @@ public interface AuthSystem {
      */
     AuthSystem NULL = () -> ".";
 
+    static Authenticator fromConfig(Map<String,Object> conf, Authenticator def){
+        if ( conf.isEmpty() ) return def;
+        DataSource ds = DataSource.UNIVERSAL.create( "ds:auth", conf, null);
+        return (Authenticator) ds.proxy();
+    }
+
     /**
      * Creates an AuthSystem
      * @param file from this file
@@ -160,9 +172,13 @@ public interface AuthSystem {
             File f = new File(file).getCanonicalFile().getAbsoluteFile();
             final String filePath = f.getAbsolutePath();
             final String baseDir = f.getParent();
-            Map<String,Object> conf = (Map)ZTypes.yaml( filePath, true);
+            final Map<String,Object> conf = (Map)ZTypes.yaml( filePath, true);
             logger.info("Found AuthSystem, attaching : " + filePath );
+
             return new AuthSystem() {
+                final Authenticator authenticator =
+                        fromConfig((Map) conf.getOrDefault( AUTHENTICATOR_PROVIDER, Collections.emptyMap()),
+                        AuthSystem.super.authenticator() );
                 @Override
                 public boolean disabled() {
                     return  ZTypes.bool(conf.getOrDefault(DISABLED, AuthSystem.super.disabled()),true);
@@ -181,6 +197,11 @@ public interface AuthSystem {
                 @Override
                 public Map<String, Object> policy() {
                     return (Map)conf.getOrDefault( POLICY, Collections.emptyMap());
+                }
+
+                @Override
+                public Authenticator authenticator(){
+                    return authenticator;
                 }
 
                 @Override

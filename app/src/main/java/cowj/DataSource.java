@@ -76,11 +76,16 @@ public interface DataSource {
     }
 
     /**
+     * The key 'type' which defines type of data source
+     */
+    String DS_TYPE = "type" ;
+
+    /**
      * Universal Creator,
      * Creating from the Type Registry
      */
     Creator UNIVERSAL = (name, config, parent) -> {
-        String type = config.getOrDefault("type", "").toString();
+        String type = config.getOrDefault(DS_TYPE, "").toString();
         Creator creator = REGISTRY.get(type);
         if (creator == null) throw new IllegalArgumentException("Unknown type of datasource -> value: " + type);
         return creator.create(name, config, parent);
