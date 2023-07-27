@@ -10,6 +10,7 @@ import java.util.Objects;
 
 public abstract class StorageAuthenticator extends Authenticator.TokenAuthenticator.CachedAuthenticator {
 
+    final static String CACHE_SIZE = "cache" ;
     final static String STORAGE = "storage" ;
     final static String TOKEN_EXPRESSION = "token" ;
     final static String USER_QUERY = "query" ;
@@ -33,6 +34,7 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
         storageWrapperKey = config.getOrDefault( STORAGE, "auth-jdbc").toString();
         userQuery = config.getOrDefault( USER_QUERY, "query").toString();
         storage = Scriptable.DATA_SOURCES.get(storageWrapperKey);
+        maxCapacity = ZNumber.integer(config.getOrDefault(CACHE_SIZE, maxCapacity),maxCapacity).intValue();
     }
 
     @Override

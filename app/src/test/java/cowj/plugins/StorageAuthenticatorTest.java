@@ -42,9 +42,10 @@ public class StorageAuthenticatorTest {
 
     @Test
     public void jdbcAuthTest(){
-        Map<String,Object> config = Map.of( "type", "auth-jdbc", "storage" , "__jdbc");
+        Map<String,Object> config = Map.of( "type", "auth-jdbc", "storage" , "__jdbc", "cache", 8 );
         Authenticator authenticator = AuthSystem.fromConfig(config, NULL);
         Assert.assertNotEquals(NULL, authenticator);
+        Assert.assertEquals(8, ((Authenticator.TokenAuthenticator.CachedAuthenticator)authenticator).cacheSize()  );
         final String userId = authenticator.authenticate(mockRequest);
         Assert.assertEquals("foo", userId);
     }

@@ -95,6 +95,11 @@ public interface Authenticator {
 
         abstract class CachedAuthenticator implements TokenAuthenticator {
             protected int maxCapacity = 1024;
+
+            public int cacheSize(){
+                return maxCapacity;
+            }
+
             protected final Map<String,UserInfo> lru = Collections.synchronizedMap(new LinkedHashMap<>(){
                 @Override
                 protected boolean removeEldestEntry(Map.Entry eldest) {
