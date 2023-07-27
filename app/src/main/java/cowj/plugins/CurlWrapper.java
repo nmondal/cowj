@@ -131,18 +131,7 @@ public interface CurlWrapper {
                 return EitherMonad.error(t);
             }
         };
-
-        return new DataSource() {
-            @Override
-            public Object proxy() {
-                return curlWrapper;
-            }
-
-            @Override
-            public String name() {
-                return name;
-            }
-        };
+        return DataSource.dataSource(name, curlWrapper);
     };
 
 }

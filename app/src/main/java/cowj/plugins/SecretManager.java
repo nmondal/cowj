@@ -71,18 +71,8 @@ public interface SecretManager {
             AccessSecretVersionResponse resp = client.accessSecretVersion(SecretVersionName.of(projectID, secret, "latest"));
             String jsonString = resp.getPayload().getData().toStringUtf8();
             Map object = (Map) ZTypes.json(jsonString);
-
-            return new DataSource() {
-                @Override
-                public Object proxy() {
-                    return from(object);
-                }
-
-                @Override
-                public String name() {
-                    return name;
-                }
-            };
+            final SecretManager secretManager = from(object);
+            return DataSource.dataSource(name, secretManager);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

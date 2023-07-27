@@ -73,16 +73,6 @@ public interface RedisWrapper {
             HostAndPort hp = jedisClusterNodes.iterator().next();
             jedis = new JedisPooled(hp.getHost(), hp.getPort());
         }
-        return new DataSource() {
-            @Override
-            public Object proxy() {
-                return jedis;
-            }
-
-            @Override
-            public String name() {
-                return name;
-            }
-        };
+        return DataSource.dataSource(name, jedis);
     };
 }

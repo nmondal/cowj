@@ -7,7 +7,6 @@ import cowj.DataSource;
 import zoomba.lang.core.types.ZTypes;
 
 import java.nio.ByteBuffer;
-import java.nio.channels.WritableByteChannel;
 import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -136,16 +135,6 @@ public interface GoogleStorageWrapper {
     DataSource.Creator STORAGE = (name, config, parent) -> {
         Storage storage = StorageOptions.getDefaultInstance().getService();
         final GoogleStorageWrapper gw = () -> storage;
-        return new DataSource() {
-            @Override
-            public Object proxy() {
-                return gw;
-            }
-
-            @Override
-            public String name() {
-                return name;
-            }
-        };
+        return DataSource.dataSource(name, gw);
     };
 }

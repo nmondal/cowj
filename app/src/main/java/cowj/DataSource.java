@@ -75,6 +75,19 @@ public interface DataSource {
         }
     }
 
+    static DataSource dataSource(String name, Object proxy){
+        return new DataSource() {
+            @Override
+            public Object proxy() {
+                return proxy;
+            }
+            @Override
+            public String name() {
+                return name;
+            }
+        };
+    }
+
     /**
      * The key 'type' which defines type of data source
      */

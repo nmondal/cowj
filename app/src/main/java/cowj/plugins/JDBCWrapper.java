@@ -231,16 +231,6 @@ public interface JDBCWrapper {
         if ( em.inError() ) {
            throw  Function.runTimeException(em.error());
         }
-        return new DataSource() {
-            @Override
-            public Object proxy() {
-                return jdbcWrapper;
-            }
-
-            @Override
-            public String name() {
-                return name;
-            }
-        };
+        return DataSource.dataSource(name, jdbcWrapper);
     };
 }

@@ -168,17 +168,7 @@ public interface FCMWrapper {
             throw new RuntimeException(e);
         }
 
-        FCMWrapper fcmWrapper = FirebaseMessaging::getInstance;
-        return new DataSource() {
-            @Override
-            public Object proxy() {
-                return fcmWrapper;
-            }
-
-            @Override
-            public String name() {
-                return name;
-            }
-        };
+        final FCMWrapper fcmWrapper = FirebaseMessaging::getInstance;
+        return DataSource.dataSource(name, fcmWrapper);
     };
 }
