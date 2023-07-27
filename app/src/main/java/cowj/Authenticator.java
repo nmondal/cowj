@@ -31,8 +31,8 @@ public interface Authenticator {
     interface UserInfo{
         String id();
         String token();
-        long validity();
-        static  UserInfo userInfo(String id, String token, long validity){
+        long expiry();
+        static  UserInfo userInfo(String id, String token, long expiry){
             return new UserInfo() {
                 @Override
                 public String id() {
@@ -45,8 +45,8 @@ public interface Authenticator {
                 }
 
                 @Override
-                public long validity() {
-                    return validity;
+                public long expiry() {
+                    return expiry;
                 }
             };
         }
@@ -58,7 +58,8 @@ public interface Authenticator {
     default String authenticate(Request request){
         UserInfo userInfo = safeAuthExecute( () -> userInfo(request));
         assert userInfo != null;
-        if ( userInfo.validity() > System.currentTimeMillis() ){
+        // already expired...
+        if ( userInfo.expiry() < System.currentTimeMillis() ){
             Spark.halt(401, UN_AUTHENTICATED);
         }
         request.attribute(USER_ID, userInfo.id());

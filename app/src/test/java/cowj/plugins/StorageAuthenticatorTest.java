@@ -18,6 +18,8 @@ public class StorageAuthenticatorTest {
 
     static Authenticator NULL = request -> Authenticator.UserInfo.GUEST;
 
+    static Request mockRequest;
+
     @BeforeClass
     public static void beforeClass(){
         // register stuff
@@ -28,6 +30,8 @@ public class StorageAuthenticatorTest {
         Map<String,Object> data = Map.of("user", "foo", "expiry" , System.currentTimeMillis() + 100000);
         when(jdbcWrapper.select(any(),any())).thenReturn(EitherMonad.value(List.of(data)));
         Scriptable.DATA_SOURCES.put("__jdbc", jdbcWrapper );
+        mockRequest = mock(Request.class);
+        when(mockRequest.body()).thenReturn("{ \"token\" : \"foo-bar\" }");
     }
 
     @AfterClass
@@ -35,10 +39,13 @@ public class StorageAuthenticatorTest {
         Scriptable.DATA_SOURCES.remove("__jdbc");
     }
 
+
     @Test
     public void jdbcAuthTest(){
         Map<String,Object> config = Map.of( "type", "auth-jdbc", "storage" , "__jdbc");
         Authenticator authenticator = AuthSystem.fromConfig(config, NULL);
         Assert.assertNotEquals(NULL, authenticator);
+        final String userId = authenticator.authenticate(mockRequest);
+        Assert.assertEquals("foo", userId);
     }
 }
