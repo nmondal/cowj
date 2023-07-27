@@ -12,6 +12,8 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Map;
 
+import static cowj.Authenticator.UN_AUTHENTICATED;
+
 /**
  * Auth System - essentially integrates JCasbin into the system
  * @see <a href="https://github.com/casbin/jcasbin">JCasbin</a>
@@ -104,14 +106,20 @@ public interface AuthSystem {
     String USER_HEADER = "user-header" ;
 
     /**
-     * Name for  UnAuthenticated
-     */
-    String UN_AUTHENTICATED = "UnAuthenticated" ;
-
-    /**
      * Name for  UnAuthorized
      */
     String UN_AUTHORIZED = "UnAuthorized" ;
+
+    default Authenticator authenticator(){
+        final String userHeader = userHeader();
+        return request -> {
+            final String userName = request.headers(userHeader);
+            if ( userName == null ){
+                Spark.halt(401, UN_AUTHENTICATED + " : " +  haltMessage());
+            }
+            return Authenticator.UserInfo.userInfo(userName, "", 0);
+        };
+    }
 
     /**
      * Attaches an Auth System to Spark-Java
@@ -124,15 +132,12 @@ public interface AuthSystem {
         final String authDefDir = definitionsDir();
         final Adapter adapter = adapter(policy(), authDefDir);
         final String casBinModel = authDefDir + "/" + MODEL_FILE ;
+        final Authenticator authenticator = authenticator();
         final Enforcer enforcer = new Enforcer(casBinModel, adapter);
-        final String userHeader = userHeader();
         Spark.before("*", ((request, response) -> {
             final String pathInfo = request.pathInfo();
             final String verb = request.requestMethod();
-            final String userName = request.headers(userHeader);
-            if ( userName == null ){
-                Spark.halt(401, UN_AUTHENTICATED + " : " +  haltMessage());
-            }
+            final String userName = authenticator.authenticate(request);
             final boolean thouShallPass = enforcer.enforce( userName, pathInfo, verb);
             if ( !thouShallPass){
                 Spark.halt(403, UN_AUTHORIZED + " : " +  haltMessage());
