@@ -51,7 +51,6 @@ public interface Authenticator {
             };
         }
         UserInfo GUEST = UserInfo.userInfo( "", "", Long.MAX_VALUE);
-        UserInfo INVALID = UserInfo.userInfo( "", "", Long.MIN_VALUE);
     }
     UserInfo userInfo(Request request) throws Exception ;
 
@@ -115,14 +114,9 @@ public interface Authenticator {
                     return lru.get(token);
                 }
                 UserInfo userInfo = Authenticator.safeAuthExecute( () -> tryGetUserInfo(token));
-                if ( userInfo == null || UserInfo.INVALID.equals( userInfo )){
-                    throw new Exception("Invalid User");
-                }
                 lru.put(userInfo.token(), userInfo);
                 return userInfo;
             }
         }
-
     }
-
 }
