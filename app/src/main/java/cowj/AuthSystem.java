@@ -116,6 +116,11 @@ public interface AuthSystem {
      */
     String UN_AUTHORIZED = "UnAuthorized" ;
 
+    /**
+     * Gets the  Authenticator for the system
+     * Default implementation just checks if the header has the user id or not
+     * @return An Authenticator Object
+     */
     default Authenticator authenticator(){
         final String userHeader = userHeader();
         return request -> {
@@ -156,6 +161,13 @@ public interface AuthSystem {
      */
     AuthSystem NULL = () -> ".";
 
+    /**
+     * Tries to create an Authenticator from a Map of string, object
+     * In case conf is empty  - then returns a default authenticator
+     * @param conf the map of string, object to create the authenticator
+     * @param def default authenticator to be passed in case of empty conf
+     * @return an Authenticator from the conf, failing returns the def
+     */
     static Authenticator fromConfig(Map<String,Object> conf, Authenticator def){
         if ( conf.isEmpty() ) return def;
         DataSource ds = DataSource.UNIVERSAL.create( "ds:auth", conf, null);
