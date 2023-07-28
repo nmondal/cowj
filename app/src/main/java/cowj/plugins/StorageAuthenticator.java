@@ -49,7 +49,6 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
         Objects.requireNonNull(userId);
         final Object exp = userData.getOrDefault(expColumnName,0L);
         final long expiry = ZNumber.integer(exp, 0L).longValue();
-        assert expiry != 0L;
         return UserInfo.userInfo(userId.toString(), token, expiry);
     }
 
@@ -83,7 +82,7 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
             @Override
             Map<String, Object> userData(String token) throws Exception {
                 GoogleStorageWrapper googleStorageWrapper = (GoogleStorageWrapper) storage;
-                String[] arr = userQuery.split(":");
+                String[] arr = userQuery.split("/");
                 Object o = googleStorageWrapper.load(arr[0], arr[1] );
                 if ( o instanceof Map){
                     return (Map)o;
