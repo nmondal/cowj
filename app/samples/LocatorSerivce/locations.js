@@ -11,36 +11,27 @@ endTime = input.get('end_time')
 // utilities
 function getDataFromSql(person, startTime, endTime, jdbc) {
 findPerson = `select * from locationService.locations where person_id = "${person}" AND created_date BETWEEN '${startTime}' AND '${endTime}';`;
-con = jdbc.connection().value();
-stmt = con.select(findPerson)
-data = stmt.executeQuery()
-//uncomment to repro select not working
-//data = jdbc.select(findPerson);
-
+data = jdbc.select(findPerson, []);
+result = data.value();
 res = [];
-while (data.next())
-      {
-      resTemp = JSON.parse(data.getString('data'));
-      timeStamp = data.getString('created_date');
-      resTemp.last_seen = timeStamp;
-      res.push(resTemp)
-      }
+ result.forEach( m => {
+           resTemp = m.get("data");
+           timeStamp = m.get('created_date');
+           resTemp.last_seen = timeStamp;
+           res.push(resTemp)
+       });
       return res;
 }
 
 function checkIfUserRegistered(person, jdbc) {
 findPerson = `select * from locationService.latestLocation where person_id = "${person}";`;
-con = jdbc.connection().value();
-stmt = con.createStatement()
-data = stmt.executeQuery(findPerson)
+data = jdbc.select(findPerson, []);
+result = data.value();
 
 res = ''
-while (data.next())
-      {
-      res = data.getString('data');
-      }
-      if(res != '') {
-      res = JSON.parse(res)
+result.forEach( m => {res = m.get("data");});
+ if(res != '') {
+  res = JSON.parse(res)
       }
       return res;
 }
@@ -59,8 +50,6 @@ Test.expect(false, err, 400 )
 
 //return value
 
-//getting [object Object] in the postman when trying to pass JSON as an object at the last
-//JSON needs to stringified at the last
-// uncomment the last line to reproduce
+
 JSON.stringify({ person_id : person, locations : data})
 //{ person_id : person, locations : data}

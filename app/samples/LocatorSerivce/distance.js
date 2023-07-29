@@ -20,15 +20,11 @@ person2 = input.get("person_id_2");
 // utilities
 function getDataFromSql(person, jdbc, redis) {
 findPerson = `select * from locationService.latestLocation where person_id = "${person}";`;
-con = jdbc.connection().value();
-stmt = con.createStatement()
-data = stmt.executeQuery(findPerson)
+data = jdbc.select(findPerson, []);
+result = data.value();
 
 res = ''
-while (data.next())
-      {
-      res = data.getString('data');
-      }
+result.forEach( m => {res = m.get("data");});
       if(res != '') {
       if(isRedisActive) {
       redis.set(person, res)

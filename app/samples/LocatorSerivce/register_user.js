@@ -30,16 +30,13 @@ redis.set(personId, JSON.stringify( { latitude : latitude, longitude : longitude
 
 // insert or update the data to mysql table. This can be moved to a async processor to further speed up the API
 findPerson = `select * from locationService.latestLocation where person_id = "${personId}";`;
-con = jdbc.connection().value();
-stmt = con.createStatement()
-data = stmt.executeQuery(findPerson)
+data = jdbc.select(findPerson, []);
+result = data.value();
 
 res = ''
-while (data.next())
-      {
-      res+=data.getString('person_id')
-      }
+result.forEach( m => {res += m.get("person_id");});
 
+con = jdbc.connection().value();
 if(res == '') {
 // insert a new entry
 insertSql = `insert into latestLocation VALUES( "${personId}" ,'{"latitude": "${latitude}", "longitude":  "${longitude}", "last_seen":  "${lastSeen}"}');`
