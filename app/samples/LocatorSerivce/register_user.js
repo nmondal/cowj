@@ -61,10 +61,7 @@ stmt = con.createStatement()
 data = stmt.execute(registerLocation)
 }
 catch(err) {
-// need better way to assert on the err object
-if(err.toString().startsWith('JavaException: java.sql.SQLIntegrityConstraintViolationException')) {
-Test.expect(false, 'duplicate request', 409 )
-}
+Test.panic(err.toString().startsWith('JavaException: java.sql.SQLIntegrityConstraintViolationException'), 'duplicate request', 409 )
 throw err;
 }
 

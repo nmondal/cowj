@@ -12,8 +12,8 @@ endTime = input.get('end_time')
 function getDataFromSql(person, startTime, endTime, jdbc) {
 findPerson = `select * from locationService.locations where person_id = "${person}" AND created_date BETWEEN '${startTime}' AND '${endTime}';`;
 con = jdbc.connection().value();
-stmt = con.createStatement()
-data = stmt.executeQuery(findPerson)
+data = jdbc.select(findPerson);
+//data = stmt.executeQuery()
 
 res = [];
 while (data.next())
@@ -48,14 +48,8 @@ while (data.next())
 data = [];
 try {
 
-if(checkIfUserRegistered(person, jdbc) != '') {
-dataTemp = getDataFromSql(person, startTime, endTime, jdbc);
-if(dataTemp != '') {
-data = dataTemp;
-}
-} else {
-Test.expect(false, 'User not found', 404 )
-}
+Test.panic(checkIfUserRegistered(person, jdbc) == '', 'User not found', 404)
+data = getDataFromSql(person, startTime, endTime, jdbc);
 
 } catch (err) {
 Test.expect(false, err, 400 )
