@@ -12,8 +12,10 @@ endTime = input.get('end_time')
 function getDataFromSql(person, startTime, endTime, jdbc) {
 findPerson = `select * from locationService.locations where person_id = "${person}" AND created_date BETWEEN '${startTime}' AND '${endTime}';`;
 con = jdbc.connection().value();
-data = jdbc.select(findPerson);
-//data = stmt.executeQuery()
+stmt = con.select(findPerson)
+data = stmt.executeQuery()
+//uncomment to repro select not working
+//data = jdbc.select(findPerson);
 
 res = [];
 while (data.next())
