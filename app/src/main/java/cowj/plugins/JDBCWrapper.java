@@ -3,6 +3,8 @@ package cowj.plugins;
 import cowj.DataSource;
 import cowj.EitherMonad;
 import cowj.Scriptable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zoomba.lang.core.operations.Function;
 
 import java.sql.*;
@@ -10,34 +12,81 @@ import java.time.ZoneId;
 import java.time.chrono.ChronoLocalDateTime;
 import java.util.*;
 
+/**
+ * Abstraction for JDBC Connection
+ */
 public interface JDBCWrapper {
 
+    /**
+     * Logger for the wrapper
+     */
+    Logger logger = LoggerFactory.getLogger(JDBCWrapper.class);
+
+    /**
+     * Gets the EitherMonad for Connection
+     * @return EitherMonad for Connection
+     */
     EitherMonad<Connection> connection();
 
+    /**
+     * Creates the Connection
+     * In case of failure, puts the creation error into EitherMonad
+     * @return EitherMonad for Connection
+     */
     EitherMonad<Connection> create();
 
+    /**
+     * Checks if the underlying Connection is valid or not
+     * @return true if Connection is ok, false otherwise
+     */
     boolean isValid();
 
+    /**
+     * This is the query which used to check if the underlying Connection is valid or not
+     * Druid, MySQL, PGSQL ,AuroraDB :: SELECT 1
+*    * Oracle ::  SELECT 1 FROM DUAL
+     * @return  a query which can be used to check underlying db connection health
+     */
     default String staleCheckQuery(){
-        /*
-        * Druid, MySQL, PGSQL ,AuroraDB
-        * Oracle will not work SELECT 1 FROM DUAL
-        * */
         return "SELECT 1";
     }
 
+    /**
+     * Key for the driver class
+     */
     String DRIVER = "driver" ;
 
+    /**
+     * Key for the SecretManager
+     */
     String SECRET_MANAGER = "secrets";
 
+    /**
+     * Key for the JDBC Connection Properties
+     */
     String PROPERTIES = "properties" ;
 
+    /**
+     * Key for the JDBC Connection String
+     */
     String CONNECTION_STRING = "connection" ;
 
+    /**
+     * Key for the staleCheckQuery() query string
+     */
     String STALE_CHECK_TIMEOUT_QUERY = "stale" ;
 
+    /**
+     * Constant for the default JDBC Connection String
+     */
     String DEFAULT_CONNECTION_STRING = "${schema}//${host}/${db}?user=${user}&password=${pass}" ;
 
+    /**
+     * Converts java.sql.* object into java object
+     * Essentially take temporal SQL Column values and convert them into numeric
+     * @param value java.sql.* object
+     * @return normal java object
+     */
     static Object getObject(Object value) {
         if (value instanceof java.util.Date) {
             /*
@@ -53,11 +102,23 @@ public interface JDBCWrapper {
         return value;
     }
 
+    /**
+     * Runs Select Query using connection and args
+     * @param con the Connection to use
+     * @param query to be executed
+     * @param args the arguments to be passed
+     * @return a EitherMonad of type List of Map - rather list of json objects
+     */
     static EitherMonad<List<Map<String,Object>>> selectWithConnection( Connection con, String query, List<Object> args) {
+        if ( con == null ){
+            final String errorMessage = "Connection was passed as null, why?" ;
+            logger.error(errorMessage);
+            return EitherMonad.error( new NullPointerException(errorMessage));
+        }
         try (Statement stmt = con.createStatement() ) {
             List<Map<String,Object>> result = new ArrayList<>();
             String q = query.formatted(args.toArray());
-            System.out.println(q);
+            logger.info(q);
             ResultSet rs = stmt.executeQuery(q);
             ResultSetMetaData rsmd = rs.getMetaData();
             int count = rsmd.getColumnCount();
@@ -78,13 +139,28 @@ public interface JDBCWrapper {
         }
     }
 
+    /**
+     * Runs Select Query using underlying connection and args
+     * Does automatic retry for stale/invalid connection
+     * @param query to be executed
+     * @param args the arguments to be passed
+     * @return a EitherMonad of type List of Map - rather list of json objects
+     */
     default EitherMonad<List<Map<String,Object>>> select(String query, List<Object> args) {
+        EitherMonad<Connection> em = connection();
+        if ( em.inError() ) {
+            logger.error("Connection creation error - returning the error, will not do query!");
+            return EitherMonad.error(em.error());
+        }
         EitherMonad<List<Map<String,Object>>> res = selectWithConnection(connection().value(), query, args);
         if ( res.isSuccessful() || isValid() ) return res;
-        EitherMonad<Connection> em  = create();
+        em  = create();
         return selectWithConnection(em.value(), query, args);
     }
 
+    /**
+     * DataSource.Creator for JDBCWrapper type
+     */
     DataSource.Creator JDBC = (name, config, parent) -> {
 
         JDBCWrapper jdbcWrapper = new JDBCWrapper() {
@@ -94,14 +170,17 @@ public interface JDBCWrapper {
             @Override
             public boolean isValid(){
                 final Connection _connection = connectionThreadLocal.get();
-                if ( _connection == null) return false;
+                if ( _connection == null) {
+                    logger.warn("Connection is null!");
+                    return false;
+                }
 
                 try (Statement st = _connection.createStatement()) {
                      st.execute( staleCheckQuery );
                      return true;
                 }catch (Exception ignore){
                     connectionThreadLocal.set(null);
-                    System.err.printf("'%s' db Connection was stale, will try creating one! %n", name );
+                    logger.error("'{}' db Connection was stale, will try creating one!", name );
                     return false;
                 }
             }
@@ -126,10 +205,12 @@ public interface JDBCWrapper {
                         Class.forName(driverName);
                     }
                     final Connection _connection = DriverManager.getConnection(substitutedConString, properties);
+                    Objects.requireNonNull(_connection);
                     connectionThreadLocal.set(_connection);
-                    System.out.printf("'%s' db Connection got created from thread.%n", name );
+                    logger.info("'{}' db Connection got created from thread.", name );
                     return EitherMonad.value(_connection);
                 } catch ( Throwable th){
+                    logger.error("Connection stays null for the thread due to : " + th);
                     return EitherMonad.error(th);
                 }
             }
@@ -150,16 +231,6 @@ public interface JDBCWrapper {
         if ( em.inError() ) {
            throw  Function.runTimeException(em.error());
         }
-        return new DataSource() {
-            @Override
-            public Object proxy() {
-                return jdbcWrapper;
-            }
-
-            @Override
-            public String name() {
-                return name;
-            }
-        };
+        return DataSource.dataSource(name, jdbcWrapper);
     };
 }

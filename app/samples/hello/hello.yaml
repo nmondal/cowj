@@ -36,9 +36,9 @@ routes:
 
 proxies:
   get:
-    /users: json_place/users
+    /users: json_place/* # it would be interpreted as json_place/users
   post:
-    /users: json_place/users
+    /users: json_place/* # it would be interpreted as json_place/users
     /local: local_send/send
 
 filters:

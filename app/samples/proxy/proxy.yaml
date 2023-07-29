@@ -22,6 +22,7 @@ proxies:
   get:
     /error: google/*
     /wp: foo/bar # this does not exist
+    /nop: booom/* # this curl type does not exist
 
   post:
     /echo: postman_echo/post
@@ -43,3 +44,7 @@ data-sources:
   google:
     type: curl
     url: https://google.co.in
+  foo:
+    type: curl
+    url : https://foo.bar.com
+

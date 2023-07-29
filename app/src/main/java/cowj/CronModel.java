@@ -2,6 +2,8 @@ package cowj;
 
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zoomba.lang.core.types.ZTypes;
 
 import javax.script.Bindings;
@@ -11,18 +13,51 @@ import java.util.Map;
 
 import static org.quartz.JobBuilder.newJob;
 
+/**
+ * Integrates Quartz Scheduler into Cowj
+ * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.3.0/quick-start.html#starting-a-sample-application">Quartz Scheduler</a>
+ */
 public interface CronModel {
 
+    /**
+     * Logger for the Cron
+     */
+    Logger logger = LoggerFactory.getLogger(CronModel.class);
+
+    /**
+     * A Cowj Task
+     */
     interface Task {
 
+        /**
+         * Name of the boot key
+         * If true, task gets executed in system startup
+         */
         String BOOT = "boot";
 
+        /**
+         * Name of the exec key
+         * This points to the executable script - which is the cron job
+         */
         String EXEC = "exec";
 
+        /**
+         * Name of the cron expression key
+         * This points to the cron expression
+         * @see <a href="https://docs.oracle.com/cd/E12058_01/doc/doc.1014/e12030/cron_expressions.htm">Oracle : Cron Expression</a>
+         * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html">Quartz: Cron Expression</a>
+         */
         String SCHEDULE = "at";
 
+        /**
+         * Scriptable Context key for the JobContext
+         */
         String JOB_EXEC_CONTEXT = "_ctx";
 
+        /**
+         * Concrete Job Class for the Scriptable Support
+         * @see <a href="https://www.javadoc.io/doc/org.quartz-scheduler/quartz/2.3.0/org/quartz/Job.html">Job</a>
+         */
         final class CronJob implements Job {
 
             @Override
@@ -34,23 +69,53 @@ public interface CronModel {
                 try {
                     Bindings b = new SimpleBindings();
                     b.put(JOB_EXEC_CONTEXT, context);
-                    scriptable.exec(b);
+                    Object result = scriptable.exec(b);
+                    context.setResult(result); // set the result
                 } catch (Throwable t) {
                     throw new JobExecutionException(t);
                 }
             }
         }
 
+        /**
+         * Name of the Task
+         * @return name of the Task
+         */
         String name();
 
+        /**
+         * Should the task be run at boot time for Cowj ?
+         * @return true if task needs to run on boot also, false if no
+         */
         boolean boot();
 
+        /**
+         * Details for the Job
+         * @see <a href="https://www.quartz-scheduler.org/api/2.3.0/org/quartz/JobDetail.html">JobDetail</a>
+         * @return a JobDetail object
+         */
         JobDetail jobDetail();
 
+        /**
+         * Trigger for the Job
+         * @see <a href="https://www.javadoc.io/doc/org.quartz-scheduler/quartz/2.3.0/org/quartz/Trigger.html">Trigger</a>
+         * @return a Trigger object
+         */
         Trigger trigger();
 
+        /**
+         * Underlying Scriptable responsible for the Job
+         * @return a Scriptable object
+         */
         Scriptable scriptable();
 
+        /**
+         * Creates a task from config
+         * @param model Cowj Data Model
+         * @param name of the task
+         * @param config actual configuration
+         * @return a Task
+         */
         static Task fromConfig(Model model, String name, Map<String, Object> config) {
             final boolean boot = ZTypes.bool(config.getOrDefault(BOOT, "false"), false);
             final String scriptPath = model.interpretPath(config.getOrDefault(EXEC, "").toString());
@@ -93,12 +158,29 @@ public interface CronModel {
         }
     }
 
+    /**
+     * Gets all the Tasks
+     * @return a Map of Tasks, keyed by their name
+     */
     Map<String, Task> tasks();
 
+    /**
+     * Name of the key via which Scheduler is accessible inside any Scriptable
+     */
     String SCHEDULER = "_sched";
 
+    /**
+     * Global SchedulerFactory
+     * @see <a href="https://www.quartz-scheduler.org/api/2.3.0/org/quartz/SchedulerFactory.html">SchedulerFactory</a>
+     */
     SchedulerFactory SCHEDULER_FACTORY = new StdSchedulerFactory();
 
+    /**
+     * Creates a CronModel
+     * @param model the Cowj data model
+     * @param config actual configuration
+     * @return a CronModel
+     */
     static CronModel fromConfig(Model model, Map<String, Map<String,Object>> config) {
         final Map<String, Task> tasks = new LinkedHashMap<>();
         config.forEach((name, conf) -> {
@@ -107,10 +189,19 @@ public interface CronModel {
         return () -> tasks;
     }
 
+    /**
+     * The Default Factory for Scheduler
+     * @see <a href="https://www.quartz-scheduler.org/api/2.3.0/org/quartz/SchedulerFactory.html">SchedulerFactory</a>
+     * @return whatever factory one may wants to use
+     */
     default SchedulerFactory factory(){
         return SCHEDULER_FACTORY ;
     }
 
+    /**
+     * Schedules the model
+     * @param cronModel to be scheduled
+     */
     static void schedule(CronModel cronModel) {
         // do not bother if empty
         if (cronModel.tasks().isEmpty()) return;
@@ -119,13 +210,18 @@ public interface CronModel {
         try {
             final Scheduler scheduler = schedulerFactory.getScheduler();
             // now the rest of the problem...
-            System.out.println("Cron Jobs are...");
+            logger.info("Cron Jobs are...");
             cronModel.tasks().forEach((name, task) -> {
-                System.out.printf("%s --> %s %n", task.name(), task.trigger());
+                logger.info( "{} --> {}", task.name(), task.trigger());
                 if ( task.boot() ){ // run immediately...
                     try {
-                        System.out.println("Running immediate ... " + name);
-                        task.scriptable().exec( new SimpleBindings());
+                        logger.info("Running immediate : " + name);
+                        try {
+                            task.scriptable().exec( new SimpleBindings());
+                        }finally {
+                            logger.error("Error Running Task : " + name);
+                            logger.error("This will terminate/hang the instance...");
+                        }
                     }catch (Throwable e){
                        throw new RuntimeException(e);
                     }
@@ -144,10 +240,18 @@ public interface CronModel {
         }
     }
 
+    /**
+     * Quick Method to get the underlying Scheduler
+     * @see <a href="https://www.javadoc.io/doc/org.quartz-scheduler/quartz/2.3.0/org/quartz/Scheduler.html">Scheduler</a>
+     * @return Underlying Scheduler
+     */
     static Scheduler scheduler(){
         return (Scheduler)Scriptable.DATA_SOURCES.get(SCHEDULER);
     }
 
+    /**
+     * Stops the Cron Jobs
+     */
     static void stop(){
         try {
             Scheduler scheduler = scheduler();

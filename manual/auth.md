@@ -160,8 +160,7 @@ curl -XGET localhost:6042/hello.json
 because it is loaded from `static` - it is exempt - so anyone would be able to access it.
 
 
-
-#### ## References
+## References
 
 1. Casbin :  https://casbin.org 
 

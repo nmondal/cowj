@@ -6,6 +6,9 @@ import org.junit.Test;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 import static org.junit.Assert.assertThrows;
 
 public class ScriptableTest {
@@ -123,8 +126,44 @@ public class ScriptableTest {
     }
 
     @Test
-    public void nasHornPrintTest() throws Exception {
+    public void rhinoPrintTest() throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream( baos);
+        PrintStream os = System.out;
+        System.setOut(ps);
+
+        ByteArrayOutputStream baes = new ByteArrayOutputStream();
+        PrintStream pe = new PrintStream( baes);
+        PrintStream es = System.err;
+        System.setErr(pe);
+
         Scriptable sc= Scriptable.JSR.create(Scriptable.INLINE, "Test.print('hello, world!%n'); Test.printe('hello, world!%n'); //.js" );
-        Object o = sc.exec( new SimpleBindings( ) );
+        try {
+            sc.exec( new SimpleBindings( ) );
+            Assert.assertEquals( baos.toString(), "hello, world!\n");
+            Assert.assertEquals( baes.toString(), "hello, world!\n");
+        }finally {
+            System.setOut(os);
+            System.setOut(es);
+        }
+    }
+
+    interface RunnableThrows {
+        void run() throws Throwable;
+    }
+
+    public static void loadErrorTest( RunnableThrows r) {
+        RuntimeException exception = assertThrows(RuntimeException.class, r::run);
+        Assert.assertNotNull(exception);
+    }
+
+    @Test
+    public void jsrScriptLoadErrorTest(){
+        loadErrorTest(() -> Scriptable.loadScript("ignore", "samples/test_scripts/parse_err.js") );
+    }
+
+    @Test
+    public void zmbScriptLoadErrorTest(){
+        loadErrorTest(() -> Scriptable.loadZScript("ignore", "samples/test_scripts/parse_err.zm") );
     }
 }

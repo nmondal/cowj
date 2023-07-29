@@ -1,24 +1,44 @@
 package cowj;
 
 import cowj.plugins.CurlWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import spark.*;
 import zoomba.lang.core.types.ZTypes;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 import static spark.Spark.*;
 
+/**
+ * This is where Cowj really runs
+ */
 public interface ModelRunner extends Runnable {
 
+    /**
+     * Logger for the Cowj ModelRunner
+     */
+    Logger logger = LoggerFactory.getLogger(ModelRunner.class);
+
+    /**
+     * Underlying model
+     * @return a Model, which is running currently
+     */
     Model model();
 
+    /**
+     * Underlying Creator for Scriptable
+     * @return a Scriptable.Creator
+     */
     default Scriptable.Creator scriptCreator(){
         return Scriptable.UNIVERSAL;
     }
 
+    /**
+     * Underlying Creator for DataSource
+     * @return a DataSource.Creator
+     */
     default DataSource.Creator dsCreator(){
         return DataSource.UNIVERSAL;
     }
@@ -50,14 +70,14 @@ public interface ModelRunner extends Runnable {
         staticFiles.externalLocation(m.staticPath());
         final String baseDir = m.base();
         // load routes
-        System.out.println("Base Directory : " + baseDir);
+        logger.info("Base Directory : " + baseDir);
         final String libDir = m.interpretPath( m.libPath() );
         // load libraries
-        System.out.println("Library Directory : " +libDir);
+        logger.info("Library Directory : " +libDir);
         ZTypes.loadJar(libDir);
 
         // loading plugins...
-        System.out.println("Loading plugins now...");
+        logger.info("Loading plugins now...");
         Map<String, Map<String, String>> plugins = m.plugins();
         for ( String packageName : plugins.keySet() ){
             Map<String,String> providers = plugins.get(packageName);
@@ -68,17 +88,17 @@ public interface ModelRunner extends Runnable {
         }
 
         // load data sources ...
-        System.out.println("DataSources mapping are as follows...");
+        logger.info("DataSources mapping are as follows...");
         Map<String, Map<String, Object>> dataSources = m.dataSources();
         DataSource.Creator dsCreator = dsCreator();
         for (String dsName : dataSources.keySet()) {
             Map<String,Object> dsConfig = dataSources.get(dsName);
             try{
                 DataSource dataSource = dsCreator.create(dsName, dsConfig, model());
-                System.out.printf("DS '%s' created! %n", dataSource.name());
+                logger.info("DS '{}' created!", dataSource.name());
                 Scriptable.DATA_SOURCES.put(dsName, dataSource.proxy());
             }catch (Throwable t){
-                System.err.printf("DS '%s' failed to create! %s %n", dsName, t);
+                logger.error("DS '{}' failed to create! {}", dsName, t.toString());
             }
         }
 
@@ -86,7 +106,7 @@ public interface ModelRunner extends Runnable {
         CronModel cronModel = CronModel.fromConfig(m, m.cron());
         CronModel.schedule(cronModel);
 
-        System.out.println("Routes mapping are as follows...");
+        logger.info("Routes mapping are as follows...");
         Map<String, Map<String, String>> paths = m.routes();
         for (String verb : paths.keySet()) {
             Map<String, String> verbRoutes = paths.getOrDefault(verb, Collections.emptyMap());
@@ -95,11 +115,11 @@ public interface ModelRunner extends Runnable {
                 String scriptPath = m.interpretPath(r.getValue());
                 Route route = creator.createRoute(r.getKey(), scriptPath);
                 bic.accept(r.getKey(), route);
-                System.out.printf("%s -> %s -> %s %n", verb, r.getKey(), scriptPath);
+                logger.info("{} -> {} -> {}", verb, r.getKey(), scriptPath);
             }
         }
         // proxies, if any...
-        System.out.println("Proxies mapping are as follows...");
+        logger.info("Proxies mapping are as follows...");
         Map<String, Map<String, String>> proxies = m.proxies();
         for (String verb : proxies.keySet()) {
             Map<String, String> verbProxies = proxies.getOrDefault(verb, Collections.emptyMap());
@@ -110,7 +130,7 @@ public interface ModelRunner extends Runnable {
                 String curlKey = arr[0];
                 Object o = Scriptable.DATA_SOURCES.get(curlKey);
                 if (!(o instanceof CurlWrapper )){
-                    System.err.printf("route does not have any base curl data source : %s->%s %n", r.getKey(), r.getValue());
+                    logger.error("route does not have any base curl data source : {}->{}", r.getKey(), r.getValue());
                     continue;
                 }
                 final String destPath = proxyPath.replace(curlKey + "/", "");
@@ -119,17 +139,17 @@ public interface ModelRunner extends Runnable {
                     return cw.proxy(verb, "*".equals(destPath) ? request.pathInfo() : destPath, request, response);
                 };
                 bic.accept(r.getKey(), route);
-                System.out.printf("%s -> %s -> %s %n", verb, r.getKey(), r.getValue());
+                logger.info("{} -> {} -> {}", verb, r.getKey(), r.getValue());
             }
         }
         // load auth...
         AuthSystem authSystem = AuthSystem.fromFile(m.auth());
-        authSystem.attach( m.staticPath() );
+        authSystem.attach();
         // load type system ...
         TypeSystem typeSystem = TypeSystem.fromFile( m.schemaPath());
         typeSystem.attach();
         // load filters
-        System.out.println("Filters mapping are as follows...");
+        logger.info("Filters mapping are as follows...");
         Map<String, Map<String, String>> filters = m.filters();
         final Map<String, BiConsumer<String, Filter>> filterMap = new HashMap<>();
         filterMap.put("before", Spark::before);
@@ -143,19 +163,28 @@ public interface ModelRunner extends Runnable {
                 String scriptPath = m.interpretPath(r.getValue());
                 Filter filter = creator.createFilter(r.getKey(), scriptPath);
                 bic.accept(r.getKey(), filter);
-                System.out.printf("%s -> %s -> %s %n", filterType, r.getKey(), scriptPath);
+                logger.info("{} -> {} -> {}", filterType, r.getKey(), scriptPath);
             }
         }
         awaitInitialization();
-        System.out.println("Cowj is initialized!");
+        FileWatcher.startWatchDog( baseDir );
+        logger.info("Cowj is initialized!");
     }
 
+    /**
+     * Stops the Cowj Instance from Running
+     */
     default void stop(){
         Spark.stop();
         awaitStop();
         CronModel.stop();
     }
 
+    /**
+     * Creates a ModelRunner instance from a file
+     * @param path the file yaml, json
+     * @return a ModelRunner
+     */
     static ModelRunner fromModel(String path){
         final Model model = Model.from(path);
         return () -> model;

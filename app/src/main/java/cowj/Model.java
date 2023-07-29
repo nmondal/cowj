@@ -1,5 +1,7 @@
 package cowj;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zoomba.lang.core.types.ZNumber;
 import zoomba.lang.core.types.ZTypes;
 
@@ -10,13 +12,37 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Cowj Application Model Abstraction
+ */
 public interface Model {
 
+    /**
+     * Logger for the Cowj Model
+     */
+    Logger logger = LoggerFactory.getLogger(Model.class);
+
+    /**
+     * Pattern that defines ENV Substitution
+     */
     Pattern TEMPLATE_PATTERN = Pattern.compile("\\$\\{(?<var>[^\\{\\}]+)\\}");
 
+    /**
+     * Constant that defines directory relative file location
+     */
     String IN_THE_SAME_FOLDER_PREFIX  = "_/" ;
+
+    /**
+     * Suffix for binary Route
+     */
     String BINARY_ROUTE_SUFFIX  = ".class" ;
 
+    /**
+     * Substitutes all ${xyz} from the context to produce string
+     * @param templateString input string may containing ${xyz}
+     * @param context input map whose key should be "xyz" so that we substitute
+     * @return a string after substitution
+     */
     default String template(String templateString, Map context){
         Matcher m = TEMPLATE_PATTERN.matcher(templateString);
         String ret = templateString;
@@ -29,12 +55,27 @@ public interface Model {
         return ret;
     }
 
+    /**
+     * Like the template() function but uses System.getenv() for the Map
+     * @param templateString input string may containing ${env_var_name}
+     * @return a string after substitution
+     */
     default String envTemplate(String templateString){
         return template( templateString, Collections.unmodifiableMap(System.getenv()));
     }
 
+    /**
+     * Base directory of the model, which folder the model file is found
+     * @return folder which model file was loaded from
+     */
     String base();
 
+    /**
+     * Parameters for threading for Jetty
+     * min : min no of threads
+     * max : max no of threads
+     * @return threading properties
+     */
     default Map<String,Integer> threading(){
         return Map.of(
                 "min", 3,
@@ -43,76 +84,167 @@ public interface Model {
         );
     }
 
+    /**
+     * Port of operation
+     * @return port of the model
+     */
     default int port(){
         return 8080;
     }
 
+    /**
+     * Location where all static files will be loaded
+     * @return static file location - a folder
+     */
     default String staticPath(){
         return interpretPath( "_/static" ) ;
     }
 
+    /**
+     * Location from where Type System - Schemas will be loaded
+     * @return full path for Schema.yaml file
+     */
     default String schemaPath(){
         return staticPath() + SCHEMA_DEFINITION ;
     }
 
+    /**
+     * Location where all extra jar files will be loaded
+     * @return all jar/binary file location - a folder
+     */
     default String libPath(){
         return "_/lib" ;
     }
 
+    /**
+     * Route definition
+     * http_verb: [ path : script_path ]
+     * @return a map returning the routes mapping
+     */
     default Map<String, Map<String,String>> routes(){
         return Collections.emptyMap();
     }
 
+    /**
+     * Location from where Auth System will be loaded
+     * @return full path for Auth.yaml file
+     */
     default String auth(){
         return interpretPath( AUTH_DEFINITION ) ;
     }
 
+    /**
+     * Filter definition
+     * [before|after|finally]: [ path : script_path ]
+     * @return a map returning the filters mapping
+     */
     default Map<String, Map<String,String>> filters(){
         return Collections.emptyMap();
     }
 
+    /**
+     * Proxy definition
+     * http_verb: [ path : proxy_id/destination_Path ]
+     * @return a map returning the proxy mapping
+     */
     default Map<String, Map<String,String>> proxies(){
         return Collections.emptyMap();
     }
 
+    /**
+     * Plugin Registration definition
+     * package_name : [ type_name : class_name::field_name ]
+     * @return a map returning the plugin registrations
+     */
     default Map<String, Map<String,String>> plugins(){
         return Collections.emptyMap();
     }
 
+
+    /**
+     * Plugin Creation definition
+     * instance_name : [ prop_name : prop_value ]
+     * @return a map returning the plugin creation
+     */
     default Map<String, Map<String,Object>> dataSources(){
         return Collections.emptyMap();
     }
 
+    /**
+     * Gets back the Cron configuration
+     * instance_name : [ prop_name : prop_value ]
+     * @return a map of the cron jobs
+     */
     default Map<String, Map<String,Object>> cron(){
         return Collections.emptyMap();
     }
 
+    /**
+     * Name for the key for port
+     */
     String PORT = "port" ;
 
+    /**
+     * Name for the key for static folder
+     */
     String STATIC = "static" ;
 
+    /**
+     * Name for the key for routes configuration
+     */
     String ROUTES = "routes" ;
 
+    /**
+     * Name for the key for threading configuration
+     */
     String THREADING = "threading" ;
 
-    String AUTH = "auth" ;
-
+    /**
+     * Name for the key for filters configuration
+     */
     String FILTERS = "filters" ;
 
+    /**
+     * Name for the key for data sources configuration
+     */
     String DATA_SOURCES = "data-sources" ;
 
+    /**
+     * Name for the key for proxy routes configuration
+     */
     String PROXIES = "proxies" ;
 
+    /**
+     * Name for the key for plugin registration configuration
+     */
     String PLUGINS = "plugins" ;
 
+    /**
+     * Name for the key for lib folder
+     */
     String LIB_FOLDER = "lib" ;
 
+    /**
+     * Name for the key for cron job configuration
+     */
     String CRON_JOBS = "cron" ;
 
+    /**
+     * Constant schema configuration location
+     */
     String SCHEMA_DEFINITION = "/types/schema.yaml" ;
 
+    /**
+     * Constant auth configuration location
+     */
     String AUTH_DEFINITION = "_/auth/auth.yaml" ;
 
+    /**
+     * Create a Model
+     * @param map the properties map to be used to create the model
+     * @param baseDir directory for the model
+     * @return a Model
+     */
     static Model from(final Map<String,Object> map, final String baseDir){
 
         return new Model() {
@@ -123,10 +255,10 @@ public interface Model {
             public int port() {
                 Object p = map.getOrDefault(PORT, Model.super.port());
                 if ( p instanceof Integer ) return (int)p;
-                System.out.printf("Port is possibly redirected : '%s' %n", p );
+                logger.info("Port is possibly redirected : '{}'", p );
                 String ps = p.toString();
                 String subP = envTemplate(ps);
-                System.out.printf("Port is redirected to : '%s' %n", subP );
+                logger.info("Port is redirected to : '{}'", subP );
                 return ZNumber.integer(subP, Model.super.port()).intValue();
             }
 
@@ -177,6 +309,11 @@ public interface Model {
         };
     }
 
+    /**
+     * Create a Model from a yaml/json file
+     * @param path - yaml,json file to be used to load as configuration
+     * @return a Model
+     */
     static Model from(String path){
         File f = new File(path);
         final String abs = f.getAbsolutePath();
@@ -194,10 +331,14 @@ public interface Model {
         throw new IllegalArgumentException(String.format("Invalid Type of file : '%s' must be a json or yaml", abs ));
     }
 
-    /// Central place to ask the model to interpret the path as it wishes.
-    /// Doing this because a lot of plugins will need to do this. Best to
-    /// have them all using the same function so any improvements are automatically
-    /// propagated to everybody
+    /**
+     *  Central place to ask the model to interpret the path as it wishes.
+     *  Doing this because a lot of plugins will need to do this. Best to
+     *  have them all using the same function so any improvements are automatically
+     *  propagated to everybody
+     * @param path the input path perhaps containing _/ as prefix
+     * @return the final normalized path in absolute form
+     */
     default String interpretPath(String path) {
         if ( path.endsWith(BINARY_ROUTE_SUFFIX)) return path;
         final String input;

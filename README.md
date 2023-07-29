@@ -28,8 +28,6 @@ Cowj let's you build back-end systems :
 
 via configurations and scripts. It's backbone is written using `spark-11`,  `jetty-11` ,  `quartz` and `casbin`. 
 
-
-
 ### Very Fast `Hello World`
 
 1. Download the appropriate binary - or build to that you have the `cowj-jar`  ready with `./deps`  pointing to dependencies.
@@ -41,8 +39,6 @@ via configurations and scripts. It's backbone is written using `spark-11`,  `jet
 4. Inside `static` folder created `index.html` and write down `hello, world!`.
 
 5. Inside the `hello` folder create a `hello.yaml` file as follows:
-
-
 
 ```yaml
 # hello/hello.yaml
@@ -59,13 +55,9 @@ Open browser and visit `localhost:8080/index.html`  you will see `hello,world`.
 
 That is it. That is  all it takes to setup a `Cowj` server.
 
-
-
 What about actual service endpoints?
 
 Just type down these into the `hello.yaml` :
-
-
 
 ```yaml
 # hello/hello.yaml
@@ -88,11 +80,7 @@ You would get back `Hello, World!`.
 
 What is really happening here is Cowj system is detecting an expression written using `js` engine - and evaluating and returning.
 
-
-
 One can of course, for betterment move the expression from inside to outside, e.g. create a file `hello.js` in the `hello` folder, and then update the `hello.yaml` as follows:
-
-
 
 ```yaml
 # hello/hello.yaml
@@ -114,8 +102,6 @@ Now, restart cowj, run the same curl command - and voila, you would have `Hello,
 As you can see, code is configuration and configuration is code in Cowj.
 
 With this note, we shall dive into the world of BED - back end development.
-
-
 
 ## Back End Development
 
@@ -276,6 +262,10 @@ The context is defined as:
 https://sparkjava.com/documentation#request
 
 https://sparkjava.com/documentation#response
+
+A good read about why we try to avoid type systems inside can be found here:
+
+[Clojure vs. The Static Typing World](https://ericnormand.me/article/clojure-and-types)
 
 #### Shared Memory
 
@@ -512,14 +502,53 @@ To read more see [Writing Input Validations](manual/types.md)
 We support `casbin` based Auth.
 To read more see [Embedding Auth](manual/auth.md)
 
-## Running
+## Using Stand Alone 
 
-1. Build the app.
-2. Run the app by going to the `app/build/libs` folder by:
+
+### Building 
+
+1. Clone the repo to a local directory  
+2. Install / Download java 17 from adoptium ( https://adoptium.net ) 
+3. If you do no have `gradle` install/download gradle  ( https://gradle.org/install ) 
+4. Open command promt and run `gradle`, if it runs you are good.
+5. Go to the local directory where cowj is cloned and issue the command `gradle build`
+6. It would take some time and will be build.
+
+
+### Running 
+
+1. Build the app. 
+2. Go to the `app/build/libs` folder.
+3. Run the stand-alone binary by:
 
 ```shell
-java -jar cowj*  <config-file>
+java -jar cowj-0.1-SNAPSHOT.jar  <config-file>
+```
+
+where you can chose any yaml config file. There are variety of files in the `app/samples` folder.
+For example to run the `hello` app :
+
+```shell
+# you are in the folder app/build/libs 
+java -jar cowj-0.1-SNAPSHOT.jar  ../../samples/hello/hello.yaml 
 ```
 
 The jar has been created such as to have classpath property set to run
 as long as all the dependencies are in the `deps` folder.
+
+### Auto Load on Save for Development & Testing 
+
+It was suggested that for development and testing it is better to have automatic reloading of some of the 
+files on save. In a full configuration based system this pose a problem. 
+However, we have implemented load on save for 
+
+1. Scripts 
+2. JSON Schema 
+
+Any other configuration file have implication and needs to reload the entire app.
+
+```shell
+# you are in the folder app/build/libs 
+java -jar cowj-0.1-SNAPSHOT.jar  ../../samples/hello/hello.yaml true # the last argument true ensures it is running in DEV mode  
+```
+And will load script and schema files automatically on save.

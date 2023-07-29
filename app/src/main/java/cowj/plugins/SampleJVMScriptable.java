@@ -5,6 +5,9 @@ import cowj.Scriptable;
 import javax.script.Bindings;
 import java.util.Map;
 
+/**
+ * A Sample Java Class to Show the Scriptable Implementation
+ */
 public class SampleJVMScriptable implements Scriptable {
     @Override
     public Object exec(Bindings bindings) throws Exception {

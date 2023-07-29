@@ -11,6 +11,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 
+import java.io.IOException;
 import java.util.Collections;
 
 import static org.junit.Assert.assertThrows;
@@ -48,6 +49,12 @@ public class SecretManagerTest {
         SecretManager sm = (SecretManager) ds.proxy();
         String r = sm.getOrDefault("a", "0" );
         Assert.assertEquals("42", r);
+        // Now check IO Error
+        smscStatic.when( SecretManagerServiceClient::create).thenThrow(new IOException("Boom!"));
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            SecretManager.GSM.create("bar", Collections.emptyMap(), model  );
+        });
+        Assert.assertNotNull(exception);
     }
 
     @Test

@@ -1,6 +1,16 @@
 # The standard location auth file
 # is it enabled?
 disabled: false
+
+
+#provider:
+#  type: "auth-jdbc"
+#  jdbc: ""
+#  token: "body:token"
+#  query: ""
+#  user: "user"
+#  expiry: "expiry"
+
 user-header: "u"
 # casbin policy
 policy:
