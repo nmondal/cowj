@@ -75,6 +75,12 @@ public interface DataSource {
         }
     }
 
+    /**
+     * Creates a Data Source Wrapper
+     * @param name of the data source - to be used as key
+     * @param proxy underlying actual object
+     * @return a DataSource object instance
+     */
     static DataSource dataSource(String name, Object proxy){
         return new DataSource() {
             @Override
