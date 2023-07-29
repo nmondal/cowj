@@ -353,7 +353,9 @@ If the idea of COWJ is to do CRUD, where it does CRUD to/from? The underlying da
 How data sources work? There is a global map for registered data sources, which gets injected in the scripts as `_ds`  :
 
 ```js
-_ds.redis
+_ds.get("redis") // javascript 
+_ds["redis"] // zoomba, groovy, python 
+_ds.redis // zoomba, groovy 
 ```
 
 Would access the data source which is registered in the name of `redis` .
