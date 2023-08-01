@@ -346,6 +346,7 @@ public interface TypeSystem {
             try {
                 OBJECT_MAPPER.readValue(validatedParser, Object.class);
             } catch (Throwable e) {
+                logger.error("Original Response: {} ==> {}", response.status(), response.body());
                 logger.error("Output Schema Validation failed. Route '{}' : \n {}", path, e.toString());
             } finally {
                 final long endTime = System.currentTimeMillis();

@@ -65,13 +65,17 @@ public interface CronModel {
                 JobDetail jobDetail = context.getJobDetail();
                 JobDataMap map = context.getJobDetail().getJobDataMap();
                 final String scriptFile = map.get(EXEC).toString();
-                Scriptable scriptable = Scriptable.UNIVERSAL.create("cron:" + jobDetail.getKey().getName(), scriptFile);
+                final String jobName = jobDetail.getKey().getName();
+                Scriptable scriptable = Scriptable.UNIVERSAL.create("cron:" + jobName, scriptFile);
+                logger.info("Starting job '{}' ==> {}", jobName, scriptFile);
                 try {
                     Bindings b = new SimpleBindings();
                     b.put(JOB_EXEC_CONTEXT, context);
                     Object result = scriptable.exec(b);
                     context.setResult(result); // set the result
+                    logger.info("Completed job '{}' ==> {}", jobName, scriptFile);
                 } catch (Throwable t) {
+                    logger.error("Error in job '{}' ==> {} : {}", jobName, scriptFile, t.toString());
                     throw new JobExecutionException(t);
                 }
             }
