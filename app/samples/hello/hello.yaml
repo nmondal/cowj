@@ -32,6 +32,7 @@ routes:
 
   post:
     /hello: _/hello.zm
+    /identity: _/identity.zm
 
 
 proxies:

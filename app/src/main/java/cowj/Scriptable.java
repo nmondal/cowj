@@ -7,7 +7,6 @@ import org.python.jsr223.PyScriptEngineFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.*;
-import zoomba.lang.core.interpreter.ZContext;
 import zoomba.lang.core.interpreter.ZScript;
 import zoomba.lang.core.operations.Function;
 import zoomba.lang.core.types.ZException;
@@ -63,8 +62,10 @@ public interface Scriptable  {
         } catch ( Throwable t){
             if ( sb.containsKey(HALT_ERROR) ){
                 TestAsserter.HaltException he = (TestAsserter.HaltException) sb.get(HALT_ERROR);
+                logger.warn("checked error : " + he.getMessage());
                 return Spark.halt(he.code, he.getMessage());
             }
+            logger.error("unchecked error : " + t);
             return Spark.halt(500, t.getMessage());
         }
     }
@@ -409,15 +410,22 @@ public interface Scriptable  {
     Creator NOP = (path, handler) -> bindings -> "";
 
     /**
-     * JSR-223 Scriptable creator
+     * Adds some parameters to the Bindings passed
+     * @param bindings a binding which is being prepared
      */
-    Creator JSR = (path, handler) -> (bindings) -> {
-        CompiledScript cs = loadScript(path, handler);
+    static void prepareBinding(Bindings bindings){
         bindings.put(DATA_SOURCE, DATA_SOURCES);
         bindings.put(TestAsserter.ASSERTER, (TestAsserter) () -> bindings);
         bindings.put( ENVIRON, System.getenv());
         bindings.put( SHARED,  SHARED_MEMORY);
+    }
 
+    /**
+     * JSR-223 Scriptable creator
+     */
+    Creator JSR = (path, handler) -> (bindings) -> {
+        CompiledScript cs = loadScript(path, handler);
+        prepareBinding(bindings);
         Object r =  cs.eval(bindings);
         if ( r != null ) return r;
         // Jython issue...
@@ -432,13 +440,9 @@ public interface Scriptable  {
      */
     Creator ZMB = (path, handler) -> (bindings) -> {
         ZScript zs = loadZScript(path, handler);
-        ZContext.FunctionContext fc = new ZContext.FunctionContext( ZContext.EMPTY_CONTEXT , ZContext.ArgContext.EMPTY_ARGS_CONTEXT);
-        bindings.put(DATA_SOURCE, DATA_SOURCES);
-        bindings.put( ENVIRON, System.getenv());
-        bindings.put( SHARED,  SHARED_MEMORY);
-        fc.putAll( bindings);
-        zs.runContext(fc);
-        Function.MonadicContainer mc = zs.execute();
+        prepareBinding(bindings);
+        // This ensures things are pure function
+        Function.MonadicContainer mc = zs.eval(bindings);
         if ( mc.isNil() ) return "";
         if (mc.value() instanceof Throwable th){
             final Exception ex;
@@ -457,7 +461,6 @@ public interface Scriptable  {
             } else {
                 ex = new RuntimeException(th);
             }
-
             throw ex;
         }
         return mc.value();
@@ -493,9 +496,7 @@ public interface Scriptable  {
      * Binary - class based creator
      */
     Creator BINARY = (path, handler) -> (bindings) -> {
-        bindings.put(DATA_SOURCE, DATA_SOURCES);
-        bindings.put( ENVIRON, System.getenv());
-        bindings.put( SHARED,  SHARED_MEMORY);
+        prepareBinding(bindings);
         Scriptable scriptable = loadClass(handler);
         return scriptable.exec(bindings);
     };

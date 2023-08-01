@@ -1,0 +1,5 @@
+// return the body back as json
+// in case of any error, returns empty json
+jo = json( req.body ) ?? {:}
+jstr(jo) // return
+

@@ -59,7 +59,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
 
     // Auth
-    implementation 'org.casbin:jcasbin:1.33.1'
+    implementation 'org.casbin:jcasbin:1.34.0'
 
     // File Watching ....
     implementation 'io.methvin:directory-watcher:0.18.0'
