@@ -222,8 +222,9 @@ public interface CronModel {
                         logger.info("Running immediate : " + name);
                         try {
                             task.scriptable().exec( new SimpleBindings());
-                        }finally {
-                            logger.error("Error Running Task : " + name);
+                            logger.info("Successfully ran: " + name);
+                        } catch (Throwable t) {
+                            logger.error("Error Running Task {} => {}", name, t.toString());
                             logger.error("This will terminate/hang the instance...");
                         }
                     }catch (Throwable e){
