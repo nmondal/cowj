@@ -226,6 +226,7 @@ public interface CronModel {
                         } catch (Throwable t) {
                             logger.error("Error Running Task {} => {}", name, t.toString());
                             logger.error("This will terminate/hang the instance...");
+                            throw t;
                         }
                     }catch (Throwable e){
                        throw new RuntimeException(e);
