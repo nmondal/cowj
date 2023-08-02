@@ -1,0 +1,17 @@
+/*
+Verifies if OTP is correct
+*/
+
+// get the parsed body
+parsed_body = req.attribute("_body")
+// we get the data here
+sms_store = Test.shared("SMS")
+assert( parsed_body.requestId @ sms_store , jstr(  {  "message" : "Invalid or Stale Request Id!" }  ) , 401 )
+data = sms_store[parsed_body.requestId]
+// remove OTP ??? Or store back.. who cares, honestly ???
+sms_store -= parsed_body.requestId
+// get current time
+cur_time  = int(time())
+assert( data.expiry >= cur_time , jstr(  {  "message" : "OTP Expired!" }  ) , 401 )
+// return response
+str(  {  "message" : "OTP Verified!" }  )

@@ -3,6 +3,7 @@ package cowj;
 import org.junit.Assert;
 import org.junit.Test;
 
+import javax.script.Bindings;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 
@@ -165,5 +166,17 @@ public class ScriptableTest {
     @Test
     public void zmbScriptLoadErrorTest(){
         loadErrorTest(() -> Scriptable.loadZScript("ignore", "samples/test_scripts/parse_err.zm") );
+    }
+
+    @Test
+    public void nameSpacedSharedMemTest(){
+        final Bindings b = new SimpleBindings();
+        Scriptable.TestAsserter ts = () -> b;
+        Object o1 = ts.shared("_foo");
+        Object o2 = ts.shared("_bar");
+        Assert.assertNotSame(o1, o2);
+        Object o3 = ts.shared("_bar");
+        Assert.assertNotSame(o1, o3);
+        Assert.assertEquals(o2,o3);
     }
 }

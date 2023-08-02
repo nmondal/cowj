@@ -1,0 +1,13 @@
+{
+  "$id": "https://github.com/nmondal/cowj/prod/RetVal.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RetVal",
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string",
+      "description": "SMS Gateway Response "
+    }
+  },
+  "required": ["message" ]
+}

@@ -1,0 +1,15 @@
+/*
+Responds back the response
+*/
+
+// case when the SMS gateway goofed up
+if ( resp.status() != 200 ){
+  my_resp = jstr ( { "message" : jstr(resp.body()) })
+  resp.body(my_resp)
+  return
+}
+// now in here, should be successful
+ret = req.attribute("_ret")
+// return this
+jstr(ret)
+

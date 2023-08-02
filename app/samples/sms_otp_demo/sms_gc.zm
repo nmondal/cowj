@@ -1,0 +1,19 @@
+/*
+Munch through all OTP who are... expired for a long time...
+There could have been  crashing due to sync
+That is why the abundant use of ?? to ensure nothing can go wrong
+*/
+LONG_TIME = 15 * 60 * 1000
+NOW = int(time())
+// anything having expiry older than this must be removed
+EXPIRED = NOW - LONG_TIME
+
+sms_store = Test.shared("SMS")
+ref_ids = set ( sms_store.keys )
+from ( ref_ids , [] ) where {
+     // in here, there is a case of w are deleting something that is just being deleted
+     // to deal with this, we respond back with NOW ensuring we do not attempt to delete it
+     expiry = ( sms_store[$.o].expiry ) ?? NOW
+     expiry < EXPIRED  } as {
+     ( sms_store-= $.o ) ?? ''
+  }

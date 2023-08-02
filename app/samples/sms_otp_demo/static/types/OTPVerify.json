@@ -1,0 +1,17 @@
+{
+  "$id": "https://github.com/nmondal/cowj/prod/OTPVerify.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OTPVerify",
+  "type": "object",
+  "properties": {
+    "requestId": {
+      "type": "string",
+      "description": "Unique Request Id received from service"
+    },
+    "otp": {
+      "type": "string",
+      "description": "Trial OTP which we should send to verify"
+    }
+  },
+  "required": ["otp", "requestId" ]
+}

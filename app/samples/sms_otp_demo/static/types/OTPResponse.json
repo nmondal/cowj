@@ -1,0 +1,17 @@
+{
+  "$id": "https://github.com/nmondal/cowj/prod/OTPResponse.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OTPResponse",
+  "type": "object",
+  "properties": {
+    "expiry": {
+      "type": "integer",
+      "description": "Expiry of the OTP in UTC milli sec"
+    },
+    "requestId": {
+      "type": "string",
+      "description": "Unique Request Id against OTP is stored"
+    }
+  },
+  "required": ["expiry", "requestId" ]
+}

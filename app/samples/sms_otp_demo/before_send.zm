@@ -1,0 +1,33 @@
+/*
+The one which generates a:
+ 1. random k digit OTP
+ 2. Globally Unique request id to push through
+*/
+// key for the gateway load from secrets, ideally
+API_KEY = "xx"
+// no of digits
+DIGITS = 6
+// Expiry duration
+EXPIRY_OFFSET = 6 * 60 * 1000
+// get the parsed body
+parsed_body = req.attribute("_body")
+
+// we start creating payloads here
+headers = {  "authorization" : API_KEY, "accept" : "*/*", "cache-control": "no-cache", "content-type": "application/json" }
+uuid = random("[a-z]+", 8 ) + str(int(time()))
+otp =  random("[0-9]+", DIGITS )
+// create the OTP message
+message = str("%s is Your OTP!", otp)
+body = { "message"  : message, "route" : "q", "numbers" : parsed_body.mobile , "flash" : "1" }
+
+// store the OTP in transient store - Ideally rely on REDIS
+// but this works, and can scale to millions to be honest
+sms_store = Test.shared("SMS")
+expiry = int(time()) + EXPIRY
+sms_store[uuid] = { "otp" : otp , "expiry" : expiry }
+proxy_payload = { "headers" : headers , "body" : jstr(body) }
+ret = { "requestId" : uuid , "expiry" : expiry }
+// now set the proxy attribute
+req.attribute("_proxy", proxy_payload)
+req.attribute("_ret", ret)
+// we are done here...

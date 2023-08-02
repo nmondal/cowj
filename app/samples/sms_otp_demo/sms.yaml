@@ -1,0 +1,38 @@
+#########################
+# SMS Gateway API test bed & Demo
+# No script would cross 42 lines, a hard limit,
+# ideally, even with comments
+#########################
+
+port: 8042
+
+threading:
+  min: 4
+  max : 8
+  timeout: 3000
+
+routes:
+  post:
+    /gen_otp:  sms_gateway/dev/bulkV2 # forward here
+    /verify_otp: _/verify_otp.zm # verify API here
+
+filters:
+  before:
+    /gen_otp: _/before_send.zm
+  finally:
+    /gen_otp: _/after_send.zm
+
+plugins:
+  cowj.plugins:
+    curl: CurlWrapper::CURL
+
+data-sources:
+  sms_gateway: # https://www.fast2sms.com/free-sms-api-gateway
+    type: curl
+    url: https://www.fast2sms.com
+
+cron:
+  sms-gc:
+    exec: _/sms_gc.zm
+    boot: false
+    at: "*/10 * * * *" # https://crontab.guru/every-10-minutes

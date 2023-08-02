@@ -229,6 +229,20 @@ public interface Scriptable  {
          * Key name for the TestAsserter instance inside a Scriptable script
          */
         String ASSERTER = "Test" ;
+
+        /**
+         * Gets a memory for a name space
+         * @param namespace the name space
+         * @return a Map of string to object to store data
+         */
+        default Map<String,Object> shared(String namespace){
+            synchronized (SHARED_MEMORY){
+                if ( SHARED_MEMORY.containsKey(namespace) ) return (Map<String, Object>) SHARED_MEMORY.get(namespace);
+                Map<String,Object> syncMap = new ConcurrentHashMap<>();
+                SHARED_MEMORY.put(namespace,syncMap);
+                return syncMap;
+            }
+        }
     }
 
     /**

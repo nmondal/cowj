@@ -1,0 +1,17 @@
+{
+  "$id": "https://github.com/nmondal/cowj/prod/OTPGen.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OTPGen",
+  "type": "object",
+  "properties": {
+    "mobile": {
+      "type": "string",
+      "description": "Mobile No to Send the OTP"
+    },
+    "deviceId": {
+      "type": "string",
+      "description": "The person's device where we want to login"
+    }
+  },
+  "required": ["mobile", "deviceId" ]
+}

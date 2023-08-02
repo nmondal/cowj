@@ -1,0 +1,25 @@
+#####################
+# Defines the Schemas for routes
+# https://json-schema.org/learn/miscellaneous-examples.html
+#####################
+labels:
+  ok:  "resp.status == 200"
+  err:  "resp.status != 200"
+
+verify:
+  in: false
+  out: false
+
+routes:
+
+  /gen_otp:
+      post:
+        in: OTPGen.json
+        ok: OTPResponse.json
+        err: RetVal.json
+
+  /verify_otp:
+    post:
+      in: OTPVerify.json
+      ok: RetVal.json
+      err: RetVal.json
