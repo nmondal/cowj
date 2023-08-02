@@ -8,13 +8,19 @@
 
 ## Goal
 
-COWJ is pronounced as Cows, and stands for:
+
+COWJ is pronounced as `Cow Jay`. Reason for emphasising on COW is the configuration only web,
+powered by the polyglot support from underlying JVM, which is by and large
+one of the phenomenal piece of Engineering done, till date.
+Author tried doing the same with GO but not with much success - here is the link to that project:
+https://github.com/nmondal/goscow
 
 > Configuration-Only-Web-over-JVM
 
 It should be very clear from the naming that:
 
 > objective is to optimize back-end development and replacing it with configurations.
+
 
 Cowj let's you build back-end systems :
 
