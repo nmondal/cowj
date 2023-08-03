@@ -23,7 +23,7 @@ body = { "message"  : message, "route" : "q", "numbers" : parsed_body.mobile , "
 // store the OTP in transient store - Ideally rely on REDIS
 // but this works, and can scale to millions to be honest
 sms_store = Test.shared("SMS")
-expiry = int(time()) + EXPIRY
+expiry = int(time()) + EXPIRY_OFFSET
 sms_store[uuid] = { "otp" : otp , "expiry" : expiry }
 proxy_payload = { "headers" : headers , "body" : jstr(body) }
 ret = { "requestId" : uuid , "expiry" : expiry }

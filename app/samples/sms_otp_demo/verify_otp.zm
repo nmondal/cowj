@@ -14,4 +14,4 @@ sms_store -= parsed_body.requestId
 cur_time  = int(time())
 assert( data.expiry >= cur_time , jstr(  {  "message" : "OTP Expired!" }  ) , 401 )
 // return response
-str(  {  "message" : "OTP Verified!" }  )
+jstr(  {  "message" : "OTP Verified!" }  )

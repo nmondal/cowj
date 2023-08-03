@@ -11,5 +11,4 @@ if ( resp.status() != 200 ){
 // now in here, should be successful
 ret = req.attribute("_ret")
 // return this
-jstr(ret)
-
+resp.body(jstr(ret) )
