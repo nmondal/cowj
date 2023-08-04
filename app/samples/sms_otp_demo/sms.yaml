@@ -13,8 +13,11 @@ threading:
 
 routes:
   post:
-    /gen_otp:  sms_gateway/dev/bulkV2 # forward here
     /verify_otp: _/verify_otp.zm # verify API here
+
+proxies:
+  post:
+    /gen_otp:  sms_gateway/dev/bulkV2 # forward here
 
 filters:
   before:
