@@ -161,10 +161,6 @@ which is the systems environment variable.
 
 This also is true for any `${key}` directive in any `SecretManager` ,  the problem of bootstrapping or who watches the watcher gets avoided by booting from a bunch of `ENV` variable passed into the system - and then `SecretManager` can be loaded and then the system can use the secret manager.
 
- 
-
-
-
 ### Web IO - CURL
 
 The implementer class is `cowj.plugins.CurlWrapper`.
@@ -216,10 +212,6 @@ result = em.value()
 result.body() // here is the body 
 ```
 
-
-
-
-
 ### JDBC
 
 JDBC abstracts the connection provided by JDBC drivers.
@@ -249,14 +241,11 @@ data-sources:
   druid: # druid connection using avatica driver
     type: jdbc
     connection: "jdbc:avatica:remote:url=http://localhost:8082/druid/v2/sql/avatica/"
-  
+
   derby: # apache derby connection 
     type: jdbc
     stale: "values current_timestamp" # notice the custom stale connection check query
     connection: "jdbc:derby:memory:cowjdb;create=true"
-
-
-
 ```
 
 In this implementation, we are using the `SecretManager` named `secret_source`.
@@ -298,15 +287,9 @@ As one can surmise, we do not want to generally use the DB, but in rare cases
 we may want to read, and if write is necessary we can do that with the underlying connection.
 Mostly, we shall be using read.
 
-
-
 `isValid()` is the method that uses some sort of heuristic to figure out if the `connection()` is actually valid.  For that, it relies on `staleCheckQuery()` which is exposed as `stale` parameter as shown in the yaml.
 
-
-
 There will be one guaranteed connection per JDBC, on boot. Then on, if any jetty thread access the db, a dedicated connection will be opened, and will be reused on the lifetime of the thread.
-
-
 
 Work is underway to clean up the connection when the thread ends.
 
@@ -428,6 +411,30 @@ public interface GoogleStorageWrapper {
 
 }
 ```
+
+
+
+## Using Jython
+
+As people might be aware of, Jython is pretty much dead, end of life, and we are yet to find out better solutions for the same which are portable.  
+
+[Future of Jython · Issue #24 · jython/jython · GitHub](https://github.com/jython/jython/issues/24)
+
+In any case, we can still use Jython.
+
+A related question is many things which are given in Python 3+, say `json` support and all are not supported out of the box for Jython.
+
+In those cases 2 things possible:
+
+1.  Use the awesomeness of `ZTypes.json()` and `ZTypes.string()` functions from ZoomBA, or any other standard Java libraries to parse JSON - here is a manual on how to do it:  [Jython - Importing Java Libraries | Tutorialspoint](https://www.tutorialspoint.com/jython/jython_importing_java_libraries.htm) - it is a breeze. We have also created a sample Python project in the `app/samples/jython` to showcase this in the file `jvm_int.py`  which uses multiple Java libraries to run  stuff from Python.
+
+2. Install Jython PIP and then install `pythonic`  dependencies. This is much harder to maintain - but this is discussed in this link :  [java - How can I install various Python libraries in Jython? - Stack Overflow](https://stackoverflow.com/questions/6787015/how-can-i-install-various-python-libraries-in-jython)
+   
+   This is also done in the `pip_demo.py`  file where we installed `json` package for Python 2.7 and run.
+
+
+
+
 
 ## References
 

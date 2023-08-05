@@ -1,0 +1,12 @@
+###################
+# Showcase how to properly use Jython
+# Uses Java libraries from Python and parse json
+# Also, use PIP - from Jython
+###################
+
+port : 5001
+
+routes:
+  post:
+    /java : _/jvm_int.py
+    /pip : _/pip_demo.py

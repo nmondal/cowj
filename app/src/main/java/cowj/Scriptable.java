@@ -66,7 +66,7 @@ public interface Scriptable  {
                 return Spark.halt(he.code, he.getMessage());
             }
             logger.error("unchecked error : " + t);
-            return Spark.halt(500, t.getMessage());
+            return Spark.halt(500, t.toString());
         }
     }
 
