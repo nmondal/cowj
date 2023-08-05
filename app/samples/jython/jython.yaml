@@ -8,5 +8,5 @@ port : 5001
 
 routes:
   post:
-    /java : _/jvm_int.py
-    /pip : _/pip_demo.py
+    /zmb : _/zoomba_json.py
+    /jackson : _/jackson_json.py

@@ -65,17 +65,17 @@ What about actual service endpoints?
 
 Just type down these into the `hello.yaml` :
 
+
+
 ```yaml
 # hello/hello.yaml
 port: 8080
-
 routes:
   get:
-    /hello: "'Hello,World!'//.js"
+    /hello: _/hello.js
 ```
 
-And restart cowj again. 
-
+And restart cowj again.
 Hit this endpoint in curl:
 
 ```shell
@@ -87,14 +87,6 @@ You would get back `Hello, World!`.
 What is really happening here is Cowj system is detecting an expression written using `js` engine - and evaluating and returning.
 
 One can of course, for betterment move the expression from inside to outside, e.g. create a file `hello.js` in the `hello` folder, and then update the `hello.yaml` as follows:
-
-```yaml
-# hello/hello.yaml
-port: 8080
-routes:
-  get:
-    /hello: _/hello.js
-```
 
 And the `hello.js` :
 

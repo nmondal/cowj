@@ -228,6 +228,17 @@ panic(true, "Message", 418 ) // raise error with message with a status
 
 WIP.
 
+## Jython Usage 
+
+Given Jython is closed at 2.7, one should use it as wrapper to run Java classes in a clean way.
+One can understand the way to do Jython - using underlying Java classes from here:
+https://www.tutorialspoint.com/jython/jython_importing_java_libraries.htm
+
+Also, there is `app/samples/jython` project to see how to get `json` working out.
+Evidently the dialect will be Pythonic, rest would be `JVM` based.
+
+
+
 ## References
 
 1. JSR 223 - https://en.wikipedia.org/wiki/Scripting_for_the_Java_Platform 
