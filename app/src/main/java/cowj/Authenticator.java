@@ -120,7 +120,9 @@ public interface Authenticator {
         UserInfo userInfo = safeAuthExecute( () -> userInfo(request));
         assert userInfo != null;
         // already expired...
-        if ( userInfo.expiry() < System.currentTimeMillis() ){
+        long currentTime = System.currentTimeMillis();
+        if ( userInfo.expiry() <  currentTime){
+            logger.info("Token is expired. Expiry: {}, current time: {}", userInfo.expiry(), currentTime);
             Spark.halt(401, UN_AUTHENTICATED);
         }
         request.attribute(USER_ID, userInfo.id());
@@ -224,10 +226,13 @@ public interface Authenticator {
             @Override
             public UserInfo userFromToken(String token) throws Exception {
                 if ( lru.containsKey( token ) ){
-                    return lru.get(token);
+                    UserInfo info =  lru.get(token);
+                    logger.info("Token found in cache => userid: {}, token: {}", info.id(), info.token());
+                    return info;
                 }
                 UserInfo userInfo = Authenticator.safeAuthExecute( () -> tryGetUserInfo(token));
                 lru.put(userInfo.token(), userInfo);
+                logger.info("Token added in cache => userid: {}, token: {}", userInfo.id(), userInfo.token());
                 return userInfo;
             }
         }
