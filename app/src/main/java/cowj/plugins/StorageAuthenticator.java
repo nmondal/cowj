@@ -134,7 +134,8 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
                 EitherMonad<List<Map<String,Object>>> em = jdbcWrapper.select(userQuery, List.of(token));
                 if ( em.inError() ){ throw new RuntimeException(em.error()) ; }
                 List<Map<String,Object>> res = em.value();
-                if ( res.size() != 1 ){ throw new RuntimeException("Ambiguous Response!") ; }
+                if ( res.size() != 1 ){ throw new RuntimeException(
+                        String.format("Ambiguous Response : token : '%s', resp size '%d", token, res.size())) ; }
                 return res.get(0);
             }
         };
