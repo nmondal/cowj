@@ -122,7 +122,7 @@ public interface Authenticator {
         // already expired...
         long currentTime = System.currentTimeMillis();
         if ( userInfo.expiry() <  currentTime){
-            logger.info("Token is expired. Expiry: {}, current time: {}", userInfo.expiry(), currentTime);
+            logger.error("Token is expired. Expiry: {}, current time: {}", userInfo.expiry(), currentTime);
             Spark.halt(401, UN_AUTHENTICATED);
         }
         request.attribute(USER_ID, userInfo.id());
