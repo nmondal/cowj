@@ -7,9 +7,7 @@ import spark.Spark;
 import zoomba.lang.core.interpreter.ZMethodInterceptor;
 import zoomba.lang.core.types.ZTypes;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 /**
@@ -32,6 +30,12 @@ public interface Authenticator {
      * Default attribute to set once authenticated
      */
     String USER_ID = "user-id" ;
+
+    /**
+     * Default attribute to set user data
+     */
+    String USER_DATA = "user-data" ;
+
 
     /**
      * A safe sandbox to call any method, failing which 401 response would be done
@@ -137,6 +141,7 @@ public interface Authenticator {
             Spark.halt(401, UN_AUTHENTICATED);
         }
         request.attribute(USER_ID, userInfo.id());
+        request.attribute(USER_DATA, userInfo.data());
         return userInfo.id();
     }
 
@@ -164,6 +169,12 @@ public interface Authenticator {
          * @return expression which would be used to gather the token from the Request
          */
         String tokenExpression();
+
+        /**
+         * Collection of routes which we allow to pass w/o authentication
+         * @return a Set of routes
+         */
+        default Set<String> risks(){ return Collections.emptySet(); }
 
         /**
          * Users XPath expression to extract token out from body
@@ -196,6 +207,15 @@ public interface Authenticator {
         @Override
         default UserInfo userInfo(Request request) throws Exception {
             String token = Authenticator.safeAuthExecute( () -> token(request));
+            if ( token == null || token.isEmpty() ){
+                // is the route allowed to be accessed... by guest ?
+                final String pathInfo = request.pathInfo();
+                if ( risks().contains(pathInfo) ){
+                    logger.info("Allowing route in risks setting : {}", pathInfo);
+                    return UserInfo.GUEST;
+                }
+                throw new RuntimeException("token is null or empty!");
+            }
             return Authenticator.safeAuthExecute(() -> userFromToken(token));
         }
 

@@ -6,6 +6,7 @@ import spark.HaltException;
 import spark.Request;
 
 import java.util.Collections;
+import java.util.Set;
 
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -27,6 +28,11 @@ public class AuthenticatorTest {
         @Override
         public String tokenExpression() {
             return "header:foo" ;
+        }
+
+        @Override
+        public Set<String> risks() {
+            return Set.of("foo/bar");
         }
     }
 
@@ -66,5 +72,28 @@ public class AuthenticatorTest {
         });
         Assert.assertTrue( exception instanceof HaltException );
         Assert.assertEquals( 401, ((HaltException)exception).statusCode() );
+    }
+
+
+    @Test
+    public void riskyRouteTest(){
+        Request request = mock(Request.class);
+        when(request.pathInfo()).thenReturn("foo/bar");
+        int[] counters = { 0 };
+        Authenticator authenticator = new CachedAuthTestImpl(counters,1);
+        String user = authenticator.authenticate(request);
+        Assert.assertEquals(0, counters[0]);
+        Assert.assertEquals("", Authenticator.UserInfo.GUEST.id());
+    }
+
+    @Test
+    public void riskyRouteErrorTest(){
+        Request request = mock(Request.class);
+        when(request.pathInfo()).thenReturn("foo/whatever");
+        int[] counters = { 0 };
+        Authenticator authenticator = new CachedAuthTestImpl(counters,1);
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            authenticator.authenticate(request);
+        });
     }
 }

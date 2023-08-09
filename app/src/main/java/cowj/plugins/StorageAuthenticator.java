@@ -4,9 +4,7 @@ import cowj.*;
 import redis.clients.jedis.UnifiedJedis;
 import zoomba.lang.core.types.ZNumber;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * A Class to connect to actual identity providers from the token string
@@ -49,6 +47,11 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
      * Key for the expiry  - would be used to fetch expiry timestamp from the map returned
      */
     final static String EXPIRY_COLUMN = "expiry" ;
+
+    /**
+     * Key for the allowed risky paths
+     */
+    final static String RISKS = "risks" ;
 
     /**
      * Gathers using underlying storage the Map object containing the user id from the token
@@ -94,6 +97,11 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
     protected final Object storage;
 
     /**
+     * Actual risky paths where auth would not applicable
+     */
+    protected final Set<String> risks;
+
+    /**
      * Creates one abstract StorageAuthenticator
      * @param config configuration parameters to create one
      */
@@ -105,12 +113,18 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
         storageWrapperKey = config.getOrDefault( STORAGE, "auth-jdbc").toString();
         userQuery = config.getOrDefault( USER_QUERY, "query").toString();
         storage = Scriptable.DATA_SOURCES.get(storageWrapperKey);
+        risks = Set.<String>copyOf((List) config.getOrDefault(RISKS, Collections.emptyList()));
         maxCapacity = ZNumber.integer(config.getOrDefault(CACHE_SIZE, maxCapacity),maxCapacity).intValue();
     }
 
     @Override
     public String tokenExpression() {
         return tokenExpression;
+    }
+
+    @Override
+    public Set<String> risks() {
+        return risks;
     }
 
     @Override
