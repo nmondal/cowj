@@ -128,7 +128,7 @@ public interface AuthSystem {
             if ( userName == null ){
                 Spark.halt(401, UN_AUTHENTICATED + " : " +  haltMessage());
             }
-            return Authenticator.UserInfo.userInfo(userName, "", Long.MAX_VALUE);
+            return Authenticator.UserInfo.userInfo(userName, "", Long.MAX_VALUE, Collections.emptyMap());
         };
     }
 

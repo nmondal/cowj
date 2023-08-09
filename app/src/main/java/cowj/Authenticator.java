@@ -72,13 +72,19 @@ public interface Authenticator {
         long expiry();
 
         /**
+         * The user data
+         * @return user data
+         */
+        Map<String,Object> data();
+
+        /**
          * Creates a concrete UserInfo
          * @param id identifier for the user
          * @param token authentication token for the user
          * @param expiry time for the token for the user
          * @return a concrete UserInfo implementation
          */
-        static  UserInfo userInfo(String id, String token, long expiry){
+        static  UserInfo userInfo(String id, String token, long expiry, Map<String,Object> data){
             return new UserInfo() {
                 @Override
                 public String id() {
@@ -94,13 +100,18 @@ public interface Authenticator {
                 public long expiry() {
                     return expiry;
                 }
+
+                @Override
+                public Map<String, Object> data() {
+                    return data;
+                }
             };
         }
 
         /**
          * A basal utility constant for Guest Access provision
          */
-        UserInfo GUEST = UserInfo.userInfo( "", "", Long.MAX_VALUE);
+        UserInfo GUEST = UserInfo.userInfo( "", "", Long.MAX_VALUE, Collections.emptyMap());
     }
 
     /**

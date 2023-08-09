@@ -120,7 +120,7 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
         Objects.requireNonNull(userId);
         final Object exp = userData.getOrDefault(expColumnName,0L);
         final long expiry = ZNumber.integer(exp, 0L).longValue();
-        return UserInfo.userInfo(userId.toString(), token, expiry);
+        return UserInfo.userInfo(userId.toString(), token, expiry, userData);
     }
 
     /**

@@ -5,6 +5,8 @@ import org.junit.Test;
 import spark.HaltException;
 import spark.Request;
 
+import java.util.Collections;
+
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -20,7 +22,7 @@ public class AuthenticatorTest {
         @Override
         protected UserInfo tryGetUserInfo(String token) throws Exception {
             counters[0] ++;
-            return UserInfo.userInfo("id","bar", Long.MAX_VALUE);
+            return UserInfo.userInfo("id","bar", Long.MAX_VALUE, Collections.emptyMap());
         }
         @Override
         public String tokenExpression() {
@@ -52,7 +54,7 @@ public class AuthenticatorTest {
         Authenticator authenticator = new Authenticator.TokenAuthenticator.CachedAuthenticator() {
             @Override
             protected UserInfo tryGetUserInfo(String token) throws Exception {
-                return UserInfo.userInfo("id","bar", Long.MAX_VALUE);
+                return UserInfo.userInfo("id","bar", Long.MAX_VALUE, Collections.emptyMap());
             }
             @Override
             public String tokenExpression() {
