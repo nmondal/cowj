@@ -89,6 +89,9 @@ public interface Authenticator {
          * @return a concrete UserInfo implementation
          */
         static  UserInfo userInfo(String id, String token, long expiry, Map<String,Object> data){
+
+            final Map<String,Object> immutable = Collections.unmodifiableMap(data);
+
             return new UserInfo() {
                 @Override
                 public String id() {
@@ -107,7 +110,7 @@ public interface Authenticator {
 
                 @Override
                 public Map<String, Object> data() {
-                    return data;
+                    return immutable;
                 }
             };
         }
@@ -127,11 +130,25 @@ public interface Authenticator {
     UserInfo userInfo(Request request) throws Exception ;
 
     /**
-     * Tries to authenticate an user based on request
+     * Collection of routes which we allow to pass w/o authentication
+     * @return a Set of routes
+     */
+    default Set<String> risks(){ return Collections.emptySet(); }
+
+    /**
+     * Tries to authenticate a user based on request
      * @param request a spark.Request
      * @return in case of successful authentication, returns user id
      */
     default String authenticate(Request request){
+        // is the route allowed to be accessed... by guest ?
+        String pathInfo = request.pathInfo();
+        pathInfo = pathInfo == null ? "" : pathInfo;
+        if ( risks().contains(pathInfo) ){
+            // you are on your own ...
+            logger.info("Allowing route in risks setting : {}", pathInfo);
+            return "";
+        }
         UserInfo userInfo = safeAuthExecute( () -> userInfo(request));
         assert userInfo != null;
         // already expired...
@@ -170,11 +187,6 @@ public interface Authenticator {
          */
         String tokenExpression();
 
-        /**
-         * Collection of routes which we allow to pass w/o authentication
-         * @return a Set of routes
-         */
-        default Set<String> risks(){ return Collections.emptySet(); }
 
         /**
          * Users XPath expression to extract token out from body
@@ -208,12 +220,6 @@ public interface Authenticator {
         default UserInfo userInfo(Request request) throws Exception {
             String token = Authenticator.safeAuthExecute( () -> token(request));
             if ( token == null || token.isEmpty() ){
-                // is the route allowed to be accessed... by guest ?
-                final String pathInfo = request.pathInfo();
-                if ( risks().contains(pathInfo) ){
-                    logger.info("Allowing route in risks setting : {}", pathInfo);
-                    return UserInfo.GUEST;
-                }
                 throw new RuntimeException("token is null or empty!");
             }
             return Authenticator.safeAuthExecute(() -> userFromToken(token));
