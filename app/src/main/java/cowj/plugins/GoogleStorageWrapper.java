@@ -142,13 +142,13 @@ public interface GoogleStorageWrapper {
      *
      * @param bucketName name of the bucket
      * @param location location of the bucket. Supported values https://cloud.google.com/storage/docs/locations
-     * @param _private if true, sets up iam to prevent public access. Otherwise, does nothing
-     * @return
+     * @param preventPublicAccess if true, sets up iam to prevent public access. Otherwise, does nothing
+     * @return bucket
      */
-    default Bucket createBucket(String bucketName, String location, boolean _private) {
+    default Bucket createBucket(String bucketName, String location, boolean preventPublicAccess) {
         BucketInfo.Builder builder = BucketInfo.newBuilder(bucketName)
                 .setLocation(location);
-        if (_private) {
+        if (preventPublicAccess) {
             builder.setIamConfiguration(
                     BucketInfo.IamConfiguration.newBuilder()
                             .setPublicAccessPrevention(BucketInfo.PublicAccessPrevention.ENFORCED)
