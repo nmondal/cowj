@@ -137,6 +137,14 @@ public interface GoogleStorageWrapper {
         });
     }
 
+    /**
+     * Create a new bucket
+     *
+     * @param bucketName name of the bucket
+     * @param location location of the bucket. Supported values https://cloud.google.com/storage/docs/locations
+     * @param _private if true, sets up iam to prevent public access. Otherwise, does nothing
+     * @return
+     */
     default Bucket createBucket(String bucketName, String location, boolean _private) {
         BucketInfo.Builder builder = BucketInfo.newBuilder(bucketName)
                 .setLocation(location);
@@ -151,10 +159,22 @@ public interface GoogleStorageWrapper {
         return storage().create(builder.build());
     }
 
+    /**
+     * Deletes the bucket
+     * @param bucketName name of bucket
+     * @return true if bucket was deleted false if bucket does not exist
+     */
     default boolean deleteBucket(String bucketName) {
         return storage().delete(bucketName);
     }
 
+
+    /**
+     * Deletes the file from the bucket
+     * @param bucketName name of the bucket
+     * @param path path of the file - example - "abc/def.json"
+     * @return true if bucket was deleted, false if bucket does not exist
+     */
     default boolean delete(String bucketName, String path) {
         return storage().delete(BlobId.of(bucketName, path));
     }
