@@ -18,15 +18,17 @@ public interface GoogleStorageWrapper {
 
     /**
      * Underlying Storage
+     *
      * @return Storage
      */
     Storage storage();
 
     /**
      * Dump String to Google Cloud Storage
+     *
      * @param bucketName the bucket
-     * @param fileName the file
-     * @param data which to be dumped encoding used is UTF-8
+     * @param fileName   the file
+     * @param data       which to be dumped encoding used is UTF-8
      * @return a Blob object
      */
     default Blob dumps(String bucketName, String fileName, String data) {
@@ -49,9 +51,10 @@ public interface GoogleStorageWrapper {
 
     /**
      * Dump Object to Google Cloud Storage after converting it to JSON String
+     *
      * @param bucketName the bucket
-     * @param fileName the file
-     * @param obj which to be dumped
+     * @param fileName   the file
+     * @param obj        which to be dumped
      * @return a Blob object
      */
     default Blob dump(String bucketName, String fileName, Object obj) {
@@ -61,8 +64,9 @@ public interface GoogleStorageWrapper {
 
     /**
      * Load data from Google Storage as String - encoding is UTF-8
+     *
      * @param bucketName from this bucket name
-     * @param fileName from this file
+     * @param fileName   from this file
      * @return data string - content of the file
      */
     default String loads(String bucketName, String fileName) {
@@ -78,8 +82,9 @@ public interface GoogleStorageWrapper {
 
     /**
      * Load data from Google Storage as Object
+     *
      * @param bucketName from this bucket name
-     * @param fileName from this file
+     * @param fileName   from this file
      * @return data object - content of the file after parsing it as JSON
      */
     default Object load(String bucketName, String fileName) {
@@ -94,6 +99,7 @@ public interface GoogleStorageWrapper {
 
     /**
      * Gets a Stream of Blob objects from a bucket
+     *
      * @param bucketName name of the bucket
      * @return a Stream of Google Storage Blob
      */
@@ -104,6 +110,7 @@ public interface GoogleStorageWrapper {
 
     /**
      * Gets a Stream of String from a bucket
+     *
      * @param bucketName name of the bucket
      * @return a Stream of String after reading each Blob as String use UTF-8 encoding
      */
@@ -115,6 +122,7 @@ public interface GoogleStorageWrapper {
      * Gets a Stream of Object from a bucket
      * after reading each Blob as String use UTF-8 encoding
      * In case it can parse it as JSON return that object, else return the string
+     *
      * @param bucketName name of the bucket
      * @return a Stream of Object or String
      */
@@ -127,6 +135,28 @@ public interface GoogleStorageWrapper {
                 return data;
             }
         });
+    }
+
+    default Bucket createBucket(String bucketName, String location, boolean _private) {
+        BucketInfo.Builder builder = BucketInfo.newBuilder(bucketName)
+                .setLocation(location);
+        if (_private) {
+            builder.setIamConfiguration(
+                    BucketInfo.IamConfiguration.newBuilder()
+                            .setPublicAccessPrevention(BucketInfo.PublicAccessPrevention.ENFORCED)
+                            .build()
+            );
+        }
+
+        return storage().create(builder.build());
+    }
+
+    default boolean deleteBucket(String bucketName) {
+        return storage().delete(bucketName);
+    }
+
+    default boolean delete(String bucketName, String path) {
+        return storage().delete(BlobId.of(bucketName, path));
     }
 
     /**

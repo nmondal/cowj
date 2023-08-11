@@ -7,6 +7,7 @@ import cowj.DataSource;
 import cowj.Model;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
 import org.mockito.ArgumentMatchers;
 import zoomba.lang.core.types.ZTypes;
 
@@ -19,8 +20,7 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class GoogleStorageWrapperTest {
     private static final Model model = () -> ".";
@@ -132,5 +132,72 @@ public class GoogleStorageWrapperTest {
         Assert.assertEquals(2, r.size());
         Assert.assertEquals(first, r.get(0));
         Assert.assertTrue( r.get(1) instanceof Map );
+    }
+
+    @Test
+    public void createPrivateBucketTest() {
+        Storage storage = mock(Storage.class);
+        final String bucket = "foo-bar";
+        final String location = "abc";
+        Bucket b = mock(Bucket.class);
+
+        ArgumentMatcher<BucketInfo> expectedBucketInfo = (BucketInfo bi) ->
+                location.equals(bi.getLocation())
+                        && bucket.equals(bi.getName())
+                        /// public access prevention should be enforced for private buckets.
+                        && bi.getIamConfiguration().getPublicAccessPrevention()
+                        .equals(BucketInfo.PublicAccessPrevention.ENFORCED);
+        when(storage.create(argThat(expectedBucketInfo))).thenReturn(b);
+        GoogleStorageWrapper gsw = () -> storage;
+        Assert.assertEquals(b, gsw.createBucket(bucket, location, true));
+    }
+
+    @Test
+    public void createPublicBucketTest() {
+        Storage storage = mock(Storage.class);
+        final String bucket = "foo-bar";
+        final String location = "abc";
+        Bucket b = mock(Bucket.class);
+
+        ArgumentMatcher<BucketInfo> expectedBucketInfo = (BucketInfo bi) ->
+                location.equals(bi.getLocation())
+                        && bucket.equals(bi.getName())
+                        /// iam configuration should not be set for public buckets.
+                        && bi.getIamConfiguration() == null;
+        when(storage.create(argThat(expectedBucketInfo))).thenReturn(b);
+        GoogleStorageWrapper gsw = () -> storage;
+        Assert.assertEquals(b, gsw.createBucket(bucket, location, false));
+    }
+
+    @Test
+    public void deleteBucketTest() {
+        Storage storage = mock(Storage.class);
+        final String bucket = "foo-bar";
+
+        /// trying with both true and false both to check whether we
+        /// actually return what storage.delete returns
+        when(storage.delete(ArgumentMatchers.eq(bucket))).thenReturn(true);
+        GoogleStorageWrapper gsw = () -> storage;
+        Assert.assertTrue(gsw.deleteBucket(bucket));
+
+        when(storage.delete(ArgumentMatchers.eq(bucket))).thenReturn(false);
+        Assert.assertFalse(gsw.deleteBucket(bucket));
+    }
+
+    @Test
+    public void deleteTest() {
+        Storage storage = mock(Storage.class);
+        final String bucket = "foo-bar";
+        final String path = "abc/def";
+
+        /// trying with both true and false both to check whether we
+        /// actually return what storage.delete returns
+        BlobId blob = BlobId.of(bucket, path);
+        when(storage.delete(ArgumentMatchers.eq(blob))).thenReturn(true);
+        GoogleStorageWrapper gsw = () -> storage;
+        Assert.assertTrue(gsw.delete(bucket, path));
+
+        when(storage.delete(ArgumentMatchers.eq(blob))).thenReturn(false);
+        Assert.assertFalse(gsw.delete(bucket, path));
     }
 }
