@@ -179,11 +179,18 @@ public interface GoogleStorageWrapper {
         return storage().delete(BlobId.of(bucketName, path));
     }
 
+    String PROJECT_ID = "project-id";
+
     /**
      * A DataSource.Creator for GoogleStorageWrapper
      */
     DataSource.Creator STORAGE = (name, config, parent) -> {
-        Storage storage = StorageOptions.getDefaultInstance().getService();
+        HttpStorageOptions.Builder builder = HttpStorageOptions.newBuilder();
+        String projectID = config.getOrDefault(PROJECT_ID, "").toString();
+        if (!projectID.isEmpty()) {
+            builder.setProjectId(projectID);
+        }
+        Storage storage = builder.build().getService();
         final GoogleStorageWrapper gw = () -> storage;
         return DataSource.dataSource(name, gw);
     };
