@@ -3,12 +3,14 @@ package cowj.plugins;
 import com.google.api.gax.paging.Page;
 import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.*;
+import com.google.firebase.FirebaseApp;
 import cowj.DataSource;
 import cowj.Model;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.ArgumentMatchers;
+import org.mockito.MockedStatic;
 import zoomba.lang.core.types.ZTypes;
 
 import java.nio.charset.StandardCharsets;
@@ -30,6 +32,28 @@ public class GoogleStorageWrapperTest {
         Assert.assertNotNull( ds.proxy() );
         Assert.assertTrue( ds.proxy() instanceof GoogleStorageWrapper );
         Assert.assertNotNull( ((GoogleStorageWrapper) ds.proxy()).storage() );
+    }
+
+    @Test
+    public void initWithProjectID(){
+        try (MockedStatic<HttpStorageOptions> storageOptions = mockStatic(HttpStorageOptions.class)) {
+            HttpStorageOptions.Builder mockBuilder = mock(HttpStorageOptions.Builder.class);
+            when(mockBuilder.setProjectId(ArgumentMatchers.eq("abdef"))).thenReturn(mockBuilder);
+
+            HttpStorageOptions mockOptions = mock(HttpStorageOptions.class);
+            Storage storage = mock(Storage.class);
+            when(mockOptions.getService()).thenReturn(storage);
+            when(mockBuilder.build()).thenReturn(mockOptions);
+
+            storageOptions.when(HttpStorageOptions::newBuilder).thenReturn(mockBuilder);
+
+            DataSource ds = GoogleStorageWrapper.STORAGE.create("foo", Map.of("project-id", "abcdef"), model);
+            Assert.assertNotNull( ds.proxy() );
+            Assert.assertTrue( ds.proxy() instanceof GoogleStorageWrapper );
+            Assert.assertNotNull( ((GoogleStorageWrapper) ds.proxy()).storage() );
+
+            verify(mockBuilder, times(1)).setProjectId("abcdef");
+        }
     }
 
     @Test
