@@ -99,12 +99,15 @@ public interface GoogleStorageWrapper {
 
     /**
      * Gets a Stream of Blob objects from a bucket
-     *
+     * <a href="https://cloud.google.com/storage/docs/samples/storage-list-files-with-prefix#storage_list_files_with_prefix-java">See In Here.</a>
      * @param bucketName name of the bucket
+     * @param directoryPrefix prefix we use to get files in the directory
      * @return a Stream of Google Storage Blob
      */
-    default Stream<Blob> all(String bucketName) {
-        Page<Blob> p = storage().list(bucketName);
+    default Stream<Blob> all(String bucketName, String directoryPrefix) {
+        Page<Blob> p = storage().list(bucketName,
+                Storage.BlobListOption.prefix(directoryPrefix),
+                Storage.BlobListOption.currentDirectory());
         return p.streamAll();
     }
 
@@ -112,22 +115,23 @@ public interface GoogleStorageWrapper {
      * Gets a Stream of String from a bucket
      *
      * @param bucketName name of the bucket
+     * @param directoryPrefix prefix we use to get files in the directory
      * @return a Stream of String after reading each Blob as String use UTF-8 encoding
      */
-    default Stream<String> allContent(String bucketName) {
-        return all(bucketName).map(b -> new String(b.getContent(), UTF_8));
+    default Stream<String> allContent(String bucketName, String directoryPrefix) {
+        return all(bucketName,directoryPrefix).map(b -> new String(b.getContent(), UTF_8));
     }
 
     /**
      * Gets a Stream of Object from a bucket
      * after reading each Blob as String use UTF-8 encoding
      * In case it can parse it as JSON return that object, else return the string
-     *
      * @param bucketName name of the bucket
+     * @param directoryPrefix prefix we use to get files in the directory
      * @return a Stream of Object or String
      */
-    default Stream<Object> allData(String bucketName) {
-        return all(bucketName).map(b -> {
+    default Stream<Object> allData(String bucketName, String directoryPrefix) {
+        return all(bucketName, directoryPrefix).map(b -> {
             final String data = new String(b.getContent(), UTF_8);
             try {
                 return ZTypes.json(data);
