@@ -183,6 +183,10 @@ public interface GoogleStorageWrapper {
         return storage().delete(BlobId.of(bucketName, path));
     }
 
+    /**
+     * The key to be used to identify the storage id for the instance
+     * In the configuration map
+     */
     String PROJECT_ID = "project-id";
 
     /**
