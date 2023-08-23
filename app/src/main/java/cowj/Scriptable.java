@@ -98,7 +98,7 @@ public interface Scriptable  {
             Scriptable scriptable = create(path, handler);
             if ( isAsync ){
                 logger.info("Async Route : {} ==> {}", path, handler);
-                return AsyncRequest.route(scriptable);
+                return AsyncHandler.instance().route(scriptable);
             }
             return scriptable::exec;
         }

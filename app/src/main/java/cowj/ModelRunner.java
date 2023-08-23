@@ -60,11 +60,15 @@ public interface ModelRunner extends Runnable {
         // bind port
         port(m.port());
         // set threading
-        Map<String, Integer> tAct = model().threading();
+        Map<String, Integer> tAct = m.threading();
         int min = tAct.getOrDefault("min", 3);
         int max = tAct.getOrDefault("max", 10);
         int timeout = tAct.getOrDefault("timeout", 30000);
         threadPool(max, min, timeout);
+        // Set Async IO
+        Map<String, Object> asyncConfig = m.async();
+        AsyncHandler.fromConfig(asyncConfig, m);
+        // Now go start creating creators
         Scriptable.Creator creator = scriptCreator();
         // load static
         staticFiles.externalLocation(m.staticPath());
@@ -178,6 +182,7 @@ public interface ModelRunner extends Runnable {
         Spark.stop();
         awaitStop();
         CronModel.stop();
+        AsyncHandler.stop();
     }
 
     /**

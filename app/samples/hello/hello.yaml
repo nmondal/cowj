@@ -16,6 +16,11 @@ threading:
   max : 8
   timeout: 30000
 
+# Async related stuff
+async:
+  threads: 8
+  keep: 32
+
 # path mapping
 routes:
   get:

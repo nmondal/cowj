@@ -84,6 +84,18 @@ public interface Model {
         );
     }
 
+
+    /**
+     * Parameters for Async IO
+     * threads : no of threads in the pool
+     * keep : max no of tasks results to store in memory
+     * fail : failure handler for all async task
+     * @return Async IO properties
+     */
+    default Map<String,Object> async(){
+        return Collections.emptyMap();
+    }
+
     /**
      * Port of operation
      * @return port of the model
@@ -199,6 +211,12 @@ public interface Model {
      */
     String THREADING = "threading" ;
 
+
+    /**
+     * Name for the key for async IO configuration
+     */
+    String ASYNC = "async" ;
+
     /**
      * Name for the key for filters configuration
      */
@@ -279,6 +297,11 @@ public interface Model {
 
             @Override
             public Map<String, Integer> threading() {
+                return (Map) map.getOrDefault( THREADING, Model.super.threading());
+            }
+
+            @Override
+            public Map<String, Object> async() {
                 return (Map) map.getOrDefault( THREADING, Model.super.threading());
             }
 
