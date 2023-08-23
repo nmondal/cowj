@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import spark.QueryParamsMap;
 import spark.Request;
 import spark.Route;
+import zoomba.lang.core.operations.Function;
 import zoomba.lang.core.types.ZNumber;
 
 import javax.script.Bindings;
@@ -181,6 +182,14 @@ public interface AsyncHandler {
     }
 
     /**
+     * A map of uri mapped with Retry strategies
+     * @return a map
+     */
+    default Map<String,Retry> retries(){
+        return Collections.emptyMap();
+    }
+
+    /**
      * Creates an Asynchronous Route based on underlying scriptable
      * @param scriptable underling execution mechanism
      * @return a spark.Route
@@ -193,7 +202,10 @@ public interface AsyncHandler {
             bindings.put(REQUEST, asyncRequest);
             Runnable r = () -> {
                 try {
-                    Object o = scriptable.exec(bindings);
+                    final String retryKey = asyncRequest.uri().substring( Scriptable.Creator.ASYNC_ROUTE_PREFIX.length());
+                    final Retry retry = retries().getOrDefault( retryKey, Retry.NOP);
+                    final java.util.function.Function<Bindings,Object> withRetry = retry.withRetry( scriptable);
+                    final Object o = withRetry.apply(bindings);
                     results().put(asyncRequest.id(), o);
                     logger.info("Async Task {} completed with result {}", asyncRequest.id(), o);
                 } catch (Throwable t) {
@@ -229,6 +241,12 @@ public interface AsyncHandler {
      */
     String FAILURE_HANDLER = "fail" ;
 
+
+    /**
+     * Key to the Async IO Retry Configuration
+     */
+    String RETRY_CONFIG = "retries" ;
+
     /**
      * Creates and inserts an AsyncHandler
      * @param config from this configuration
@@ -253,6 +271,10 @@ public interface AsyncHandler {
                 return size() > memSize;
             }
         });
+        final Map<String,Map<String,Object>> retryConfig = (Map)config.getOrDefault( RETRY_CONFIG, Collections.emptyMap());
+        final Map<String,Retry> retries = new HashMap<>();
+        retryConfig.forEach( (uri,map) -> retries.put(uri, Retry.fromConfig(map)) );
+
         final String handlerPath = model.interpretPath( config.getOrDefault(FAILURE_HANDLER, "").toString());
         logger.info("Async-IO Error Handler : {}", handlerPath );
         final Scriptable failureHandler = Scriptable.UNIVERSAL.create("_async_fail_", handlerPath);
@@ -270,6 +292,11 @@ public interface AsyncHandler {
             @Override
             public Scriptable failureHandler() {
                 return failureHandler;
+            }
+
+            @Override
+            public Map<String, Retry> retries() {
+                return retries;
             }
         };
         Scriptable.DATA_SOURCES.put(ASYNC_HANDLER, asyncHandler);

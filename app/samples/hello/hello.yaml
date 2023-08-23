@@ -20,6 +20,12 @@ threading:
 async:
   threads: 8
   keep: 32
+  retries:
+    compute:
+      strategy: counter
+      max: 3
+      interval: 1000
+
 
 # path mapping
 routes:
@@ -34,12 +40,11 @@ routes:
     /error/z: _/error.zm
     /error/j: _/error.js
     /runtime_error: _/../test_scripts/runtime_error.js
-    /_async_/compute: _/async.zm
 
   post:
     /hello: _/hello.zm
     /identity: _/identity.zm
-
+    /_async_/compute: _/async.zm
 
 proxies:
   get:

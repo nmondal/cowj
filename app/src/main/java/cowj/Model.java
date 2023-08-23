@@ -302,7 +302,7 @@ public interface Model {
 
             @Override
             public Map<String, Object> async() {
-                return (Map) map.getOrDefault( THREADING, Model.super.threading());
+                return (Map) map.getOrDefault( ASYNC, Model.super.async());
             }
 
             @Override

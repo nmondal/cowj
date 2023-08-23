@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Scripting Abstraction for Cowj
  * @see <a href="https://en.wikipedia.org/wiki/Scripting_for_the_Java_Platform">JSR-223</a>
  */
-public interface Scriptable  {
+public interface Scriptable extends java.util.function.Function<Bindings,Object> {
 
     /**
      * Logger for the Cowj Scriptable
@@ -40,6 +40,15 @@ public interface Scriptable  {
      * @throws Exception any error happened while running the script
      */
     Object exec(Bindings bindings) throws Exception;
+
+    @Override
+    default Object apply(Bindings bindings) {
+        try {
+            return exec(bindings);
+        }catch (Throwable t){
+            throw Function.runTimeException(t);
+        }
+    }
 
     /**
      * Abstraction to be used for spark.Route and spark.Filter
