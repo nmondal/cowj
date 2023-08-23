@@ -18,9 +18,7 @@ import java.io.PrintStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -30,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public interface Scriptable  {
 
     /**
-     * Logger for the Cowj ModelRunner
+     * Logger for the Cowj Scriptable
      */
     Logger logger = LoggerFactory.getLogger(Scriptable.class);
 
@@ -83,6 +81,8 @@ public interface Scriptable  {
          */
         Scriptable create(String path, String handler);
 
+        String ASYNC_ROUTE_PREFIX = "/_async_/" ;
+
         /**
          * Creates a Scriptable as spark.Route
          * @see <a href="https://sparkjava.com/documentation#routes">Routes</a>
@@ -91,7 +91,12 @@ public interface Scriptable  {
          * @return a Scriptable as spark.Route
          */
         default Route createRoute( String path, String handler ){
+            final boolean isAsync = path.startsWith(ASYNC_ROUTE_PREFIX);
             Scriptable scriptable = create(path, handler);
+            if ( isAsync ){
+                logger.info("Async Route : {} ==> {}", path, handler);
+                return AsyncRequest.route(scriptable);
+            }
             return scriptable::exec;
         }
 

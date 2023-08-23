@@ -29,6 +29,7 @@ routes:
     /error/z: _/error.zm
     /error/j: _/error.js
     /runtime_error: _/../test_scripts/runtime_error.js
+    /_async_/compute: _/async.zm
 
   post:
     /hello: _/hello.zm
