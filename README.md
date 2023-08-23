@@ -173,6 +173,12 @@ Here is the config:
 # port of the server
 port : 8000
 
+# threading related stuff
+threading:
+  min: 4 # min no of threads 
+  max : 8 # max no of threads 
+  timeout: 30000 # which ms to give timeouts 
+
 # routes information
 routes:
   get:
@@ -181,6 +187,8 @@ routes:
 
   post:
     /hello : _/scripts/js/hello.js
+    /_async_/put : _/scripts/zm/put.zm # special async push back route
+
 
 # route forwarding local /users points to json_place
 proxies:
@@ -279,6 +287,23 @@ v = _shared[<key_name>] // groovy, zoomba, js, python
 ```
 
 See the document  "A Guide to COWJ Scripting" found here - [Scripting](manual/scripting.md)
+
+### Threading 
+
+We can specify the `min` , `max`, and `timeout` for the underlying jetty threadpool.
+
+
+### Routes
+As expected routes are grouped under the `HTTP` verb.
+The idea is pretty simple, in the left side we have the virtual path of the server,
+while on the right side we have the real script location which should be executed to run it.
+
+#### Async Routes 
+A special prefix is reserverd `_async_` , any route with this prefix would be executed asynchrounously, and would return almost immediately responding with a plausible almost GUID 
+string id for the task. 
+
+If one wants to make the server work for long running tasks, programmatically,  
+this is one way.
 
 ### Filters
 
@@ -499,7 +524,7 @@ To read more see [Writing Input Validations](manual/types.md)
 
 ## Auth
 
-We support `casbin` based Auth.
+We support `casbin` based Authorization and pretty basic token based Authentication too.
 To read more see [Embedding Auth](manual/auth.md)
 
 ## Using Stand Alone 
