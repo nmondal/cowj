@@ -179,6 +179,12 @@ threading:
   max : 8 # max no of threads 
   timeout: 30000 # which ms to give timeouts 
 
+# async IO configuration 
+async:
+   threads: 8 # for async io, if not specified, infinite in practice  
+   keep: 32 # keep only 32 task results , if not specified 1024 by default 
+   fail: _/scripts/js/async_task_failure_handler.js #  async task failure handler 
+
 # routes information
 routes:
   get:
@@ -299,11 +305,19 @@ The idea is pretty simple, in the left side we have the virtual path of the serv
 while on the right side we have the real script location which should be executed to run it.
 
 #### Async Routes 
-A special prefix is reserverd `_async_` , any route with this prefix would be executed asynchrounously, and would return almost immediately responding with a plausible almost GUID 
-string id for the task. 
+A special prefix is reserved `_async_` , any route with this prefix would be executed asynchronously, 
+and would return almost immediately responding with a plausible almost GUID string id for the task. 
 
 If one wants to make the server work for long running tasks, programmatically,  
 this is one way.
+
+```yaml
+# async IO configuration 
+async:
+   threads: 8 # for async io, if not specified, infinite in practice  
+   keep: 32 # keep only 32 task results , if not specified 1024 by default 
+   fail: _/scripts/js/async_task_failure_handler.js #  async task failure handler 
+```
 
 ### Filters
 

@@ -86,6 +86,7 @@ public interface Authenticator {
          * @param id identifier for the user
          * @param token authentication token for the user
          * @param expiry time for the token for the user
+         * @param data original data from where all information to be extracted and stored
          * @return a concrete UserInfo implementation
          */
         static  UserInfo userInfo(String id, String token, long expiry, Map<String,Object> data){
