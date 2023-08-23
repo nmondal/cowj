@@ -108,7 +108,13 @@ public interface GoogleStorageWrapper {
         Page<Blob> p = storage().list(bucketName,
                 Storage.BlobListOption.prefix(directoryPrefix),
                 Storage.BlobListOption.currentDirectory());
-        return p.streamAll();
+        Stream<Blob> resultStream = p.streamAll();
+        while ( p.hasNextPage() ){
+            p = p.getNextPage();
+            // https://www.baeldung.com/java-merge-streams
+            resultStream = Stream.concat(resultStream, p.streamAll());
+        }
+        return resultStream;
     }
 
     /**

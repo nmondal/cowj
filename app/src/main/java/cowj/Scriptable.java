@@ -81,6 +81,9 @@ public interface Scriptable  {
          */
         Scriptable create(String path, String handler);
 
+        /**
+         * The _async_ prefix for the routes, which deemed to be run in async mode
+         */
         String ASYNC_ROUTE_PREFIX = "/_async_/" ;
 
         /**

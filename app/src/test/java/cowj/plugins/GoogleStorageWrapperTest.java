@@ -125,6 +125,9 @@ public class GoogleStorageWrapperTest {
     public void streamTest(){
         Storage storage = mock( Storage.class);
         Page<Blob> page = mock(Page.class);
+        when(page.hasNextPage()).thenReturn(true);
+        Page<Blob> page2 = mock(Page.class);
+        when(page.getNextPage()).thenReturn(page2);
         // two items
         Blob b1 = mock(Blob.class);
         when(b1.getStorage()).thenReturn(storage);
@@ -150,12 +153,15 @@ public class GoogleStorageWrapperTest {
         Assert.assertEquals(second, res.get(1));
 
         when(page.streamAll()).thenReturn(Stream.of(b1, b2));
+        when(page2.streamAll()).thenReturn(Stream.of(b2, b1));
         Stream<Object> ao = gsw.allData("foo", "");
         List<Object> r = ao.toList();
 
-        Assert.assertEquals(2, r.size());
+        Assert.assertEquals(4, r.size());
         Assert.assertEquals(first, r.get(0));
         Assert.assertTrue( r.get(1) instanceof Map );
+        Assert.assertEquals(first, r.get(3));
+        Assert.assertTrue( r.get(2) instanceof Map );
     }
 
     @Test
