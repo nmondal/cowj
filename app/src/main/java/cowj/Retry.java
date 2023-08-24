@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of things which are retry-able
@@ -48,14 +49,36 @@ public interface Retry {
         }
     } ;
 
+
+    interface Failure{
+        long when();
+
+        Throwable error();
+
+        static Failure failure(Throwable t){
+            return new Failure() {
+                final long ts = System.nanoTime();
+                @Override
+                public long when() {
+                    return ts;
+                }
+                @Override
+                public Throwable error() {
+                    return t;
+                }
+            };
+        }
+    }
+
     /**
      * A Special Exception with some special properties for failure in Retry
      */
     class MaximumRetryExceededException extends RuntimeException {
+
         /**
          * Various failures which happened during the course of tries
          */
-        public final List<Throwable> failures;
+        public final List<Failure> failures;
 
         /**
          * Underlying Retry which failed
@@ -65,9 +88,9 @@ public interface Retry {
         /**
          * Creates MaximumRetryExceededException from
          * @param retry underlying retry
-         * @param causes underlying errors encountered during the execution
+         * @param causes underlying Failure encountered during the execution
          */
-        public MaximumRetryExceededException( Retry retry, List<Throwable> causes){
+        public MaximumRetryExceededException( Retry retry, List<Failure> causes){
             super();
             failures = Collections.unmodifiableList(causes);
             this.retry = retry;
@@ -75,7 +98,8 @@ public interface Retry {
 
         @Override
         public String toString() {
-            Map<String,Object> map = Map.of( "failures", ZTypes.jsonString(failures),
+            Map<String,Object> map = Map.of( "failures",
+                    failures.stream().map( f -> Map.of("t", f.when(), "e" , f.error() ) ).collect(Collectors.toList()),
                     "retry", retry.toString(),
                     "numTries", failures.size() + 1);
             return ZTypes.jsonString(map);
@@ -101,15 +125,15 @@ public interface Retry {
         return t -> {
             int numTries = 0;
             // initialize
-            List<Throwable> failures = new ArrayList<>();
+            List<Failure> failures = new ArrayList<>();
             numTries(numTries);
             while( can() ){
                 try {
                     return function.apply(t);
                 }catch (Throwable th){
+                    failures.add(Failure.failure( th) );
                     numTries++;
                     numTries(numTries);
-                    failures.add(th);
                     try {
                         Thread.sleep(interval());
                     }catch (InterruptedException e){
