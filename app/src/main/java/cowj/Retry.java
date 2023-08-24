@@ -50,11 +50,27 @@ public interface Retry {
     } ;
 
 
+    /**
+     * A Failure in Retry
+     */
     interface Failure{
+        /**
+         * Gets the time stamp of the failure time
+         * @return time stamp in nano sec
+         */
         long when();
 
+        /**
+         * Gets the underlying error
+         * @return a Throwable error
+         */
         Throwable error();
 
+        /**
+         * Creates a Failure instance from error
+         * @param t underlying Throwable error
+         * @return Failure instance
+         */
         static Failure failure(Throwable t){
             return new Failure() {
                 final long ts = System.nanoTime();

@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import spark.QueryParamsMap;
 import spark.Request;
 import spark.Route;
-import zoomba.lang.core.operations.Function;
 import zoomba.lang.core.types.ZNumber;
 
 import javax.script.Bindings;
@@ -275,9 +274,15 @@ public interface AsyncHandler {
         final Map<String,Retry> retries = new HashMap<>();
         retryConfig.forEach( (uri,map) -> retries.put(uri, Retry.fromConfig(map)) );
 
-        final String handlerPath = model.interpretPath( config.getOrDefault(FAILURE_HANDLER, "").toString());
-        logger.info("Async-IO Error Handler : {}", handlerPath );
-        final Scriptable failureHandler = Scriptable.UNIVERSAL.create("_async_fail_", handlerPath);
+        final Scriptable failureHandler;
+        if ( config.containsKey( FAILURE_HANDLER ) ) {
+            final String handlerPath = model.interpretPath( config.get(FAILURE_HANDLER).toString());
+            logger.info("Async-IO Error Handler : {}", handlerPath);
+            failureHandler = Scriptable.UNIVERSAL.create("_async_fail_", handlerPath);
+        } else {
+            logger.info("Async-IO Error Handler is set to NOP!");
+            failureHandler = Scriptable.NOP.create("", "" );
+        }
         AsyncHandler asyncHandler = new AsyncHandler() {
             @Override
             public ExecutorService executorService() {

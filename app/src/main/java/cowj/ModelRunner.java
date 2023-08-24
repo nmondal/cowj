@@ -119,7 +119,7 @@ public interface ModelRunner extends Runnable {
                 String scriptPath = m.interpretPath(r.getValue());
                 Route route = creator.createRoute(r.getKey(), scriptPath);
                 bic.accept(r.getKey(), route);
-                logger.info("{} -> {} -> {}", verb, r.getKey(), scriptPath);
+                logger.info("scriptable route: {} -> {} -> {}", verb, r.getKey(), scriptPath);
             }
         }
         // proxies, if any...
@@ -143,7 +143,7 @@ public interface ModelRunner extends Runnable {
                     return cw.proxy(verb, "*".equals(destPath) ? request.pathInfo() : destPath, request, response);
                 };
                 bic.accept(r.getKey(), route);
-                logger.info("{} -> {} -> {}", verb, r.getKey(), r.getValue());
+                logger.info("proxy route: {} -> {} -> {}", verb, r.getKey(), r.getValue());
             }
         }
         // load auth...

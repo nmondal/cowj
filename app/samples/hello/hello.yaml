@@ -20,6 +20,7 @@ threading:
 async:
   threads: 8
   keep: 32
+  fail: _/fail.zm
   retries:
     compute:
       strategy: counter
