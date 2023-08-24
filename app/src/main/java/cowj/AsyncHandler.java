@@ -66,6 +66,11 @@ public interface AsyncHandler {
     String ASYNC_ERROR = "_err" ;
 
     /**
+     * Key to the Underlying Retry Object in the Bindings
+     */
+    String RETRY = "_retry" ;
+
+    /**
      * A Wrap Around clone Request to handle Async IO
      */
     interface AsyncRequest {
@@ -203,6 +208,7 @@ public interface AsyncHandler {
                 try {
                     final String retryKey = asyncRequest.uri().substring( Scriptable.Creator.ASYNC_ROUTE_PREFIX.length());
                     final Retry retry = retries().getOrDefault( retryKey, Retry.NOP);
+                    bindings.put(RETRY, retry);
                     final java.util.function.Function<Bindings,Object> withRetry = retry.withRetry( scriptable);
                     final Object o = withRetry.apply(bindings);
                     results().put(asyncRequest.id(), o);

@@ -27,6 +27,17 @@ public interface Retry {
     void numTries(int currentNumberOfFailures);
 
     /**
+     * Gets the current retry state
+     * -1 : Not initialized
+     *  0 : First try
+     *  1,2,... : Retry count
+     * @return Retry state
+     */
+    default int tries(){
+        return 0;
+    }
+
+    /**
      * interval of wait between two successive tries
      * @return interval of time in ms
      */
@@ -184,6 +195,11 @@ public interface Retry {
          * current no of retries
          */
         protected int currentState = -1;
+
+        @Override
+        public int tries(){
+            return currentState;
+        }
 
         /**
          * Constructs a Counter Strategy
