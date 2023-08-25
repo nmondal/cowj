@@ -1,5 +1,7 @@
 package cowj;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zoomba.lang.core.types.ZNumber;
 import zoomba.lang.core.types.ZTypes;
 
@@ -13,6 +15,13 @@ import java.util.stream.Collectors;
  * Implementation of things which are retry-able
  */
 public interface Retry {
+
+
+    /**
+     * Logging for the Retry
+     */
+    Logger logger = LoggerFactory.getLogger(Retry.class);
+
     /**
      * Can we retry again?
      * This MUST be immutable function
@@ -158,6 +167,7 @@ public interface Retry {
                 try {
                     return function.apply(t);
                 }catch (Throwable th){
+                    logger.debug("Retry num {} for {} with {} for error {}", numTries, t, this, th.toString());
                     failures.add(Failure.failure( th) );
                     numTries++;
                     numTries(numTries);
@@ -229,9 +239,9 @@ public interface Retry {
         @Override
         public String toString() {
             Map<String,Object> map = new HashMap<>();
-            map.put("max", maxRetries);
-            map.put("interval", interval);
-            map.put("type", getClass().getName());
+            map.put(MAX, maxRetries);
+            map.put(INTERVAL, interval);
+            map.put(STRATEGY, getClass().getName());
             return ZTypes.jsonString(map);
         }
     }
@@ -287,6 +297,37 @@ public interface Retry {
         };
     }
 
+
+    /**
+     * Key for the Retry Strategy in Config
+     */
+    String STRATEGY = "strategy" ;
+
+    /**
+     * Key for the Maximum No of  Retry in Config
+     */
+    String MAX = "max" ;
+
+    /**
+     * Key for the Interval in ms of the Retry  in Config
+     */
+    String INTERVAL  = "interval";
+
+    /**
+     * Counter Retry Strategy Alias
+     */
+    String COUNTER = "counter" ;
+
+    /**
+     * Exponential Backoff Retry Strategy Alias
+     */
+    String EXP = "exp" ;
+
+    /**
+     * Random Retry Strategy Alias
+     */
+    String RANDOM = "random" ;
+
     /**
      * Creates a Retry Strategy out of a Configuration
      * @param config a configuration map
@@ -294,15 +335,15 @@ public interface Retry {
      */
     static Retry fromConfig(Map<String,Object> config){
         if ( config.isEmpty() ) return NOP;
-        final String strategy = config.getOrDefault("strategy", "counter").toString();
-        final int maxRetries = ZNumber.integer(config.getOrDefault("max", 0),0).intValue();
-        final long interval = ZNumber.integer(config.getOrDefault("interval", Long.MAX_VALUE),0).longValue();
+        final String strategy = config.getOrDefault(STRATEGY, COUNTER).toString();
+        final int maxRetries = ZNumber.integer(config.getOrDefault(MAX, 0),0).intValue();
+        final long interval = ZNumber.integer(config.getOrDefault(INTERVAL, Long.MAX_VALUE),0).longValue();
         return switch (strategy.toLowerCase(Locale.ROOT)) {
-            case "exp" -> exponentialBackOff(maxRetries, interval);
-            case "random" -> randomize(maxRetries, interval);
-            case "counter" -> counter(maxRetries,interval);
+            case EXP -> exponentialBackOff(maxRetries, interval);
+            case RANDOM -> randomize(maxRetries, interval);
+            case COUNTER -> counter(maxRetries,interval);
             default -> { // log it out may be?
-                System.err.printf("Could not make a Retry out of : %s --> NOP %n", ZTypes.jsonString(config));
+                logger.error("Could not make a Retry out of : {} --> NOP", ZTypes.jsonString(config));
                 yield  NOP;
             }
         };
