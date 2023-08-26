@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static cowj.Scriptable.DATA_SOURCES;
 import static cowj.Scriptable.REQUEST;
 
 /**
@@ -189,9 +190,7 @@ public interface AsyncHandler {
      * A map of uri mapped with Retry strategies
      * @return a map
      */
-    default Map<String,Retry> retries(){
-        return Collections.emptyMap();
-    }
+    Map<String,Retry> retries();
 
     /**
      * Creates an Asynchronous Route based on underlying scriptable
