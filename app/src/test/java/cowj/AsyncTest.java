@@ -73,9 +73,32 @@ public class AsyncTest {
     }
 
     @Test
-    public void asyncHandlerErrorTest() throws Exception {
+    public void asyncHandlerErrorWithErrorHandlerSuccessTest() throws Exception {
         final Model m = () -> "" ;
         AsyncHandler asyncHandler = AsyncHandler.fromConfig(Collections.emptyMap(), m);
+        Assert.assertTrue( asyncHandler.executorService() instanceof ThreadPoolExecutor );
+        Assert.assertEquals( Collections.emptyMap(), asyncHandler.retries()  );
+        // Now trigger a cool job
+        Scriptable pass  = Scriptable.UNIVERSAL.create("foo", "samples/test_scripts/error_1_arg.zm");
+        Route r = asyncHandler.route(pass);
+
+        // pass case
+        Request request = mockRequest();
+        when(request.body()).thenReturn(null);
+        Response response = mock(Response.class);
+        r.handle(request,response);
+        Thread.sleep(3000);
+        Assert.assertEquals(1, asyncHandler.results().size());
+        Assert.assertTrue(asyncHandler.results().entrySet().iterator().next().getValue() instanceof Throwable);
+
+        // in the end...
+        AsyncHandler.stop();
+    }
+
+    @Test
+    public void asyncHandlerErrorWithErrorHandlerFailure() throws Exception {
+        final Model m = () -> "" ;
+        AsyncHandler asyncHandler = AsyncHandler.fromConfig(Map.of("fail", "samples/test_scripts/error_2_arg.zm"), m);
         Assert.assertTrue( asyncHandler.executorService() instanceof ThreadPoolExecutor );
         Assert.assertEquals( Collections.emptyMap(), asyncHandler.retries()  );
         // Now trigger a cool job

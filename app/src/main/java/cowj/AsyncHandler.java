@@ -217,8 +217,11 @@ public interface AsyncHandler {
                     logger.error("Async Task {} failed with error {}", asyncRequest.id(), t.toString());
                     try {
                         bindings.put(ASYNC_ERROR, t);
-                        failureHandler().exec( bindings );
-                    }catch (Throwable ignore){}
+                        Object fr = failureHandler().exec( bindings );
+                        logger.info("Async Task Error Handler successfully executed with response : " + fr);
+                    }catch (Throwable handlerError){
+                        logger.error("Async Task Error Handler itself failed (facepalm) with error : "+ handlerError);
+                    }
                 }
             };
             // TODO should check if we could do another async threadpool here...
