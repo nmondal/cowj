@@ -1,11 +1,12 @@
 package cowj.plugins;
 
 import cowj.*;
-import org.checkerframework.checker.units.qual.A;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import zoomba.lang.core.operations.Function;
+import zoomba.lang.core.operations.ZJVMAccess;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -247,6 +248,7 @@ public class JDBCWrapperTest {
                 return false;
             }
         };
+        Assert.assertFalse( broken.noCrashOnBoot() ); // this should be defaulted to false...
         EitherMonad<?> res = broken.select("whatever", List.of());
         Assert.assertTrue( res.inError());
         Assert.assertEquals(errorCon.error() , res.error() );
@@ -286,5 +288,21 @@ public class JDBCWrapperTest {
         double tms = tm.value()/1000000.0;
         System.out.printf( "With %d threads running over %d queries on derby took %.2f milli secs! %n", numThreads, totalQueries, tms );
         Assert.assertTrue( tms <= 1.5 );
+    }
+
+    @Test
+    public void noCrashOnBootTest(){
+        final Map<String,Object> config = Map.of( "no-crash-boot", true );
+        JDBCWrapper jdbcWrapper = (JDBCWrapper) JDBCWrapper.JDBC.create("bar", config, model).proxy();
+        Assert.assertNotNull(jdbcWrapper);
+        // Now setup local threadlocal stuff
+        Function.MonadicContainer mc = ZJVMAccess.getProperty(jdbcWrapper, "connectionThreadLocal");
+        Assert.assertFalse(mc.isNil());
+        ThreadLocal<Connection> tc = (ThreadLocal<Connection>) mc.value();
+        Connection con = derby.connection().value();
+        tc.set(con);
+        // setup done, now ask for the stuff back
+        Assert.assertTrue(jdbcWrapper.connection().isSuccessful());
+        Assert.assertEquals( con, jdbcWrapper.connection().value());
     }
 }

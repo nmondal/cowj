@@ -6,6 +6,7 @@ import cowj.Scriptable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zoomba.lang.core.operations.Function;
+import zoomba.lang.core.types.ZTypes;
 
 import java.sql.*;
 import java.time.ZoneId;
@@ -51,6 +52,17 @@ public interface JDBCWrapper {
         return "SELECT 1";
     }
 
+
+    /**
+     * States if the wrapper is set to expect crash on booting up
+     * Perhaps JDBC ds will be available later,
+     * So in case no Connection can be made, still continue w/o throwing error
+     * @return true if boot up connection can fail, false if we should throw error
+     */
+    default boolean noCrashOnBoot(){
+        return false;
+    }
+
     /**
      * Key for the driver class
      */
@@ -80,6 +92,13 @@ public interface JDBCWrapper {
      * Constant for the default JDBC Connection String
      */
     String DEFAULT_CONNECTION_STRING = "${schema}//${host}/${db}?user=${user}&password=${pass}" ;
+
+
+    /**
+     * Constant for the system not to crash on boot if connection failed on creation
+     */
+    String NO_CRASH_ON_BOOT_CONNECTION  = "no-crash-boot" ;
+
 
     /**
      * Converts java.sql.* object into java object
@@ -167,6 +186,13 @@ public interface JDBCWrapper {
             final String staleCheckQuery = config.getOrDefault(STALE_CHECK_TIMEOUT_QUERY, JDBCWrapper.super.staleCheckQuery()).toString() ;
             final ThreadLocal<Connection> connectionThreadLocal = ThreadLocal.withInitial(() -> null);
 
+            final boolean noCrashOnBoot = ZTypes.bool(config.getOrDefault(NO_CRASH_ON_BOOT_CONNECTION, false),false) ;
+
+            @Override
+            public boolean noCrashOnBoot() {
+                return noCrashOnBoot;
+            }
+
             @Override
             public boolean isValid(){
                 final Connection _connection = connectionThreadLocal.get();
@@ -229,7 +255,14 @@ public interface JDBCWrapper {
         };
         EitherMonad<Connection> em = jdbcWrapper.connection();
         if ( em.inError() ) {
-           throw  Function.runTimeException(em.error());
+            // This is where we essentially claim that later threads might be successful
+            if (jdbcWrapper.noCrashOnBoot()) {
+                logger.error("Booting DS Connection '{}' Creation Failed: {}", name , em.error().toString());
+                logger.error("noCrashOnBoot() is true, creating DS, may later result in unexpected issues !!!");
+                logger.error("Please consider booting the dependencies properly.");
+            } else {
+                throw Function.runTimeException(em.error());
+            }
         }
         return DataSource.dataSource(name, jdbcWrapper);
     };
