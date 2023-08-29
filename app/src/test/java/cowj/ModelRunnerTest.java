@@ -5,6 +5,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import zoomba.lang.core.io.ZWeb;
+import zoomba.lang.core.operations.ZJVMAccess;
 import zoomba.lang.core.types.ZTypes;
 
 import java.util.ArrayList;
@@ -153,10 +154,22 @@ public class ModelRunnerTest {
     @Test
     public void runTimeErrorJSR() throws Exception {
         mr = runModel(hello);
+        try {
+            ZJVMAccess.setProperty( new App(), "PROD_MODE", false);
+            ZWeb zWeb = new ZWeb("http://localhost:5003");
+            ZWeb.ZWebCom r = zWeb.get("/runtime_error", Collections.emptyMap());
+            // this should show up in non prod mode
+            Assert.assertTrue(r.body().contains("bar"));
+            Assert.assertEquals(500, r.status);
+        }finally {
+            ZJVMAccess.setProperty( new App(), "PROD_MODE", true);
+        }
         ZWeb zWeb = new ZWeb("http://localhost:5003");
         ZWeb.ZWebCom r = zWeb.get("/runtime_error", Collections.emptyMap());
-        Assert.assertTrue (r.body().contains("bar"));
-        Assert.assertEquals( 500, r.status);
+        // On prod mode, this should point to right error in the script
+        // Are we literally re-inventing PHP? May be.
+        Assert.assertTrue(r.body().contains("Internal Server Error!"));
+        Assert.assertEquals(500, r.status);
     }
 
     @Test
@@ -198,12 +211,17 @@ public class ModelRunnerTest {
 
     @Test
     public void proxyDestinationErrorCheck() throws Exception {
-        mr = runModel(proxy);
-        ZWeb zWeb = new ZWeb("http://localhost:5004");
-        ZWeb.ZWebCom r = zWeb.get("/wp", Collections.emptyMap());
-        Assert.assertEquals( 500, r.status);
-        Assert.assertNotNull(r.body());
-        Assert.assertTrue( r.body().contains(CurlWrapper.PROXY_ROUTE_FAILED_ERROR_PREFIX) );
+        try {
+            ZJVMAccess.setProperty( new App(), "PROD_MODE", false);
+            mr = runModel(proxy);
+            ZWeb zWeb = new ZWeb("http://localhost:5004");
+            ZWeb.ZWebCom r = zWeb.get("/wp", Collections.emptyMap());
+            Assert.assertEquals(500, r.status);
+            Assert.assertNotNull(r.body());
+            Assert.assertTrue(r.body().contains(CurlWrapper.PROXY_ROUTE_FAILED_ERROR_PREFIX));
+        }finally {
+            ZJVMAccess.setProperty( new App(), "PROD_MODE", true);
+        }
     }
 
     @Test
