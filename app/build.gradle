@@ -8,6 +8,8 @@
  */
 
 plugins {
+
+    id 'base'
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
     // https://imperceptiblethoughts.com/shadow/introduction/
@@ -20,8 +22,11 @@ plugins {
 
 // the maven identifiers
 group = 'org.zoomba-lang'
-archivesBaseName = 'cowj'
 version = '0.1-SNAPSHOT'
+
+base{
+    archivesName = 'cowj'
+}
 
 repositories {
     // Use Maven Central for resolving dependencies.
