@@ -4,6 +4,8 @@ import cowj.AsyncHandler;
 import cowj.DataSource;
 import cowj.EitherMonad;
 import cowj.Scriptable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import spark.Request;
 import spark.Response;
 import spark.Route;
@@ -23,6 +25,11 @@ import static cowj.AsyncHandler.ASYNC_ROUTE_PREFIX;
  * Abstraction for a HTTP[s] web call
  */
 public interface CurlWrapper {
+
+    /**
+     * Logger for the wrapper
+     */
+    Logger logger = LoggerFactory.getLogger(CurlWrapper.class);
 
     /**
      * Sends a payload to a remote server
@@ -99,6 +106,7 @@ public interface CurlWrapper {
      * @return response body of the proxy request
      */
     default String proxy(boolean async, String verb, String destPath, Request request, Response response) {
+        final long startTime = System.nanoTime();
         Objects.requireNonNull(request.body()); // this, according to code, can never be bull
         String body = request.body();
         Object proxyPayload = request.attribute(PROXY_ATTRIBUTE);
@@ -127,6 +135,8 @@ public interface CurlWrapper {
             Bindings bindings = new SimpleBindings();
             Runnable runnable = AsyncHandler.instance().runnable(scriptable, retryKey, bindings, uid );
             AsyncHandler.instance().executorService().submit(runnable);
+            final long spentNano = System.nanoTime() - startTime;
+            logger.info("{} took {} ns", uid, spentNano);
             return uid;
         }
         // This is the regular path sync call
@@ -167,6 +177,7 @@ public interface CurlWrapper {
                 final ZWeb.ZWebCom com = zWeb.send(verb, path, params, body);
                 return EitherMonad.value(com);
             } catch (Throwable t) {
+                logger.error("Error while Sending Request : " + t );
                 return EitherMonad.error(t);
             }
         };
