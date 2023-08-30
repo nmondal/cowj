@@ -63,6 +63,19 @@ public interface GoogleStorageWrapper {
     }
 
     /**
+     * Utility method to get content of a Blob
+     * @param blob the Blob whose content we shall read
+     * @return String content of the Blob imagining UTF-8 encoding
+     */
+    default String data(Blob blob){
+        if (blob == null) {
+            return "";
+        }
+        byte[] prevContent = blob.getContent();
+        return new String(prevContent, UTF_8);
+    }
+
+    /**
      * Load data from Google Storage as String - encoding is UTF-8
      *
      * @param bucketName from this bucket name
@@ -73,11 +86,7 @@ public interface GoogleStorageWrapper {
         Storage storage = storage();
         BlobId blobId = BlobId.of(bucketName, fileName);
         Blob blob = storage.get(blobId);
-        if (blob == null) {
-            return "";
-        }
-        byte[] prevContent = blob.getContent();
-        return new String(prevContent, UTF_8);
+        return data(blob);
     }
 
     /**

@@ -1,0 +1,3 @@
+for ( q : req.queryParams ){
+    printf("%s --> {%s} %n", q, req.queryParams(q) )
+}
