@@ -29,6 +29,7 @@ proxies:
 
   post:
     /echo: postman_echo/post
+    /_async_/echo: postman_echo/post # this is async call
 
 filters:
   before: # use for transforming the request to proxy request

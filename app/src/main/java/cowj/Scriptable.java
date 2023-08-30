@@ -21,6 +21,8 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static cowj.AsyncHandler.ASYNC_ROUTE_PREFIX;
+
 /**
  * Scripting Abstraction for Cowj
  *
@@ -101,11 +103,6 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
          * @return a Scriptable
          */
         Scriptable create(String path, String handler);
-
-        /**
-         * The _async_ prefix for the routes, which deemed to be run in async mode
-         */
-        String ASYNC_ROUTE_PREFIX = "/_async_/";
 
         /**
          * Creates a Scriptable as spark.Route

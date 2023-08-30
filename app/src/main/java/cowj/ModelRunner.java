@@ -133,15 +133,12 @@ public interface ModelRunner extends Runnable {
                 String[] arr = proxyPath.split("/");
                 String curlKey = arr[0];
                 Object o = Scriptable.DATA_SOURCES.get(curlKey);
-                if (!(o instanceof CurlWrapper )){
+                if (!(o instanceof CurlWrapper cw)){
                     logger.error("route does not have any base curl data source : {}->{}", r.getKey(), r.getValue());
                     continue;
                 }
                 final String destPath = proxyPath.replace(curlKey + "/", "");
-                Route route = (request, response) -> {
-                    final CurlWrapper cw = (CurlWrapper) o;
-                    return cw.proxy(verb, "*".equals(destPath) ? request.pathInfo() : destPath, request, response);
-                };
+                Route route = cw.route(verb, r.getKey(), destPath);
                 bic.accept(r.getKey(), route);
                 logger.info("proxy route: {} -> {} -> {}", verb, r.getKey(), r.getValue());
             }

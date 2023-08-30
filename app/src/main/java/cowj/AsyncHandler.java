@@ -15,8 +15,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import static cowj.Scriptable.DATA_SOURCES;
 import static cowj.Scriptable.REQUEST;
 
 /**
@@ -70,6 +68,11 @@ public interface AsyncHandler {
      * Key to the Underlying Retry Object in the Bindings
      */
     String RETRY = "_retry" ;
+
+    /**
+     * The _async_ prefix for the routes, which deemed to be run in async mode
+     */
+    String ASYNC_ROUTE_PREFIX = "/_async_/";
 
     /**
      * A Wrap Around clone Request to handle Async IO
@@ -201,35 +204,46 @@ public interface AsyncHandler {
         return (request, response) -> {
             final long startNano = System.nanoTime();
             AsyncRequest asyncRequest = AsyncRequest.fromRequest(request);
+            final String retryKey = asyncRequest.uri().substring( ASYNC_ROUTE_PREFIX.length());
             final Bindings bindings = new SimpleBindings();
             bindings.put(REQUEST, asyncRequest);
-            Runnable r = () -> {
-                try {
-                    final String retryKey = asyncRequest.uri().substring( Scriptable.Creator.ASYNC_ROUTE_PREFIX.length());
-                    final Retry retry = retries().getOrDefault( retryKey, Retry.NOP);
-                    bindings.put(RETRY, retry);
-                    final java.util.function.Function<Bindings,Object> withRetry = retry.withRetry( scriptable);
-                    final Object o = withRetry.apply(bindings);
-                    results().put(asyncRequest.id(), o);
-                    logger.info("Async Task {} completed with result {}", asyncRequest.id(), o);
-                } catch (Throwable t) {
-                    results().put(asyncRequest.id(), t);
-                    logger.error("Async Task {} failed with error {}", asyncRequest.id(), t.toString());
-                    try {
-                        bindings.put(ASYNC_ERROR, t);
-                        Object fr = failureHandler().exec( bindings );
-                        logger.info("Async Task Error Handler successfully executed with response : " + fr);
-                    }catch (Throwable handlerError){
-                        logger.error("Async Task Error Handler itself failed (facepalm) with error : "+ handlerError);
-                    }
-                }
-            };
-            // TODO should check if we could do another async threadpool here...
+            Runnable r = runnable(scriptable, retryKey, bindings, asyncRequest.id());
             executorService().submit(r);
             final long spentNano = System.nanoTime() - startNano;
             logger.info("{} took {} ns", asyncRequest.id(), spentNano);
             // return the task id ...
             return asyncRequest.id();
+        };
+    }
+
+    /**
+     * Create a Runnable using a Scriptable
+     * @param scriptable underlying scriptable that would get called
+     * @param retryKey using this one would find out the retry mechanism for the underlying Scriptable
+     * @param bindings arguments for the Scriptable
+     * @param uid unique id to identify the Runnable task that would be created
+     * @return Runnable instance which would be created as the Task
+     */
+    default Runnable runnable(Scriptable scriptable, String retryKey, Bindings bindings, String uid){
+        return () -> {
+            try {
+                final Retry retry = retries().getOrDefault( retryKey, Retry.NOP);
+                bindings.put(RETRY, retry);
+                final java.util.function.Function<Bindings,Object> withRetry = retry.withRetry( scriptable);
+                final Object o = withRetry.apply(bindings);
+                results().put(uid, o);
+                logger.info("Async Task {} completed with result {}", uid, o);
+            } catch (Throwable t) {
+                results().put(uid, t);
+                logger.error("Async Task {} failed with error {}", uid, t.toString());
+                try {
+                    bindings.put(ASYNC_ERROR, t);
+                    Object fr = failureHandler().exec( bindings );
+                    logger.info("Async Task Error Handler successfully executed with response : " + fr);
+                }catch (Throwable handlerError){
+                    logger.error("Async Task Error Handler itself failed (facepalm) with error : "+ handlerError);
+                }
+            }
         };
     }
 
