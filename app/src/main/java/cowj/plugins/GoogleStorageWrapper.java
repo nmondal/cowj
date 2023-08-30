@@ -76,6 +76,21 @@ public interface GoogleStorageWrapper {
     }
 
     /**
+     * Utility method to get content of a Blob as JSON Object
+     * If not JSON object simply returns the String
+     * @param blob the Blob whose content we shall read
+     * @return JSON Object if possible - else String content
+     */
+    default Object json(Blob blob){
+        String data = data(blob);
+        try {
+            return ZTypes.json(data);
+        } catch (Throwable t) {
+            return data;
+        }
+    }
+
+    /**
      * Load data from Google Storage as String - encoding is UTF-8
      *
      * @param bucketName from this bucket name
@@ -146,14 +161,7 @@ public interface GoogleStorageWrapper {
      * @return a Stream of Object or String
      */
     default Stream<Object> allData(String bucketName, String directoryPrefix) {
-        return all(bucketName, directoryPrefix).map(b -> {
-            final String data = new String(b.getContent(), UTF_8);
-            try {
-                return ZTypes.json(data);
-            } catch (Throwable e) {
-                return data;
-            }
-        });
+        return all(bucketName, directoryPrefix).map(this::json);
     }
 
     /**
