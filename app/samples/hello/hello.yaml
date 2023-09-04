@@ -67,6 +67,7 @@ plugins:
     g_storage: GoogleStorageWrapper::STORAGE
     jdbc: JDBCWrapper::JDBC
     redis: RedisWrapper::REDIS
+    cache: ExpiryMapWrapper::CACHE
 
 
 data-sources:
@@ -98,6 +99,11 @@ data-sources:
   fcm:
     type: fcm
     credentials_file: _/credentials.json
+
+  exp_map:
+    type: cache
+    size: 10
+    expiry: 1000
 
 cron:
   r:
