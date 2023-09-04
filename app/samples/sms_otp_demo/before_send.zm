@@ -14,15 +14,17 @@ parsed_body = req.attribute("_body")
 
 // we start creating payloads here
 headers = {  "authorization" : API_KEY, "accept" : "*/*", "cache-control": "no-cache", "content-type": "application/json" }
-uuid = random("[a-z]+", 8 ) + str(int(time()))
-otp =  random("[0-9]+", DIGITS )
+rand = random()
+uuid = rand.string("[a-z]+", 8 , 8 ) + str(int(time()))
+otp =  rand.string("[0-9]+", DIGITS, DIGITS )
 // create the OTP message
 message = str("%s is Your OTP!", otp)
 body = { "message"  : message, "route" : "q", "numbers" : parsed_body.mobile , "flash" : "1" }
 
 // store the OTP in transient store - Ideally rely on REDIS
 // but this works, and can scale to millions to be honest
-sms_store = Test.shared("SMS")
+// This is an ExpiringMap - default plugin in Cowj
+sms_store = _ds.otp_cache.shared() // use the thread safe version
 expiry = int(time()) + EXPIRY_OFFSET
 sms_store[uuid] = { "otp" : otp , "expiry" : expiry }
 proxy_payload = { "headers" : headers , "body" : jstr(body) }

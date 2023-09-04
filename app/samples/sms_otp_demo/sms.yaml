@@ -28,14 +28,13 @@ filters:
 plugins:
   cowj.plugins:
     curl: CurlWrapper::CURL
+    cache: ExpiryMapWrapper::CACHE
 
 data-sources:
   sms_gateway: # https://www.fast2sms.com/free-sms-api-gateway
     type: curl
     url: https://www.fast2sms.com
 
-cron:
-  sms-gc:
-    exec: _/sms_gc.zm
-    boot: false
-    at: "*/10 * * * *" # https://crontab.guru/every-10-minutes
+  otp_cache:
+    type: cache # as no size is specified it would go to Int.MAX
+    expiry: 180000 # 3 minutes of expiry
