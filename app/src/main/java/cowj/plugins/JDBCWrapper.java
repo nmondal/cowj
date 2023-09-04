@@ -3,15 +3,20 @@ package cowj.plugins;
 import cowj.DataSource;
 import cowj.EitherMonad;
 import cowj.Scriptable;
+import net.jodah.expiringmap.ExpirationListener;
+import net.jodah.expiringmap.ExpirationPolicy;
+import net.jodah.expiringmap.ExpiringMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zoomba.lang.core.operations.Function;
+import zoomba.lang.core.types.ZNumber;
 import zoomba.lang.core.types.ZTypes;
 
 import java.sql.*;
 import java.time.ZoneId;
 import java.time.chrono.ChronoLocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Abstraction for JDBC Connection
@@ -41,6 +46,12 @@ public interface JDBCWrapper {
      * @return true if Connection is ok, false otherwise
      */
     boolean isValid();
+
+    /**
+     * Gets the idle timeout  for the underlying Connection
+     * @return timeout in ms
+     */
+    long timeout();
 
     /**
      * This is the query which used to check if the underlying Connection is valid or not
@@ -87,6 +98,12 @@ public interface JDBCWrapper {
      * Key for the staleCheckQuery() query string
      */
     String STALE_CHECK_TIMEOUT_QUERY = "stale" ;
+
+
+    /**
+     * Key for Connection idle timeout after which connection would be closed by the server
+     */
+    String CONNECTION_TIMEOUT = "timeout" ;
 
     /**
      * Constant for the default JDBC Connection String
@@ -184,9 +201,44 @@ public interface JDBCWrapper {
 
         JDBCWrapper jdbcWrapper = new JDBCWrapper() {
             final String staleCheckQuery = config.getOrDefault(STALE_CHECK_TIMEOUT_QUERY, JDBCWrapper.super.staleCheckQuery()).toString() ;
-            final ThreadLocal<Connection> connectionThreadLocal = ThreadLocal.withInitial(() -> null);
+
+            final long connectionTimeout = ZNumber.integer(config.getOrDefault( CONNECTION_TIMEOUT, 30 * 60000L ), 30 * 60000L).longValue();
+
+            @Override
+            public long timeout() {
+                return connectionTimeout;
+            }
+
+            // get a unique id to each thread...
+            final ThreadLocal<String> uuidThreadLocal = ThreadLocal.withInitial(() ->  UUID.randomUUID().toString());
+
+            final ExpirationListener<String,Connection> closeConnection = (uuid, con ) -> {
+                try {
+                    logger.info("On Thread {} trying closing JDBC connection due to inactivity", uuidThreadLocal.get());
+                    con.close();
+                    logger.info("On Thread {} closed JDBC connection due to inactivity", uuidThreadLocal.get());
+                }catch (Throwable t){
+                    logger.error("Error happened while closing connection : " +  t);
+                }
+            };
+
+            final ExpiringMap<String,Connection> conMap = ExpiringMap.builder()
+                    .expirationPolicy( ExpirationPolicy.ACCESSED)
+                    .expiration( connectionTimeout, TimeUnit.MILLISECONDS)
+                    .asyncExpirationListener(closeConnection)
+                    .build();
 
             final boolean noCrashOnBoot = ZTypes.bool(config.getOrDefault(NO_CRASH_ON_BOOT_CONNECTION, false),false) ;
+
+            void threadLocalConnection(Connection connection){
+                final String uuid = uuidThreadLocal.get();
+                conMap.put(uuid, connection);
+            }
+
+            Connection threadLocalConnection(){
+                final String uuid = uuidThreadLocal.get();
+                return conMap.get(uuid);
+            }
 
             @Override
             public boolean noCrashOnBoot() {
@@ -195,7 +247,7 @@ public interface JDBCWrapper {
 
             @Override
             public boolean isValid(){
-                final Connection _connection = connectionThreadLocal.get();
+                final Connection _connection = threadLocalConnection();
                 if ( _connection == null) {
                     logger.warn("Connection is null!");
                     return false;
@@ -205,7 +257,7 @@ public interface JDBCWrapper {
                      st.execute( staleCheckQuery );
                      return true;
                 }catch (Exception ignore){
-                    connectionThreadLocal.set(null);
+                    threadLocalConnection(null);
                     logger.error("'{}' db Connection was stale, will try creating one!", name );
                     return false;
                 }
@@ -232,7 +284,7 @@ public interface JDBCWrapper {
                     }
                     final Connection _connection = DriverManager.getConnection(substitutedConString, properties);
                     Objects.requireNonNull(_connection);
-                    connectionThreadLocal.set(_connection);
+                    threadLocalConnection(_connection);
                     logger.info("'{}' db Connection got created from thread.", name );
                     return EitherMonad.value(_connection);
                 } catch ( Throwable th){
@@ -248,7 +300,7 @@ public interface JDBCWrapper {
 
             @Override
             public EitherMonad<Connection> connection() {
-                Connection connection = connectionThreadLocal.get();
+                Connection connection = threadLocalConnection();
                 if ( connection != null ) return EitherMonad.value(connection);
                 return create();
             }

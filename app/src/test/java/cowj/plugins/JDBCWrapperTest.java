@@ -5,7 +5,6 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import zoomba.lang.core.operations.Function;
 import zoomba.lang.core.operations.ZJVMAccess;
 
 import java.sql.Connection;
@@ -17,6 +16,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 public class JDBCWrapperTest {
 
@@ -247,6 +247,8 @@ public class JDBCWrapperTest {
             public boolean isValid() {
                 return false;
             }
+            @Override
+            public long timeout() { return Long.MAX_VALUE; }
         };
         Assert.assertFalse( broken.noCrashOnBoot() ); // this should be defaulted to false...
         EitherMonad<?> res = broken.select("whatever", List.of());
@@ -295,14 +297,42 @@ public class JDBCWrapperTest {
         final Map<String,Object> config = Map.of( "no-crash-boot", true );
         JDBCWrapper jdbcWrapper = (JDBCWrapper) JDBCWrapper.JDBC.create("bar", config, model).proxy();
         Assert.assertNotNull(jdbcWrapper);
-        // Now setup local threadlocal stuff
-        Function.MonadicContainer mc = ZJVMAccess.getProperty(jdbcWrapper, "connectionThreadLocal");
-        Assert.assertFalse(mc.isNil());
-        ThreadLocal<Connection> tc = (ThreadLocal<Connection>) mc.value();
         Connection con = derby.connection().value();
-        tc.set(con);
+        // set the connection borrowed from derby
+        ZJVMAccess.callMethod( jdbcWrapper, "threadLocalConnection", new Object[] { con });
         // setup done, now ask for the stuff back
         Assert.assertTrue(jdbcWrapper.connection().isSuccessful());
         Assert.assertEquals( con, jdbcWrapper.connection().value());
+    }
+
+    @Test
+    public void connectionAutoCloseSuccessTest() throws Exception {
+        final Map<String,Object> config = Map.of( "no-crash-boot", true , "timeout", 100L );
+        JDBCWrapper jdbcWrapper = (JDBCWrapper) JDBCWrapper.JDBC.create("bar", config, model).proxy();
+        Assert.assertNotNull(jdbcWrapper);
+        Assert.assertEquals( 100L, jdbcWrapper.timeout());
+        Connection con = mock(Connection.class);
+        ZJVMAccess.callMethod( jdbcWrapper, "threadLocalConnection", new Object[] { con });
+        // this should not be closed, yet
+        verify(con, times(0)).close();
+        // wait for some time.. more than 200 ms
+        Thread.sleep(200);
+        verify(con, times(1)).close();
+    }
+
+    @Test
+    public void connectionAutoCloseFailureTest() throws Exception {
+        final Map<String,Object> config = Map.of( "no-crash-boot", true , "timeout", 100L );
+        JDBCWrapper jdbcWrapper = (JDBCWrapper) JDBCWrapper.JDBC.create("bar", config, model).proxy();
+        Assert.assertNotNull(jdbcWrapper);
+        Assert.assertEquals( 100L, jdbcWrapper.timeout());
+        Connection con = mock(Connection.class);
+        doThrow(new SQLException("boom!")).when(con).close();
+        ZJVMAccess.callMethod( jdbcWrapper, "threadLocalConnection", new Object[] { con });
+        // this should not be closed, yet
+        verify(con, times(0)).close();
+        // wait for some time.. more than 200 ms
+        Thread.sleep(200);
+        verify(con, times(1)).close();
     }
 }
