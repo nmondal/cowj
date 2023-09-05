@@ -118,6 +118,8 @@ public class SchemaTest {
     public void outVerificationBranchesTest() throws Exception {
         Request request = mock(Request.class);
         Response response = mock(Response.class);
+        when(request.body()).thenReturn("");
+        when(response.body()).thenReturn("");
         Map<String,Object> nullSig = new HashMap<>();
         nullSig.put("put", Collections.emptyMap());
         when(request.requestMethod()).thenReturn("post");

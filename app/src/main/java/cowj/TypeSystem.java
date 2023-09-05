@@ -348,8 +348,8 @@ public interface TypeSystem {
             // which pattern matched?
             Optional<String> optLabel = signature.schemas().keySet().stream().filter( label -> {
                if ( Signature.INPUT.equals(label)) return false;
-               String statusExpression = statusLabels().get( label );
-               if ( statusExpression == null ) return false;
+               // ensuring that if nothing is found, it comes as a false expression
+               String statusExpression = statusLabels().getOrDefault( label, "false" );
                return testExpression(request,response, statusExpression);
             }).findFirst();
             if ( optLabel.isEmpty() ) return;
@@ -363,6 +363,8 @@ public interface TypeSystem {
             JsonParser validatedParser = API.decorateJsonParser(validator, unvalidatedParser);
             try {
                 OBJECT_MAPPER.readValue(validatedParser, Object.class);
+                // automatically set JSON type in response
+                response.type("application/json");
             } catch (Throwable e) {
                 logger.error("Original Response: {} ==> {}", response.status(), response.body());
                 logger.error("Output Schema Validation failed. Route '{}' : \n {}", path, e.toString());

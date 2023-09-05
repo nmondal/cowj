@@ -62,9 +62,20 @@ public class CurlWrapperTest {
         return resp;
     }
 
+    static void waitAsynchOn(int maxTimes, String resp) throws Exception{
+        int tries = 0;
+        while( tries < maxTimes && !AsyncHandler.instance().results().containsKey(resp) ){
+            tries ++;
+            System.err.println("Waiting... " + tries);
+            Thread.sleep(1500);
+        }
+    }
+
     @Test
     public void asyncProxySuccessTest() throws Exception {
         final String resp = callAsynchProxy("https://postman-echo.com","/post");
+        // this can take significant time.. so...
+        waitAsynchOn(5,resp);
         Object res = AsyncHandler.instance().results().get(resp);
         Assert.assertTrue( res instanceof Map<?,?>);
         Assert.assertEquals( 200, ((Map<?, ?>) res).get("status"));
@@ -74,6 +85,7 @@ public class CurlWrapperTest {
     @Test
     public void asyncProxyFailureTest() throws Exception {
         final String resp = callAsynchProxy("http://localhost:9999", "/blablabla");
+        waitAsynchOn(2,resp);
         Object res = AsyncHandler.instance().results().get(resp);
         Assert.assertTrue( res instanceof Throwable);
         Assert.assertTrue( ((Throwable) res).getCause() instanceof ConnectException );
