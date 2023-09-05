@@ -59,6 +59,19 @@ public class SchemaTest {
     }
 
     @Test
+    public void invalidDataTypeTest(){
+        String body = ZTypes.jsonString(Map.of( "firstName", "foo", "lastName", "bar"));
+        String r = ModelRunnerTest.post( "http://localhost:5042", "/invalid", body);
+        Assert.assertNotNull(r);
+        Assert.assertEquals( "42", r);
+        // now other path
+        body = ZTypes.jsonString(Map.of( "firstName", "foo", "lastName", "bar", "personId", "booohahah"));
+        r = ModelRunnerTest.post( "http://localhost:5042", "/invalid", body);
+        Assert.assertNotNull(r);
+        Assert.assertTrue(r.contains("err"));
+    }
+
+    @Test
     public void invalidJSONSchemaTest(){
         // NOT EVEN JSON test
         String r = ModelRunnerTest.post( "http://localhost:5042", "/person",  "foo bar!" );

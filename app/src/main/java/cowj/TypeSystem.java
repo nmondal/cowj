@@ -292,7 +292,7 @@ public interface TypeSystem {
      * @return a spark.Filter before filter
      */
     default Filter inputSchemaVerificationFilter(String path){
-        // support only input as of now...
+        // support only request body as of now...
         return  (request, response) -> {
             final long startTime = System.currentTimeMillis();
             final String verb = request.requestMethod().toLowerCase(Locale.ROOT);
@@ -317,7 +317,7 @@ public interface TypeSystem {
                 Spark.halt(409,"Input Schema Validation failed : " + e);
             } finally {
                 final long endTime = System.currentTimeMillis();
-                logger.error("?? Input Verification took {} ms", endTime - startTime);
+                logger.info("?? Input Verification took {} ms", endTime - startTime);
             }
         };
     }
@@ -329,13 +329,19 @@ public interface TypeSystem {
      * @return a spark.Filter afterAfter filter
      */
     default Filter outputSchemaVerificationFilter(String path){
-        // support only input as of now...
+        // support only response body as of now...
         return  (request, response) -> {
+            final long startTime = System.currentTimeMillis();
             if ( Boolean.TRUE.equals( request.attribute(INPUT_SCHEMA_VALIDATION_FAILED))){
                 logger.info("Bypassing Output Schema Validation, reason: Input Schema validation failed");
                 return;
             }
-            final long startTime = System.currentTimeMillis();
+            final String potentialJsonBody = response.body() ;
+            if ( potentialJsonBody == null ){
+                logger.error("Bypassing Output Schema Validation, reason: Nothing is in the response body");
+                logger.error("Possible NON-String response from Route : Ensure returning string for output Schema Validation!");
+                return;
+            }
             final String verb = request.requestMethod().toLowerCase(Locale.ROOT);
             Signature signature = routes().get(path).get(verb);
             if ( signature == null ){ return; }
@@ -351,7 +357,7 @@ public interface TypeSystem {
             if ( schemaPath.isEmpty() ) return;
             final String jsonSchemaPath = definitionsDir() + "/"+  schemaPath;
             SchemaValidator validator = loadSchema(jsonSchemaPath);
-            final String potentialJsonBody = response.body() ;
+
             JsonParser unvalidatedParser =
                     OBJECT_MAPPER.getFactory().createParser(potentialJsonBody);
             JsonParser validatedParser = API.decorateJsonParser(validator, unvalidatedParser);
@@ -362,7 +368,7 @@ public interface TypeSystem {
                 logger.error("Output Schema Validation failed. Route '{}' : \n {}", path, e.toString());
             } finally {
                 final long endTime = System.currentTimeMillis();
-                logger.error("?? Output Verification took {} ms", endTime - startTime);
+                logger.info("?? Output Verification took {} ms", endTime - startTime);
             }
         };
     }

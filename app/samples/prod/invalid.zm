@@ -2,5 +2,9 @@
 Just dumps it into some random tmp folder by creating some  unique id
 */
 payload = req.attribute("_body") // this should already have the parsed data
-// this should crash out...
-jstr(payload)
+// this should test non string responses
+res = 42
+if ( "personId" @ payload ){ // produce invalid output
+  res = jstr( { "err" : "you can not have person id passed!" })
+}
+res // this should do it
