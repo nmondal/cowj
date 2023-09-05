@@ -1,0 +1,6 @@
+/*
+Just dumps it into some random tmp folder by creating some  unique id
+*/
+payload = req.attribute("_body") // this should already have the parsed data
+// this should crash out...
+jstr(payload)

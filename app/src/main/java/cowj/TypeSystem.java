@@ -281,6 +281,12 @@ public interface TypeSystem {
     String PARSED_BODY = "_body" ;
 
     /**
+     * Key for checking if input schema validation failed or not
+     * If this is not set, then the input is not verified by the input schema validator
+     */
+    String INPUT_SCHEMA_VALIDATION_FAILED = "_is_failed" ;
+
+    /**
      * Creates a spark.Filter before filter from JSON Schema path to verify input schema
      * @param path to the JSON Schema file
      * @return a spark.Filter before filter
@@ -305,7 +311,9 @@ public interface TypeSystem {
                 Object  parsedBody = OBJECT_MAPPER.readValue(validatedParser, Object.class);
                 // we should also add this to the request to ensure no further parsing for the same?
                 request.attribute(PARSED_BODY, parsedBody );
+                request.attribute(INPUT_SCHEMA_VALIDATION_FAILED, false );
             } catch (Throwable e) {
+                request.attribute(INPUT_SCHEMA_VALIDATION_FAILED, true );
                 Spark.halt(409,"Input Schema Validation failed : " + e);
             } finally {
                 final long endTime = System.currentTimeMillis();
@@ -323,6 +331,10 @@ public interface TypeSystem {
     default Filter outputSchemaVerificationFilter(String path){
         // support only input as of now...
         return  (request, response) -> {
+            if ( Boolean.TRUE.equals( request.attribute(INPUT_SCHEMA_VALIDATION_FAILED))){
+                logger.info("Bypassing Output Schema Validation, reason: Input Schema validation failed");
+                return;
+            }
             final long startTime = System.currentTimeMillis();
             final String verb = request.requestMethod().toLowerCase(Locale.ROOT);
             Signature signature = routes().get(path).get(verb);

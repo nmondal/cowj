@@ -31,7 +31,7 @@ public class SchemaTest {
     public void loadSchemaTest(){
         TypeSystem typeSystem = TypeSystem.fromFile( "samples/prod/static/types/schema.yaml");
         Assert.assertFalse( typeSystem.routes().isEmpty() );
-        Assert.assertEquals( 2, typeSystem.routes().size());
+        Assert.assertEquals( 3, typeSystem.routes().size());
     }
 
     @Test

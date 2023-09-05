@@ -16,6 +16,11 @@ routes:
         in: Person.json
         ok: RetVal.json
         err: RetVal.json
+  /invalid:
+    post:
+      in: Person.json
+      ok: RetVal.json
+      err: RetVal.json
 
   /person/*:
     get:
