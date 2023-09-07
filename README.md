@@ -101,6 +101,19 @@ As you can see, code is configuration and configuration is code in Cowj.
 
 With this note, we shall dive into the world of BED - back end development.
 
+## COWJ Setup
+1. Install java 17 or newer
+2. Install gradle
+3. Clone https://github.com/nmondal/cowj
+4. Run `gradle build -x test`
+5. `cd app/build/libs`
+6. Ensure `ls` returns `java -jar cow-0.1-SNAPSHOT.jar` as well as a
+`deps/` folder. If those two don’t exist, run `gradle clean` and 
+`gradle build -x test`
+7. `java -jar cow-0.1-SNAPSHOT.jar ../../samples/hello/hello.yaml`
+8. Open localhost:5003/hello/z in browser or curl. This should return hello world
+
+
 ## Back End Development
 
 ### Development Today
