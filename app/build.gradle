@@ -53,6 +53,13 @@ dependencies {
     implementation 'org.apache.groovy:groovy-jsr223:4.0.12'
     // jython ???
     implementation 'org.python:jython:2.7.3'
+    // Kotlin hold all libs to same version, as long as it works
+    implementation 'org.jetbrains.kotlin:kotlin-compiler-embeddable:1.8.22'
+    implementation 'org.jetbrains.kotlin:kotlin-scripting-jsr223:1.8.22'
+    // scala 2 - reason backward compat
+    implementation 'org.scala-lang:scala-library:2.13.12'
+    implementation 'org.scala-lang:scala-reflect:2.13.12'
+    implementation 'org.scala-lang:scala-compiler:2.13.12'
 
     // Cron
     // https://mvnrepository.com/artifact/org.quartz-scheduler/quartz

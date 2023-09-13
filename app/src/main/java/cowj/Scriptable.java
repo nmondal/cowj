@@ -1,5 +1,6 @@
 package cowj;
 
+import kotlin.script.experimental.jsr223.KotlinJsr223DefaultScriptEngineFactory;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
 import org.mozilla.javascript.engine.RhinoScriptEngineFactory;
 import org.python.core.Options;
@@ -77,10 +78,10 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
                 return Spark.halt(he.code, he.getMessage());
             }
             logger.error("unchecked error : " + t);
-            final String message ;
+            final String message;
             if (App.isProdMode()) {
                 // in here, do not tell consumers what error happened
-                message = "Internal Server Error!" ;
+                message = "Internal Server Error!";
             } else {
                 // in here tell consumers why we goofed up
                 message = t.toString();
@@ -291,9 +292,11 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
     Map<String, String> ENGINES = Map.of(
             "js", "JavaScript",
             "groovy", "groovy",
-            "py", "python"
-
-    );
+            "py", "python",
+            "kts", "kts",
+            "kt", "kts",
+            "scala", "scala"
+            );
 
     /**
      * Various data sources store as map
@@ -396,6 +399,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
             MANAGER.registerEngineName("JavaScript", new RhinoScriptEngineFactory());
             MANAGER.registerEngineName("groovy", new GroovyScriptEngineFactory());
             MANAGER.registerEngineName("python", new PyScriptEngineFactory());
+            MANAGER.registerEngineName("kts", new KotlinJsr223DefaultScriptEngineFactory());
             FileWatcher.ofCacheAndRegister(zScripts, (path) -> loadZScript("reload", path));
             FileWatcher.ofCacheAndRegister(scripts, (path) -> loadScript("reload", path));
         }
@@ -573,7 +577,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         String extension = extension(handler);
         Creator r = switch (extension) {
             case "zmb", "zm" -> ZMB;
-            case "js", "groovy", "py" -> JSR;
+            case "js", "groovy", "py", "kt", "kts", "scala" -> JSR;
             case "class" -> BINARY;
             default -> {
                 logger.error("No pattern matched for path '{}' -> For handler '{}' Using NOP!", path, handler);

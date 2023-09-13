@@ -89,6 +89,8 @@ public class ModelRunnerTest {
         Assert.assertEquals( expected, get("http://localhost:5003", "/hello/j"));
         // python
         Assert.assertEquals( expected, get("http://localhost:5003", "/hello/p"));
+        // kotlin
+        Assert.assertEquals( expected, get("http://localhost:5003", "/hello/k"));
         // zoomba
         Assert.assertEquals( expected, get("http://localhost:5003", "/hello/z"));
         // cache run

@@ -33,7 +33,9 @@ routes:
   get:
     /hello/g: _/hello.groovy
     /hello/j: _/hello.js
+    /hello/k: _/hello.kt
     /hello/p: _/hello.py
+    /hello/s: _/hello.scala
     /hello/z: _/hello.zm
     /hello/b: "cowj.plugins.SampleJVMScriptable.class"
     /notification: _/notification.zm
