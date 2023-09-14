@@ -63,6 +63,28 @@ public interface GoogleStorageWrapper {
     }
 
     /**
+     * In case folder exists
+     * @param bucketName in the bucket name
+     * @param prefix having the prefix
+     * @return true if is a folder like prefix, false if it does not exist or is not folder like
+     */
+    default boolean folderExists(String bucketName, String prefix){
+        Page<Blob> blobs = storage().list(bucketName, Storage.BlobListOption.prefix(prefix), Storage.BlobListOption.pageSize(1));
+        return blobs.getValues().iterator().hasNext();
+    }
+
+    /**
+     * In case file exists
+     * @param bucketName in the bucket name
+     * @param fileName having the name
+     * @return true if it is a blob , false if it does not exist or is not simple blob
+     */
+    default boolean fileExist(String bucketName, String fileName) {
+        Blob blob = storage().get(bucketName, fileName);
+        return blob != null;
+    }
+
+    /**
      * Utility method to get content of a Blob
      * @param blob the Blob whose content we shall read
      * @return String content of the Blob imagining UTF-8 encoding
