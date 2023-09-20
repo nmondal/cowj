@@ -20,3 +20,19 @@ routes:
   get:
     /person/:personId : _/fetch_person.zm
 
+proxies:
+  get:
+    /users: json_place/users
+
+filters:
+  finally:
+    /users: _/after.zm
+
+plugins:
+  cowj.plugins:
+    curl: CurlWrapper::CURL
+
+data-sources:
+  json_place:
+    type: curl
+    url: https://jsonplaceholder.typicode.com

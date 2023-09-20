@@ -148,7 +148,8 @@ public interface ModelRunner extends Runnable {
         authSystem.attach();
         // load type system ...
         TypeSystem typeSystem = TypeSystem.fromFile( m.schemaPath());
-        typeSystem.attach();
+        // Attach input before any before filter
+        typeSystem.attachInput();
         // load filters
         logger.info("Filters mapping are as follows...");
         Map<String, Map<String, String>> filters = m.filters();
@@ -167,6 +168,9 @@ public interface ModelRunner extends Runnable {
                 logger.info("{} -> {} -> {}", filterType, r.getKey(), scriptPath);
             }
         }
+
+        // Attach TypeSystem output schema verification after any after filter
+        typeSystem.attachOutput();
         awaitInitialization();
         FileWatcher.startWatchDog( baseDir );
         logger.info("Cowj is initialized!");

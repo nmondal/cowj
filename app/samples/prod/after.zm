@@ -1,0 +1,2 @@
+// literally test that the output schema verification gets triggered post every filter
+resp.body("{\"foo\": \"bar\"}")

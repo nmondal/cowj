@@ -11,6 +11,10 @@ verify:
   out: true
 
 routes:
+  /users:
+    get:
+      ok: output.json
+
   /person:
       post:
         in: Person.json

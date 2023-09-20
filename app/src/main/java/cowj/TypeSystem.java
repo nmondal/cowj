@@ -322,6 +322,10 @@ public interface TypeSystem {
         };
     }
 
+    /**
+     * Once the output schema is verified, the content type would be set to this
+     */
+    String RESP_CONTENT_TYPE = "application/json" ;
 
     /**
      * Creates a spark.Filter afterAfter filter from JSON Schema path to verify output schema
@@ -364,7 +368,7 @@ public interface TypeSystem {
             try {
                 OBJECT_MAPPER.readValue(validatedParser, Object.class);
                 // automatically set JSON type in response
-                response.type("application/json");
+                response.type(RESP_CONTENT_TYPE);
             } catch (Throwable e) {
                 logger.error("Original Response: {} ==> {}", response.status(), response.body());
                 logger.error("Output Schema Validation failed. Route '{}' : \n {}", path, e.toString());
@@ -376,21 +380,25 @@ public interface TypeSystem {
     }
 
     /**
-     * Attaches the TypeSystem to a Spark instance
+     * Attaches the TypeSystem Input Schema Validation to a Spark instance
      */
-    default void attach() {
-        if (verification().in()) { // only if verification is in...
-            routes().keySet().forEach(path -> {
-                Filter schemaVerifier = inputSchemaVerificationFilter(path);
-                Spark.before(path, schemaVerifier);
-            });
-        }
-        if ( verification().out() ){ // only if verification out is set in
-            routes().keySet().forEach(path -> {
-                Filter schemaVerifier = outputSchemaVerificationFilter(path);
-                // this is costly, we should avoid it...
-                Spark.afterAfter(path, schemaVerifier);
-            });
-        }
+    default void attachInput(){
+        if (!verification().in()) return;
+        routes().keySet().forEach(path -> {
+            Filter schemaVerifier = inputSchemaVerificationFilter(path);
+            Spark.before(path, schemaVerifier);
+        });
+    }
+
+    /**
+     * Attaches the TypeSystem Output Schema Validation to a Spark instance
+     */
+    default void attachOutput(){
+        if ( !verification().out() ) return;
+        routes().keySet().forEach(path -> {
+            Filter schemaVerifier = outputSchemaVerificationFilter(path);
+            // this is costly, we should avoid it...
+            Spark.afterAfter(path, schemaVerifier);
+        });
     }
 }
