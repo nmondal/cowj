@@ -22,6 +22,18 @@ import static org.mockito.Mockito.when;
 public class JWTAuthenticatorTest {
     Authenticator NULL = request -> Authenticator.UserInfo.GUEST;
 
+    JWTAuthenticator prov1 = new JWTAuthenticator() {
+        @Override
+        public String secretKey() {
+            return "42";
+        }
+
+        @Override
+        public String issuer() {
+            return "dummy";
+        }
+    };
+
     @Before
     public void before(){
         // register stuff
@@ -35,11 +47,13 @@ public class JWTAuthenticatorTest {
         Assert.assertNotEquals(NULL, authenticator);
         Assert.assertTrue( authenticator instanceof  JWTAuthenticator );
         JWTAuthenticator jwtAuthenticator = (JWTAuthenticator) authenticator;
+        Assert.assertEquals("", jwtAuthenticator.tokenExpression()); // it supposed to be this way
         Assert.assertEquals("test", jwtAuthenticator.issuer());
         Assert.assertEquals("42", jwtAuthenticator.secretKey());
         Assert.assertEquals(0, jwtAuthenticator.cacheSize() );
         JWTAuthenticator.JWebToken jWebToken = jwtAuthenticator.jwt("foo");
         Assert.assertTrue( jWebToken.isSignatureValid() );
+        Assert.assertTrue( jWebToken.getAudience().isEmpty()); // this is what it supposed to be
         // Now create a request with auth stuff
         Request mockRequest = mock(Request.class);
         when(mockRequest.headers()).thenReturn( Set.of("Authentication"));
@@ -100,6 +114,62 @@ public class JWTAuthenticatorTest {
         };
         Throwable throwable = assertThrows(RuntimeException.class, () -> {
            dummy.jwt("foo"); // should throw exception
+        });
+        Assert.assertNotNull(throwable);
+    }
+
+    @Test
+    public void crossJWTFailureTest(){
+
+        JWTAuthenticator.JWebToken prov1Token = prov1.jwt("foo");
+        // Now create a request with auth stuff
+        final String token = prov1Token.token();
+        JWTAuthenticator prov2 = new JWTAuthenticator() {
+            @Override
+            public String secretKey() {
+                return "420";
+            }
+
+            @Override
+            public String issuer() {
+                return "dummy";
+            }
+        };
+        Throwable throwable = assertThrows(Exception.class, () -> {
+            prov2.tryGetUserInfo(token);
+        });
+        Assert.assertNotNull(throwable);
+    }
+
+
+    @Test
+    public void noAuthHeaderTest(){
+        Request mockRequest = mock(Request.class);
+        when(mockRequest.headers()).thenReturn( Set.of());
+        Throwable throwable = assertThrows(Exception.class, () -> {
+            prov1.token(mockRequest);
+        });
+        Assert.assertNotNull(throwable);
+    }
+
+    @Test
+    public void noBearerTokenInAuthHeaderTest(){
+        Request mockRequest = mock(Request.class);
+        when(mockRequest.headers()).thenReturn( Set.of("Authentication"));
+        when(mockRequest.headers(any())).thenReturn( "boo hhaahah ");
+        Throwable throwable = assertThrows(Exception.class, () -> {
+            prov1.token(mockRequest);
+        });
+        Assert.assertNotNull(throwable);
+    }
+
+    @Test
+    public void wrongBearerTokenInAuthHeaderTest(){
+        Request mockRequest = mock(Request.class);
+        when(mockRequest.headers()).thenReturn( Set.of("Authentication"));
+        when(mockRequest.headers(any())).thenReturn( "Bearer  foo bar 42");
+        Throwable throwable = assertThrows(Exception.class, () -> {
+            prov1.token(mockRequest);
         });
         Assert.assertNotNull(throwable);
     }
