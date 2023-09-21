@@ -35,7 +35,7 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
     public class JWebToken implements UserInfo{
 
         private static final String JWT_HEADER = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
-        private Map<String,Object> payload = new LinkedHashMap<>();
+        private final Map<String,Object> payload = new TreeMap<>();
         private String signature;
         private String encodedHeader;
         private String token;
@@ -74,8 +74,9 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
             } else {
                 throw new NoSuchAlgorithmException("JWT Header is Incorrect: " + parts[0]);
             }
-
-            payload = (Map)ZTypes.json(decode(parts[1]));
+            final String decodedPayload = decode(parts[1]);
+            Map<String,Object> tokenPayload = (Map)ZTypes.json(decodedPayload);
+            payload.putAll(tokenPayload);
             if (payload.isEmpty()) {
                 throw new Exception("Payload is Empty: ");
             }
@@ -91,7 +92,8 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
         }
 
         public boolean isSignatureValid() {
-            String computed = hmacSha256(encodedHeader + "." + encode(payload), JWTAuthenticator.this.secretKey());
+            final String data = encodedHeader + "." + encode(payload);
+            final String computed = hmacSha256(data, JWTAuthenticator.this.secretKey());
             return signature.equals(computed); //signature matched
         }
 
@@ -104,6 +106,9 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
         }
 
         private static String encode(Object obj) {
+            if ( obj instanceof Map ){
+                obj = ZTypes.jsonString(obj);
+            }
             return encode(obj.toString().getBytes(StandardCharsets.UTF_8));
         }
 
@@ -196,6 +201,10 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
 
     public final static String EXPIRY = "expiry" ;
 
+    public JWTAuthenticator(){
+        super();
+        super.maxCapacity = 0; // JWT does not need caching
+    }
     public static DataSource.Creator JWT = (name, config, parent) -> {
 
         final String keyForSecretKey = config.getOrDefault(SECRET_KEY, "").toString();
@@ -211,6 +220,7 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
         final String issuer = sm.getOrDefault(keyForIssuer, keyForIssuer);
 
         final JWTAuthenticator authenticator = new JWTAuthenticator() {
+
             final long expiryOffset = ZNumber.integer( config.getOrDefault( EXPIRY, super.expiryOffset()), super.expiryOffset()).longValue();
             @Override
             public String secretKey() {
