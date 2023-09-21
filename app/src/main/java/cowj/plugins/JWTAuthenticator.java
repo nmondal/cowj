@@ -25,13 +25,29 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
     final static Logger logger = LoggerFactory.getLogger(JWTAuthenticator.class);
     final long STD_EXPIRY_OFFSET = 24 * 60 * 60 * 1000 ; // 1 day
 
+    /**
+     * Secret key which is used to sign the payload
+     * @return Secret Key to be used to sign the payload
+     */
     public abstract String secretKey();
+
+    /**
+     * Who issued the token?
+     * @return whoever issued the token
+     */
     public abstract String issuer();
 
+    /**
+     * Given a token the time to live
+     * @return offset from current time to the expiry time, time to live
+     */
     public long expiryOffset(){
         return STD_EXPIRY_OFFSET;
     }
 
+    /**
+     * A handcrafted simple implementation of JWT Auth mechanism
+     */
     public class JWebToken implements UserInfo{
 
         private static final String JWT_HEADER = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
@@ -44,6 +60,12 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
             encodedHeader = encode(JWT_HEADER);
         }
 
+        /**
+         * Creates a JWT token
+         * @param sub subject - the user id
+         * @param aud audience - list of items where user would have access
+         * @param expires time where the token should expire
+         */
         public JWebToken(String sub, List<?> aud, long expires) {
             this();
             payload.put("sub", sub);
@@ -56,6 +78,11 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
             this.token = toString();
         }
 
+        /**
+         * Constructs a token back from String rep
+         * @param token string rep for the token
+         * @throws Exception in case of any errors encountered
+         */
         public JWebToken(String token) throws Exception {
             this();
             this.token = token;
@@ -82,16 +109,28 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
             return encodedHeader + "." + encode(payload) + "." + signature;
         }
 
+        /**
+         * Is the Token actually having a valid signature
+         * @return true if it is, false otherwise
+         */
         public boolean isSignatureValid() {
             final String data = encodedHeader + "." + encode(payload);
             final String computed = hmacSha256(data, JWTAuthenticator.this.secretKey());
             return signature.equals(computed); //signature matched
         }
 
+        /**
+         * Gets the subject of the token
+         * @return subject of the token
+         */
         public String getSubject() {
             return payload.get("sub").toString();
         }
 
+        /**
+         * Audience of the token
+         * @return audience of the token
+         */
         public List<String> getAudience() {
             return (List)payload.get("aud");
         }
@@ -147,8 +186,14 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
         }
     }
 
+    /**
+     * Authentication header
+     */
     public static final String AUTHENTICATION_HEADER = "Authentication" ;
 
+    /**
+     * Authentication header Bearer Token value prefix
+     */
     public static final String BEARER = "Bearer" ;
 
     @Override
@@ -166,12 +211,34 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
         return splits[1];
     }
 
+    /**
+     * Creates a token with parameters
+     * @param sub subject of the token
+     * @param expires expiry time in milli sec
+     * @param aud audience for the token
+     * @return a token object
+     */
     public JWebToken jwt(String sub,long expires, List<?> aud){
         return new JWebToken(sub, aud, expires);
     }
+
+    /**
+     * Creates a token with parameters - audience is empty
+     * @param sub subject of the token
+     * @param expires expiry time in milli sec
+     * @return a token object
+     */
     public JWebToken jwt(String sub, long expires){
         return jwt(sub,  expires, Collections.emptyList());
     }
+
+    /**
+     * Creates a token with parameters
+     *  - audience is empty
+     *  - expires after suitable configured timeout @see{ expiryOffset() }
+     * @param sub subject of the token
+     * @return a token object
+     */
     public JWebToken jwt(String sub){
         return jwt(sub, System.currentTimeMillis() + expiryOffset() );
     }
@@ -194,16 +261,39 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
      */
     public final static String CACHE_SIZE = "cache" ;
 
+    /**
+     * Key for the secret key to be read from the secret manager in configuration
+     */
     public final static String SECRET_KEY = "secret-key" ;
+
+    /**
+     * Key for the issuer key to be read from the secret manager in configuration
+     */
     public final static String ISSUER = "issuer" ;
+
+    /**
+     * Key for the secret manager name in configuration
+     */
     public final static String SECRET_MANAGER = "secrets" ;
 
+    /**
+     * Key for the expiry time offset in configuration
+     */
     public final static String EXPIRY = "expiry" ;
 
+    /**
+     * Constructs an Authenticator
+     * Sets the maxCapacity to 0 by default, because it should JWT should not store anything
+     * It is self-signed
+     */
     public JWTAuthenticator(){
         super();
         super.maxCapacity = 0; // JWT does not need caching
     }
+
+    /**
+     * A creator for JWT Authenticator Data Source
+     */
     public static DataSource.Creator JWT = (name, config, parent) -> {
 
         final String keyForSecretKey = config.getOrDefault(SECRET_KEY, "").toString();
@@ -241,6 +331,7 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
         };
         // setup cache, the token verification is a CPU intensive process
         authenticator.maxCapacity = ZNumber.integer( config.getOrDefault( CACHE_SIZE, 0), 0).intValue();
+        logger.info("{} : max cache for jwt token auth is : [{}]", name, authenticator.maxCapacity);
         return DataSource.dataSource(name, authenticator);
     };
 }
