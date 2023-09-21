@@ -6,11 +6,11 @@ import cowj.Scriptable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.Request;
+import zoomba.lang.core.operations.Function;
 import zoomba.lang.core.types.ZNumber;
 import zoomba.lang.core.types.ZTypes;
 
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import javax.crypto.Mac;
@@ -22,7 +22,7 @@ import javax.crypto.spec.SecretKeySpec;
  * <a href="https://github.com/metamug/java-jwt/blob/master/src/main/java/com/metamug/jwt/JWebToken.java">...</a>
  */
 public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.CachedAuthenticator {
-    Logger logger = LoggerFactory.getLogger(JWTAuthenticator.class);
+    final static Logger logger = LoggerFactory.getLogger(JWTAuthenticator.class);
     final long STD_EXPIRY_OFFSET = 24 * 60 * 60 * 1000 ; // 1 day
 
     public abstract String secretKey();
@@ -113,19 +113,16 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
 
         private String hmacSha256(String data, String secret) {
             try {
-
                 //MessageDigest digest = MessageDigest.getInstance("SHA-256");
                 byte[] hash = secret.getBytes(StandardCharsets.UTF_8);//digest.digest(secret.getBytes(StandardCharsets.UTF_8));
-
                 Mac sha256Hmac = Mac.getInstance("HmacSHA256");
                 SecretKeySpec secretKey = new SecretKeySpec(hash, "HmacSHA256");
                 sha256Hmac.init(secretKey);
-
                 byte[] signedBytes = sha256Hmac.doFinal(data.getBytes(StandardCharsets.UTF_8));
                 return encode(signedBytes);
-            } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
+            } catch (Throwable ex) {
                 logger.error("Error while creating SHA : {}", ex.toString());
-                return null;
+                throw Function.runTimeException(ex);
             }
         }
 
@@ -181,10 +178,21 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
 
     @Override
     protected UserInfo tryGetUserInfo(String token) throws Exception {
-        JWebToken jWebToken = new JWebToken(token);
-        if ( jWebToken.isSignatureValid() ) return jWebToken;
-        throw new Exception("Invalid Signature " + token );
+        final long startVerification = System.nanoTime();
+        try {
+            JWebToken jWebToken = new JWebToken(token);
+            if ( jWebToken.isSignatureValid() ) return jWebToken;
+            throw new Exception("Invalid Signature " + token );
+        } finally {
+            final long delta = System.nanoTime() - startVerification;
+            logger.debug("JWT Token Verification took {} ns", delta);
+        }
     }
+
+    /**
+     * Key for the Cache Size in configuration
+     */
+    public final static String CACHE_SIZE = "cache" ;
 
     public final static String SECRET_KEY = "secret-key" ;
     public final static String ISSUER = "issuer" ;
@@ -199,19 +207,24 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
     public static DataSource.Creator JWT = (name, config, parent) -> {
 
         final String keyForSecretKey = config.getOrDefault(SECRET_KEY, "").toString();
+        logger.info("{} : key for secret key is : [{}]", name, keyForSecretKey);
 
         final String keyForIssuer = config.getOrDefault(ISSUER, "").toString();
+        logger.info("{} : key for issuer is : [{}]", name,  keyForIssuer);
 
         final String secretManagerName = config.getOrDefault( SECRET_MANAGER, "").toString();
+        logger.info("{} : secret manager is : [{}]", name, secretManagerName);
 
         final SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.getOrDefault(secretManagerName, SecretManager.DEFAULT);
+        logger.info("{} : loaded secret manager is : [{}]", name, sm.getClass());
 
         final String secretKey = sm.getOrDefault(keyForSecretKey, keyForSecretKey);
+        logger.info("{} : loaded secret key is : [{}]", name, secretKey);
 
         final String issuer = sm.getOrDefault(keyForIssuer, keyForIssuer);
+        logger.info("{} : loaded jwt issuer is : [{}]", name, issuer);
 
         final JWTAuthenticator authenticator = new JWTAuthenticator() {
-
             final long expiryOffset = ZNumber.integer( config.getOrDefault( EXPIRY, super.expiryOffset()), super.expiryOffset()).longValue();
             @Override
             public String secretKey() {
@@ -226,6 +239,8 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
                 return expiryOffset;
             }
         };
+        // setup cache, the token verification is a CPU intensive process
+        authenticator.maxCapacity = ZNumber.integer( config.getOrDefault( CACHE_SIZE, 0), 0).intValue();
         return DataSource.dataSource(name, authenticator);
     };
 }

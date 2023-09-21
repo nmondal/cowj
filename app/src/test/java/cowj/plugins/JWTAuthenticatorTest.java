@@ -84,4 +84,23 @@ public class JWTAuthenticatorTest {
         });
         Assert.assertNotNull(throwable);
     }
+
+    @Test
+    public void errorInCreationOfJWTTest(){
+        JWTAuthenticator dummy = new JWTAuthenticator() {
+            @Override
+            public String secretKey() {
+                return "";
+            }
+
+            @Override
+            public String issuer() {
+                return "";
+            }
+        };
+        Throwable throwable = assertThrows(RuntimeException.class, () -> {
+           dummy.jwt("foo"); // should throw exception
+        });
+        Assert.assertNotNull(throwable);
+    }
 }
