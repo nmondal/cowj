@@ -6,10 +6,14 @@ import org.junit.Before;
 
 import org.junit.Test;
 import spark.Request;
+import zoomba.lang.core.operations.Function;
+import zoomba.lang.core.operations.ZJVMAccess;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.Set;
 
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -43,5 +47,41 @@ public class JWTAuthenticatorTest {
         when(mockRequest.headers(any())).thenReturn( token );
         final String uId = authenticator.authenticate( mockRequest);
         Assert.assertEquals("foo", uId );
+    }
+
+    @Test
+    public void jwtInvalidCreationTests(){
+        JWTAuthenticator dummy = new JWTAuthenticator() {
+            @Override
+            public String secretKey() {
+                return "42";
+            }
+
+            @Override
+            public String issuer() {
+                return "dummy";
+            }
+        };
+        Throwable throwable = assertThrows(IllegalArgumentException.class, () -> {
+            dummy.new JWebToken("a.bc"); // invalid format
+        });
+        Assert.assertNotNull(throwable);
+
+        throwable = assertThrows(NoSuchAlgorithmException.class, () -> {
+            dummy.new JWebToken("a.b.c"); // invalid header - no such algo supported as of now
+        });
+        Assert.assertNotNull(throwable);
+        // now craft and run through
+        JWTAuthenticator.JWebToken jWebToken = dummy.jwt("foo");
+        Function.MonadicContainer m = ZJVMAccess.getProperty(jWebToken,"payload");
+        Assert.assertFalse(m.isNil());
+        Assert.assertTrue( m.value() instanceof Map );
+        ((Map)m.value()).remove("exp"); // remove expiry
+        // Now create a token out of it
+        final String craftedToken = jWebToken.toString();
+        throwable = assertThrows(Exception.class, () -> {
+            dummy.new JWebToken(craftedToken); // no expiry
+        });
+        Assert.assertNotNull(throwable);
     }
 }

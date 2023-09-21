@@ -44,12 +44,6 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
             encodedHeader = encode(JWT_HEADER);
         }
 
-        public JWebToken(Map<String,Object> payload) {
-            this(payload.get("sub").toString(),
-                    (List)payload.getOrDefault("aud", Collections.emptyList()),
-                    (long)payload.getOrDefault("exp",  System.currentTimeMillis() ) );
-        }
-
         public JWebToken(String sub, List<?> aud, long expires) {
             this();
             payload.put("sub", sub);
@@ -77,9 +71,6 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
             final String decodedPayload = decode(parts[1]);
             Map<String,Object> tokenPayload = (Map)ZTypes.json(decodedPayload);
             payload.putAll(tokenPayload);
-            if (payload.isEmpty()) {
-                throw new Exception("Payload is Empty: ");
-            }
             if (!payload.containsKey("exp")) {
                 throw new Exception("Payload doesn't contain expiry " + payload);
             }
