@@ -10,6 +10,13 @@ disabled: false
 #  query: ""
 #  user: "user"
 #  expiry: "expiry"
+# ======
+#  type: "auth-jwt"
+#  secret-key: "${org-secret-key}"
+#  issuer: "${org-issuer}"
+#  expiry: expiry
+#  secrets: secret-manager-tobe-used
+
 
 user-header: "u"
 # casbin policy

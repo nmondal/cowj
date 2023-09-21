@@ -21,3 +21,5 @@ routes:
 plugins:
   cowj.plugins:
     auth-jdbc: StorageAuthenticator::JDBC
+    auth-jwt : JWTAuthenticator::JWT
+
