@@ -165,6 +165,33 @@ public class GoogleStorageWrapperTest {
     }
 
     @Test
+    public void storageFileExistenceTest(){
+        Storage storage = mock( Storage.class);
+        GoogleStorageWrapper gsw = () -> storage;
+        Assert.assertFalse( gsw.fileExist("foo", "bar"));
+        // two items
+        Blob b1 = mock(Blob.class);
+        when(b1.getStorage()).thenReturn(storage);
+        when(storage.get(anyString(), anyString())).thenReturn(b1);
+        Assert.assertTrue( gsw.fileExist("foo", "bar"));
+    }
+
+
+    @Test
+    public void storageFolderExistenceTest(){
+        Storage storage = mock( Storage.class);
+        GoogleStorageWrapper gsw = () -> storage;
+        Assert.assertFalse( gsw.folderExists("foo", "bar"));
+
+        Page<Blob> page = mock(Page.class);
+        Blob b1 = mock(Blob.class);
+        when(b1.getStorage()).thenReturn(storage);
+        when(page.getValues()).thenReturn( List.of(b1));
+        when(storage.list(anyString(), any(), any())).thenReturn(page);
+        Assert.assertTrue( gsw.folderExists("foo", "bar"));
+    }
+
+    @Test
     public void createPrivateBucketTest() {
         Storage storage = mock(Storage.class);
         final String bucket = "foo-bar";

@@ -70,7 +70,7 @@ public interface GoogleStorageWrapper {
      */
     default boolean folderExists(String bucketName, String prefix){
         Page<Blob> blobs = storage().list(bucketName, Storage.BlobListOption.prefix(prefix), Storage.BlobListOption.pageSize(1));
-        return blobs.getValues().iterator().hasNext();
+        return  blobs != null && blobs.getValues().iterator().hasNext();
     }
 
     /**
