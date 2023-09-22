@@ -347,6 +347,7 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
         // setup cache, the token verification is a CPU intensive process
         authenticator.maxCapacity = ZNumber.integer( config.getOrDefault( CACHE_SIZE, 0), 0).intValue();
         logger.info("{} : max cache for jwt token auth is : [{}]", name, authenticator.maxCapacity);
+        logger.info("{} : default expiry for jwt token auth is : [{}] ms", name, authenticator.expiryOffset());
         return DataSource.dataSource(name, authenticator);
     };
 }
