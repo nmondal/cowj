@@ -171,6 +171,8 @@ public interface AuthSystem {
     static Authenticator fromConfig(Map<String,Object> conf, Authenticator def){
         if ( conf.isEmpty() ) return def;
         DataSource ds = DataSource.UNIVERSAL.create( "ds:auth", conf, null);
+        // load the stuff as data source
+        Scriptable.DATA_SOURCES.put(ds.name(), ds.proxy());
         return (Authenticator) ds.proxy();
     }
 

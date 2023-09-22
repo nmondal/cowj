@@ -281,6 +281,12 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
      */
     public final static String EXPIRY = "expiry" ;
 
+
+    /**
+     * Key for the allowed risky paths
+     */
+    final static String RISKS = "risks" ;
+
     /**
      * Constructs an Authenticator
      * Sets the maxCapacity to 0 by default, because it should JWT should not store anything
@@ -311,6 +317,9 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
         final String secretKey = sm.getOrDefault(keyForSecretKey, keyForSecretKey);
         logger.info("{} : loaded secret key is : [{}]", name, secretKey);
 
+        final Set<String> risks = Set.<String>copyOf((List) config.getOrDefault(RISKS, Collections.emptyList()));
+        logger.info("{} : loaded risks are : [{}]", name, risks);
+
         final String issuer = sm.getOrDefault(keyForIssuer, keyForIssuer);
         logger.info("{} : loaded jwt issuer is : [{}]", name, issuer);
 
@@ -328,6 +337,12 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
             public long expiryOffset() {
                 return expiryOffset;
             }
+
+            @Override
+            public Set<String> risks() {
+                return risks;
+            }
+
         };
         // setup cache, the token verification is a CPU intensive process
         authenticator.maxCapacity = ZNumber.integer( config.getOrDefault( CACHE_SIZE, 0), 0).intValue();

@@ -1,0 +1,23 @@
+#########################
+# Auth test bed
+# Also, using JCasbin
+#########################
+
+port: 6044
+
+# threading related stuff
+threading:
+  min: 4
+  max : 8
+  timeout: 30000
+
+# path mapping
+routes:
+  get:
+    /token : _/create_token.zm
+    /hello : _/hello.zm
+
+plugins:
+  cowj.plugins:
+    auth-jwt : JWTAuthenticator::JWT
+
