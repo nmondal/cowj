@@ -188,8 +188,9 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
 
     /**
      * Authentication header
+     * <a href="https://stackoverflow.com/questions/33265812/best-http-authorization-header-type-for-jwt">...</a>
      */
-    public static final String AUTHENTICATION_HEADER = "Authentication" ;
+    public static final String AUTHENTICATION_HEADER = "Authorization" ;
 
     /**
      * Authentication header Bearer Token value prefix
@@ -314,14 +315,14 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
         final SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.getOrDefault(secretManagerName, SecretManager.DEFAULT);
         logger.info("{} : loaded secret manager is : [{}]", name, sm.getClass());
 
-        final String secretKey = sm.getOrDefault(keyForSecretKey, keyForSecretKey);
+        final String secretKey = parent.template( keyForSecretKey, sm.env());
         logger.info("{} : loaded secret key is : [{}]", name, secretKey);
+
+        final String issuer = parent.template(keyForIssuer, sm.env());
+        logger.info("{} : loaded jwt issuer is : [{}]", name, issuer);
 
         final Set<String> risks = Set.<String>copyOf((List) config.getOrDefault(RISKS, Collections.emptyList()));
         logger.info("{} : loaded risks are : [{}]", name, risks);
-
-        final String issuer = sm.getOrDefault(keyForIssuer, keyForIssuer);
-        logger.info("{} : loaded jwt issuer is : [{}]", name, issuer);
 
         final JWTAuthenticator authenticator = new JWTAuthenticator() {
             final long expiryOffset = ZNumber.integer( config.getOrDefault( EXPIRY, super.expiryOffset()), super.expiryOffset()).longValue();

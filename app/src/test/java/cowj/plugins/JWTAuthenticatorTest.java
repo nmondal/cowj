@@ -58,7 +58,7 @@ public class JWTAuthenticatorTest {
         Assert.assertTrue( jWebToken.getAudience().isEmpty()); // this is what it supposed to be
         // Now create a request with auth stuff
         Request mockRequest = mock(Request.class);
-        when(mockRequest.headers()).thenReturn( Set.of("Authentication"));
+        when(mockRequest.headers()).thenReturn( Set.of(JWTAuthenticator.AUTHENTICATION_HEADER));
         final String token = "Bearer " + jWebToken.token();
         when(mockRequest.headers(any())).thenReturn( token );
         final String uId = authenticator.authenticate( mockRequest);
