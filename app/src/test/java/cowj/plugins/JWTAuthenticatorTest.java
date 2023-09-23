@@ -22,6 +22,8 @@ import static org.mockito.Mockito.when;
 public class JWTAuthenticatorTest {
     Authenticator NULL = request -> Authenticator.UserInfo.GUEST;
 
+    Model model = () -> "." ;
+
     JWTAuthenticator prov1 = new JWTAuthenticator() {
         @Override
         public String secretKey() {
@@ -43,7 +45,7 @@ public class JWTAuthenticatorTest {
     @Test
     public void jwtAuthSuccessTest(){
         Map<String,Object> config = Map.of( "type", "auth-jwt", "secret-key" , "42", "issuer", "test" );
-        Authenticator authenticator = AuthSystem.fromConfig(config, NULL);
+        Authenticator authenticator = AuthSystem.fromConfig(config, model, NULL);
         Assert.assertNotEquals(NULL, authenticator);
         Assert.assertTrue( authenticator instanceof  JWTAuthenticator );
         JWTAuthenticator jwtAuthenticator = (JWTAuthenticator) authenticator;

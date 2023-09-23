@@ -18,6 +18,8 @@ public class StorageAuthenticatorTest {
 
     Authenticator NULL = request -> Authenticator.UserInfo.GUEST;
 
+    Model model = () -> "." ;
+
     Request mockRequest;
 
     JDBCWrapper jdbcWrapper;
@@ -59,7 +61,7 @@ public class StorageAuthenticatorTest {
     @Test
     public void jdbcAuthTest(){
         Map<String,Object> config = Map.of( "type", "auth-jdbc", "storage" , "__jdbc", "cache", 8 );
-        Authenticator authenticator = AuthSystem.fromConfig(config, NULL);
+        Authenticator authenticator = AuthSystem.fromConfig(config, model, NULL);
         Assert.assertNotEquals(NULL, authenticator);
         Assert.assertEquals(8, ((Authenticator.TokenAuthenticator.CachedAuthenticator)authenticator).cacheSize()  );
         final String userId = authenticator.authenticate(mockRequest);
@@ -72,7 +74,7 @@ public class StorageAuthenticatorTest {
         Throwable th = new Throwable("boom!");
         // ensure jdbc throws ...
         when(jdbcWrapper.select(any(),any())).thenReturn(EitherMonad.error(th));
-        Authenticator authenticator = AuthSystem.fromConfig(config, NULL);
+        Authenticator authenticator = AuthSystem.fromConfig(config, model, NULL);
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             authenticator.authenticate(mockRequest);
         });
@@ -91,7 +93,7 @@ public class StorageAuthenticatorTest {
     public void redisAuthTest(){
         Map<String,Object> config = Map.of( "type", "auth-redis", "storage" , "__redis",
                 "cache", 8 );
-        Authenticator authenticator = AuthSystem.fromConfig(config, NULL);
+        Authenticator authenticator = AuthSystem.fromConfig(config, model, NULL);
         Assert.assertNotEquals(NULL, authenticator);
         final String userId = authenticator.authenticate(mockRequest);
         Assert.assertEquals("foo", userId);
@@ -101,7 +103,7 @@ public class StorageAuthenticatorTest {
     public void googleAuthTest(){
         Map<String,Object> config = Map.of( "type", "auth-gs", "storage" , "__gs",
                 "query", "bucket_name/file_name" );
-        Authenticator authenticator = AuthSystem.fromConfig(config, NULL);
+        Authenticator authenticator = AuthSystem.fromConfig(config, model, NULL);
         Assert.assertNotEquals(NULL, authenticator);
         final String userId = authenticator.authenticate(mockRequest);
         Assert.assertEquals("foo", userId);
@@ -112,7 +114,7 @@ public class StorageAuthenticatorTest {
         when(googleStorageWrapper.load(any(), any())).thenReturn(42);
         Map<String,Object> config = Map.of( "type", "auth-gs", "storage" , "__gs",
                 "query", "bucket_name/file_name" );
-        Authenticator authenticator = AuthSystem.fromConfig(config, NULL);
+        Authenticator authenticator = AuthSystem.fromConfig(config, model,  NULL);
         Assert.assertNotEquals(NULL, authenticator);
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             authenticator.authenticate(mockRequest);
