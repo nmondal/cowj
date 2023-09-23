@@ -1,6 +1,7 @@
 package cowj.plugins;
 
 import cowj.*;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 
@@ -42,9 +43,12 @@ public class JWTAuthenticatorTest {
         DataSource.registerType("auth-jwt", JWTAuthenticator.class.getName() + "::" + "JWT");
     }
 
-    @Test
-    public void jwtAuthSuccessTest(){
-        Map<String,Object> config = Map.of( "type", "auth-jwt", "secret-key" , "42", "issuer", "test" );
+    @After
+    public void after(){
+        Scriptable.DATA_SOURCES.remove ("custom-secret");
+    }
+
+    public void testSuccess(Map<String,Object> config){
         Authenticator authenticator = AuthSystem.fromConfig(config, model, NULL);
         Assert.assertNotEquals(NULL, authenticator);
         Assert.assertTrue( authenticator instanceof  JWTAuthenticator );
@@ -64,6 +68,26 @@ public class JWTAuthenticatorTest {
         final String uId = authenticator.authenticate( mockRequest);
         Assert.assertEquals("foo", uId );
     }
+
+    @Test
+    public void jwtAuthSuccessTest(){
+        Map<String,Object> config = Map.of( "type", "auth-jwt", "secret-key" , "42", "issuer", "test" );
+        testSuccess(config);
+    }
+
+    @Test
+    public void jwtAuthWithSecretManagerTest(){
+
+        Map<String,String> smMap = Map.of("secret-key", "42", "jwt-issuer", "test");
+        SecretManager sm = () -> smMap; // create custom secret manager
+        Scriptable.DATA_SOURCES.put ("custom-secret", sm );
+
+        Map<String,Object> config = Map.of( "type", "auth-jwt",
+                "secrets", "custom-secret",
+                "secret-key" , "${secret-key}", "issuer", "${jwt-issuer}" );
+        testSuccess(config);
+    }
+
 
     @Test
     public void jwtInvalidCreationTests(){
