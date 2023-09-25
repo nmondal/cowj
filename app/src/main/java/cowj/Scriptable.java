@@ -346,6 +346,12 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      */
     String HALT_ERROR = "_ex";
 
+
+    /**
+     * Key name for the logger in the script
+     */
+    String LOGGER = "_log";
+
     /**
      * Constant to be used to have the script inline
      */
@@ -479,6 +485,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         bindings.put(TestAsserter.ASSERTER, (TestAsserter) () -> bindings);
         bindings.put(ENVIRON, System.getenv());
         bindings.put(SHARED, SHARED_MEMORY);
+        bindings.put(LOGGER, logger);
     }
 
     /**

@@ -3,5 +3,7 @@ jwt_provider = _ds["ds:auth"] ?? ""
 panic( empty(jwt_provider), "JWT Provider does not exist!")
 // create whatever token - presumably after auth
 jwt_token = jwt_provider.jwt("bar")
+token_string = jwt_token.toString()
+_log.info("{} : Created token {}", @SCRIPT.location , token_string )
 // respond
-jstr(  { "tok" :  jwt_token.toString() } )
+jstr(  { "tok" : token_string } )
