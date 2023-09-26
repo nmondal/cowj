@@ -145,14 +145,16 @@ public interface FCMWrapper {
     DataSource.Creator FCM = (name, config, parent) -> {
         try {
             String key = config.getOrDefault("key", "").toString();
+            logger.info("FCMWrapper {} key is [{}]", name, key );
             if (key.isEmpty()) {
                 FirebaseApp.initializeApp();
             } else {
                 String secretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
+                logger.info("FCMWrapper {} secret-manager name is [{}]", name, secretManagerName );
                 SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.getOrDefault(secretManagerName, SecretManager.DEFAULT);
-
+                logger.info("FCMWrapper {} secret-manager is [{}]", name, sm.getClass() );
                 String credentials = sm.getOrDefault(key, "");
-
+                logger.debug("FCMWrapper {} credentials is [{}]", name, credentials );
                 FirebaseApp.initializeApp(
                         FirebaseOptions.builder()
                                 .setCredentials(GoogleCredentials.fromStream(
