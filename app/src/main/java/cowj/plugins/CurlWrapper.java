@@ -169,6 +169,7 @@ public interface CurlWrapper {
      */
     DataSource.Creator CURL = (name, config, parent) -> {
         String baseUrl = config.getOrDefault(DESTINATION_URL, "").toString();
+        logger.info("{} : base url [{}]", name, baseUrl);
 
         final CurlWrapper curlWrapper = (verb, path, headers, params, body) -> {
             try {
@@ -177,11 +178,10 @@ public interface CurlWrapper {
                 final ZWeb.ZWebCom com = zWeb.send(verb, path, params, body);
                 return EitherMonad.value(com);
             } catch (Throwable t) {
-                logger.error("Error while Sending Request : " + t );
+                logger.error("{} : Error while Sending Request : {}", name,  t.toString() );
                 return EitherMonad.error(t);
             }
         };
         return DataSource.dataSource(name, curlWrapper);
     };
-
 }
