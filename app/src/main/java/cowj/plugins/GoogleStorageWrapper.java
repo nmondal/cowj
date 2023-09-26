@@ -4,6 +4,8 @@ import com.google.api.gax.paging.Page;
 import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.*;
 import cowj.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zoomba.lang.core.types.ZTypes;
 
 import java.nio.ByteBuffer;
@@ -15,6 +17,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Abstraction for Google Cloud Storage
  */
 public interface GoogleStorageWrapper {
+
+    /**
+     * Logger for the wrapper
+     */
+    Logger logger = LoggerFactory.getLogger(GoogleStorageWrapper.class);
 
     /**
      * Underlying Storage
@@ -240,6 +247,7 @@ public interface GoogleStorageWrapper {
     DataSource.Creator STORAGE = (name, config, parent) -> {
         HttpStorageOptions.Builder builder = HttpStorageOptions.newBuilder();
         String projectID = config.getOrDefault(PROJECT_ID, "").toString();
+        logger.info("GoogleStorageWrapper {} project-id [{}]", name, projectID);
         if (!projectID.isEmpty()) {
             builder.setProjectId(projectID);
         }
