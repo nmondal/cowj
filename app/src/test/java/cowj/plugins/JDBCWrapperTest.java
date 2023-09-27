@@ -9,7 +9,6 @@ import zoomba.lang.core.operations.ZJVMAccess;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -58,13 +57,12 @@ public class JDBCWrapperTest {
         String query = "CREATE TABLE Data( "
                 + "Name VARCHAR(255), "
                 + "Age INT NOT NULL) " ;
-        Statement stmt = con.createStatement();
-        stmt.execute(query);
+        derby.update(query, Collections.emptyList());
         System.out.println("Table created");
         // insert 2 rows of data
         for ( int i = 0; i < UPTO ; i ++ ){
             String sql = String.format( "INSERT into Data values ( 'n_%d' , %d )", i+1, i+1 )  ;
-            stmt.executeUpdate(sql);
+            derby.update(sql, Collections.emptyList());
             System.out.println("Row Inserted...: " + i );
         }
     }

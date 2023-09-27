@@ -175,6 +175,30 @@ public interface JDBCWrapper {
         }
     }
 
+
+    /**
+     * Runs Insert, Delete, Update Query using connection and args
+     * @param con the Connection to use
+     * @param query to be executed
+     * @param args the arguments to be passed
+     * @return a EitherMonad of type Integer returned from the connection
+     */
+    static EitherMonad<Integer> updateWithConnection( Connection con, String query, List<Object> args) {
+        if ( con == null ){
+            final String errorMessage = "Connection was passed as null, why?" ;
+            logger.error(errorMessage);
+            return EitherMonad.error( new NullPointerException(errorMessage));
+        }
+        try (Statement stmt = con.createStatement() ) {
+            String q = query.formatted(args.toArray());
+            logger.info(q);
+            Integer result = stmt.executeUpdate(q);
+            return EitherMonad.value(result);
+        } catch (Throwable e) {
+            return EitherMonad.error(e);
+        }
+    }
+
     /**
      * Runs Select Query using underlying connection and args
      * Does automatic retry for stale/invalid connection
@@ -193,6 +217,27 @@ public interface JDBCWrapper {
         em  = create();
         return selectWithConnection(em.value(), query, args);
     }
+
+
+    /**
+     * Runs Insert, Update, Delete Query using underlying connection and args
+     * Does automatic retry for stale/invalid connection
+     * @param query to be executed
+     * @param args the arguments to be passed
+     * @return a EitherMonad of integer defining no of rows updated
+     */
+    default EitherMonad<Integer> update(String query, List<Object> args) {
+        EitherMonad<Connection> em = connection();
+        if ( em.inError() ) {
+            logger.error("Connection creation error - returning the error, will not do query!");
+            return EitherMonad.error(em.error());
+        }
+        EitherMonad<Integer> res = updateWithConnection(connection().value(), query, args);
+        if ( res.isSuccessful() || isValid() ) return res;
+        em  = create();
+        return updateWithConnection(em.value(), query, args);
+    }
+
 
     /**
      * DataSource.Creator for JDBCWrapper type
