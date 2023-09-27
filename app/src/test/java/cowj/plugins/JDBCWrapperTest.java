@@ -332,4 +332,10 @@ public class JDBCWrapperTest {
         Thread.sleep(200);
         verify(con, times(1)).close();
     }
+
+    @Test
+    public void updateFailureTest(){
+       EitherMonad<Integer> rm  = derby.update("this should go bonkers!", List.of());
+       Assert.assertTrue(rm.inError());
+    }
 }

@@ -146,15 +146,10 @@ public interface JDBCWrapper {
      * @return a EitherMonad of type List of Map - rather list of json objects
      */
     static EitherMonad<List<Map<String,Object>>> selectWithConnection( Connection con, String query, List<Object> args) {
-        if ( con == null ){
-            final String errorMessage = "Connection was passed as null, why?" ;
-            logger.error(errorMessage);
-            return EitherMonad.error( new NullPointerException(errorMessage));
-        }
         try (Statement stmt = con.createStatement() ) {
             List<Map<String,Object>> result = new ArrayList<>();
             String q = query.formatted(args.toArray());
-            logger.info(q);
+            logger.info("[S] query : [{}]", q);
             ResultSet rs = stmt.executeQuery(q);
             ResultSetMetaData rsmd = rs.getMetaData();
             int count = rsmd.getColumnCount();
@@ -171,6 +166,7 @@ public interface JDBCWrapper {
             }
             return EitherMonad.value(result);
         } catch (Throwable e) {
+            logger.error("Error in query : " + e );
             return EitherMonad.error(e);
         }
     }
@@ -184,19 +180,34 @@ public interface JDBCWrapper {
      * @return a EitherMonad of type Integer returned from the connection
      */
     static EitherMonad<Integer> updateWithConnection( Connection con, String query, List<Object> args) {
-        if ( con == null ){
-            final String errorMessage = "Connection was passed as null, why?" ;
-            logger.error(errorMessage);
-            return EitherMonad.error( new NullPointerException(errorMessage));
-        }
         try (Statement stmt = con.createStatement() ) {
             String q = query.formatted(args.toArray());
-            logger.info(q);
+            logger.info("[CUID] query : [{}]", q);
             Integer result = stmt.executeUpdate(q);
             return EitherMonad.value(result);
         } catch (Throwable e) {
+            logger.error("Error in query : " + e );
             return EitherMonad.error(e);
         }
+    }
+
+    /**
+     * Wrapper function to retry things using connection
+     * @param function java.util.function.Function which takes Connection and returns EitherMonad
+     * @return final result which is EitherMonad
+     * @param <T> type of the EitherMonad
+     */
+    default  <T> EitherMonad<T>  queryWithOnceRetry( java.util.function.Function <Connection, EitherMonad<T>> function ){
+        EitherMonad<Connection> em = connection();
+        if ( em.inError() ) {
+            logger.error("Connection is in error - returning the error, will not do query!");
+            return EitherMonad.error(em.error());
+        }
+        EitherMonad<T> res = function.apply(em.value());
+        if ( res.isSuccessful() || isValid() ) return res;
+        logger.error("Somehow the query failed, hence will retry once after creating connection again!");
+        em  = create();
+        return function.apply(em.value());
     }
 
     /**
@@ -207,17 +218,8 @@ public interface JDBCWrapper {
      * @return a EitherMonad of type List of Map - rather list of json objects
      */
     default EitherMonad<List<Map<String,Object>>> select(String query, List<Object> args) {
-        EitherMonad<Connection> em = connection();
-        if ( em.inError() ) {
-            logger.error("Connection creation error - returning the error, will not do query!");
-            return EitherMonad.error(em.error());
-        }
-        EitherMonad<List<Map<String,Object>>> res = selectWithConnection(connection().value(), query, args);
-        if ( res.isSuccessful() || isValid() ) return res;
-        em  = create();
-        return selectWithConnection(em.value(), query, args);
+        return queryWithOnceRetry( (connection ->  selectWithConnection(connection, query, args)));
     }
-
 
     /**
      * Runs Insert, Update, Delete Query using underlying connection and args
@@ -227,17 +229,8 @@ public interface JDBCWrapper {
      * @return a EitherMonad of integer defining no of rows updated
      */
     default EitherMonad<Integer> update(String query, List<Object> args) {
-        EitherMonad<Connection> em = connection();
-        if ( em.inError() ) {
-            logger.error("Connection creation error - returning the error, will not do query!");
-            return EitherMonad.error(em.error());
-        }
-        EitherMonad<Integer> res = updateWithConnection(connection().value(), query, args);
-        if ( res.isSuccessful() || isValid() ) return res;
-        em  = create();
-        return updateWithConnection(em.value(), query, args);
+        return queryWithOnceRetry( (connection ->  updateWithConnection(connection, query, args)));
     }
-
 
     /**
      * DataSource.Creator for JDBCWrapper type
