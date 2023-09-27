@@ -40,7 +40,7 @@ public class JDBCWrapperTest {
     static SecretManager SM = () -> smMap;
 
     @BeforeClass
-    public static void boot() throws Exception {
+    public static void boot() {
         Scriptable.DATA_SOURCES.put(TEST_SECRET_MGR_NAME, SM );
         final String driverClassName = org.apache.derby.iapi.jdbc.AutoloadedDriver.class.getName();
         // in memory stuff...
@@ -61,8 +61,7 @@ public class JDBCWrapperTest {
         System.out.println("Table created");
         // insert 2 rows of data
         for ( int i = 0; i < UPTO ; i ++ ){
-            String sql = String.format( "INSERT into Data values ( 'n_%d' , %d )", i+1, i+1 )  ;
-            derby.update(sql, Collections.emptyList());
+            derby.update("INSERT into Data values ( 'n_%d' , %d )", List.of(i+1, i+1));
             System.out.println("Row Inserted...: " + i );
         }
     }
