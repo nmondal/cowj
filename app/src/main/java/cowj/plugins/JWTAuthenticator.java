@@ -23,7 +23,7 @@ import javax.crypto.spec.SecretKeySpec;
  */
 public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.CachedAuthenticator {
     final static Logger logger = LoggerFactory.getLogger(JWTAuthenticator.class);
-    final long STD_EXPIRY_OFFSET = 24 * 60 * 60 * 1000 ; // 1 day
+    final long STD_EXPIRY_OFFSET = 24 * 60 * 60  ; // 1 day, in seconds
 
     /**
      * Secret key which is used to sign the payload
@@ -61,6 +61,14 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
         }
 
         /**
+         * Gets the current second
+         * @return current second
+         */
+        public static long currentSecond(){
+            return System.currentTimeMillis() / 1000 ;
+        }
+
+        /**
          * Creates a JWT token
          * @param sub subject - the user id
          * @param aud audience - list of items where user would have access
@@ -71,7 +79,7 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
             payload.put("sub", sub);
             payload.put("aud", aud); // Authorization
             payload.put("exp", expires);
-            payload.put("iat", System.currentTimeMillis());
+            payload.put("iat", currentSecond());
             payload.put("iss", JWTAuthenticator.this.issuer());
             payload.put("jti", UUID.randomUUID().toString()); //how do we use this?
             signature = hmacSha256(encodedHeader + "." + encode(payload), JWTAuthenticator.this.secretKey());
@@ -132,7 +140,7 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
          * @return audience of the token
          */
         public List<String> getAudience() {
-            return (List)payload.get("aud");
+            return (List)payload.getOrDefault("aud", Collections.emptyList());
         }
 
         private static String encode(Object obj) {
@@ -175,9 +183,14 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
             return token;
         }
 
+        /**
+         * Because JWT works in Sec, we need to convert it here
+         * @return expiry in approx milli sec
+         */
         @Override
         public long expiry() {
-            return (long)payload.get("exp");
+            long l = ((Number)payload.getOrDefault( "exp", currentSecond() - 1 )).longValue();
+            return l * 1000; // because underlying system runs with ms level accuracy
         }
 
         @Override
@@ -215,7 +228,7 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
     /**
      * Creates a token with parameters
      * @param sub subject of the token
-     * @param expires expiry time in milli sec
+     * @param expires expiry time in  sec
      * @param aud audience for the token
      * @return a token object
      */
@@ -241,7 +254,7 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
      * @return a token object
      */
     public JWebToken jwt(String sub){
-        return jwt(sub, System.currentTimeMillis() + expiryOffset() );
+        return jwt(sub, JWebToken.currentSecond() + expiryOffset() );
     }
 
     @Override
@@ -278,7 +291,7 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
     public final static String SECRET_MANAGER = "secrets" ;
 
     /**
-     * Key for the expiry time offset in configuration
+     * Key for the expiry time offset in configuration in Seconds
      */
     public final static String EXPIRY = "expiry" ;
 
@@ -348,7 +361,7 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
         // setup cache, the token verification is a CPU intensive process
         authenticator.maxCapacity = ZNumber.integer( config.getOrDefault( CACHE_SIZE, 0), 0).intValue();
         logger.info("{} : max cache for jwt token auth is : [{}]", name, authenticator.maxCapacity);
-        logger.info("{} : default expiry for jwt token auth is : [{}] ms", name, authenticator.expiryOffset());
+        logger.info("{} : default expiry for jwt token auth is : [{}] seconds", name, authenticator.expiryOffset());
         return DataSource.dataSource(name, authenticator);
     };
 }

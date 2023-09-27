@@ -6,7 +6,7 @@ provider:
   type: "auth-jwt"
   secret-key: "42"
   issuer: "test"
-  expiry: 60000 # 1 minute
+  expiry: 60 # 1 minute, JWT everything is seconds
   risks:
     - "/token"
 
