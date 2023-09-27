@@ -42,13 +42,14 @@ public interface GoogleStorageWrapper {
         Storage storage = storage();
         BlobId blobId = BlobId.of(bucketName, fileName);
         Blob blob = storage.get(blobId);
+        final byte[] dataBytes = data.getBytes(UTF_8); // if done this way, the bug could have been avoided
         if (blob == null) {
             BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("text/plain").build();
-            return storage.create(blobInfo, data.getBytes(UTF_8));
+            return storage.create(blobInfo, dataBytes);
         }
         try {
             WriteChannel channel = blob.writer();
-            channel.write(ByteBuffer.wrap("Updated content".getBytes(UTF_8)));
+            channel.write(ByteBuffer.wrap(dataBytes));
             channel.close();
         } catch (Exception e) {
             throw new RuntimeException(e);
