@@ -58,6 +58,24 @@ public class SchemaTest {
         r = ModelRunnerTest.get( "http://localhost:5042", "/person/" + id );
         Assert.assertNotNull(r);
         Assert.assertTrue( r.contains(id) );
+        // check json with match
+        m = (Map)ZTypes.json(r);
+        Object ds = Scriptable.DATA_SOURCES.get("ds:types");
+        Assert.assertTrue( ds instanceof  TypeSystem );
+        TypeSystem ts = (TypeSystem) ds;
+        // these are all should be ok
+        Assert.assertTrue( ts.match( "Person.json", r ) ); // string case
+        Assert.assertTrue( ts.match( "Person.json", m ) ); // a map case
+        // This should not be ok ... throws error and hence false
+        // https://stackoverflow.com/questions/26716020/how-to-get-a-jsonprocessingexception-using-jackson
+        Object o = new Object(){
+            private final Object self = this;
+            @Override
+            public String toString(){
+                return self.getClass().getName();
+            }
+        };
+        Assert.assertFalse( ts.match( "Person.json", o) );
     }
 
     @Test
