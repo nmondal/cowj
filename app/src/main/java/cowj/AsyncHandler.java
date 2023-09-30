@@ -137,7 +137,9 @@ public interface AsyncHandler {
          */
         static AsyncRequest fromRequest(Request request) {
             final String uri = request.uri();
-            final String requestId = System.nanoTime() + "." + System.nanoTime() + "." + System.nanoTime() + "|" + uri;
+            // ensure that the time is understandable unix epoch time
+            // nanoTime() does not give epoch time
+            final String requestId = System.currentTimeMillis() + "." + System.nanoTime() + "." + System.nanoTime() + "|" + uri;
 
             final Map<String, String> headers = new HashMap<>();
             request.headers().forEach(h -> headers.put(h, request.headers(h)));
