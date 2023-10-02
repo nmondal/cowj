@@ -260,7 +260,7 @@ public interface GoogleStorageWrapper {
      * Deletes the file from the bucket
      * @param bucketName name of the bucket
      * @param path path of the file - example - "abc/def.json"
-     * @return true if bucket was deleted, false if bucket does not exist
+     * @return true if file was deleted, false if file does not exist
      */
     default boolean delete(String bucketName, String path) {
         return storage().delete(BlobId.of(bucketName, path));
