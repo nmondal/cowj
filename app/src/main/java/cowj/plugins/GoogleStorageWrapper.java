@@ -35,26 +35,38 @@ public interface GoogleStorageWrapper {
      *
      * @param bucketName the bucket
      * @param fileName   the file
-     * @param data       which to be dumped encoding used is UTF-8
+     * @param data       which to be dumped
      * @return a Blob object
      */
-    default Blob dumps(String bucketName, String fileName, String data) {
+    default Blob dumpb(String bucketName, String fileName, byte[] data) {
         Storage storage = storage();
         BlobId blobId = BlobId.of(bucketName, fileName);
         Blob blob = storage.get(blobId);
-        final byte[] dataBytes = data.getBytes(UTF_8); // if done this way, the bug could have been avoided
         if (blob == null) {
             BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("text/plain").build();
-            return storage.create(blobInfo, dataBytes);
+            return storage.create(blobInfo, data);
         }
         try {
             WriteChannel channel = blob.writer();
-            channel.write(ByteBuffer.wrap(dataBytes));
+            channel.write(ByteBuffer.wrap(data));
             channel.close();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         return blob;
+    }
+
+    /**
+     * Dump String to Google Cloud Storage
+     *
+     * @param bucketName the bucket
+     * @param fileName   the file
+     * @param data       which to be dumped encoding used is UTF-8
+     * @return a Blob object
+     */
+    default Blob dumps(String bucketName, String fileName, String data) {
+        final byte[] dataBytes = data.getBytes(UTF_8); // if done this way, the bug could have been avoided
+        return dumpb(bucketName, fileName, dataBytes);
     }
 
     /**
@@ -128,10 +140,28 @@ public interface GoogleStorageWrapper {
      * @return data string - content of the file
      */
     default String loads(String bucketName, String fileName) {
+        byte[] blob = loadb(bucketName, fileName);
+        if (blob == null) {
+            return "";
+        }
+        return new String(blob, UTF_8);
+    }
+
+    /**
+     * Load data from Google Storage as bytes
+     *
+     * @param bucketName from this bucket name
+     * @param fileName   from this file
+     * @return byte[] - content of the file
+     */
+    default byte[] loadb(String bucketName, String fileName) {
         Storage storage = storage();
         BlobId blobId = BlobId.of(bucketName, fileName);
         Blob blob = storage.get(blobId);
-        return data(blob);
+        if (blob == null) {
+            return null;
+        }
+        return blob.getContent();
     }
 
     /**
@@ -230,7 +260,7 @@ public interface GoogleStorageWrapper {
      * Deletes the file from the bucket
      * @param bucketName name of the bucket
      * @param path path of the file - example - "abc/def.json"
-     * @return true if bucket was deleted, false if bucket does not exist
+     * @return true if file was deleted, false if file does not exist
      */
     default boolean delete(String bucketName, String path) {
         return storage().delete(BlobId.of(bucketName, path));
