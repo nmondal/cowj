@@ -36,3 +36,11 @@ data-sources:
   json_place:
     type: curl
     url: https://jsonplaceholder.typicode.com
+
+
+cron:
+  r:
+    exec: _/cron.zm
+    boot: true
+    at: "0/30 * * * * ? *"
+    # https://stackoverflow.com/questions/35214149/cron-expression-for-every-30-seconds-in-quartz-scheduler

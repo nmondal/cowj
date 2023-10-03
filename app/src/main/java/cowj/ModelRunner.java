@@ -79,6 +79,8 @@ public interface ModelRunner extends Runnable {
         // load libraries
         logger.info("Library Directory : " +libDir);
         ZTypes.loadJar(libDir);
+        // load type system ... other folks may depend on this
+        TypeSystem typeSystem = TypeSystem.fromFile( m.schemaPath());
 
         // loading plugins...
         logger.info("Loading plugins now...");
@@ -105,7 +107,6 @@ public interface ModelRunner extends Runnable {
                 logger.error("DS '{}' failed to create! {}", dsName, t.toString());
             }
         }
-
         // now everything is done, run cron...
         CronModel cronModel = CronModel.fromConfig(m, m.cron());
         CronModel.schedule(cronModel);
@@ -146,8 +147,6 @@ public interface ModelRunner extends Runnable {
         // load auth...
         AuthSystem authSystem = AuthSystem.fromFile(m.auth(), m );
         authSystem.attach();
-        // load type system ...
-        TypeSystem typeSystem = TypeSystem.fromFile( m.schemaPath());
         // Attach input before any before filter
         typeSystem.attachInput();
         // load filters
