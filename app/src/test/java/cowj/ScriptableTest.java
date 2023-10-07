@@ -2,6 +2,9 @@ package cowj;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import javax.script.Bindings;
 import javax.script.ScriptException;
@@ -178,5 +181,33 @@ public class ScriptableTest {
         Object o3 = ts.shared("_bar");
         Assert.assertNotSame(o1, o3);
         Assert.assertEquals(o2,o3);
+    }
+
+    @Test
+    public void prefixLoggerTest(){
+        // create 100000 loggers with random ids
+        long start = System.currentTimeMillis();
+        for ( int i =0; i < 100000; i++ ){
+            Scriptable.prefixedLogger( Scriptable.logger, String.valueOf(i));
+        }
+        long end = System.currentTimeMillis();
+        final long create = end  - start ;
+        System.out.printf("Time taken to create 100,000 Logger : %d ms %n", create );
+        Assert.assertTrue( create < 500L );
+        // create 100000 loggers with random ids
+        start = System.currentTimeMillis();
+        for ( int i =0; i < 100000; i++ ){
+            Scriptable.prefixedLogger( Scriptable.logger, String.valueOf(i));
+        }
+        end = System.currentTimeMillis();
+        final long access = end  - start ;
+        System.out.printf("Time taken to access 100,000 Logger : %d ms %n", access );
+        Assert.assertTrue( access < 20L );
+
+        // now the access of methods which use marker
+        Marker m = MarkerFactory.getMarker("marker");
+        Logger l = Scriptable.prefixedLogger( Scriptable.logger, String.valueOf(42));
+        l.info(m, "this is a test marker");
+        Assert.assertTrue(true);
     }
 }
