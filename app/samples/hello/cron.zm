@@ -1,3 +1,5 @@
 // print to console...
 _log.info("I am cron!!! {} ", time())
 _log.info("Logger name is {} ",  _log.getName())
+_log.info("Hello, World!") // basic test , automatic
+
