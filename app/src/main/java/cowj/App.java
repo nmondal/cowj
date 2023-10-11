@@ -5,6 +5,14 @@ package cowj;
 
 import zoomba.lang.core.types.ZTypes;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
+
 /**
  * Entry point for the Cowj Application
  */
@@ -20,11 +28,39 @@ public class App {
      */
     public static boolean isProdMode(){ return PROD_MODE ; }
 
+    private static String getManifestInfo() {
+        try {
+            // https://stackoverflow.com/questions/3777055/reading-manifest-mf-file-from-jar-file-using-java
+            Enumeration<?> resEnum = Thread.currentThread().getContextClassLoader().getResources(JarFile.MANIFEST_NAME);
+            while (resEnum.hasMoreElements()) {
+                try {
+                    URL url = (URL)resEnum.nextElement();
+                    InputStream is = url.openStream();
+                    if (is != null) {
+                        Manifest manifest = new Manifest(is);
+                        Attributes mainAttribs = manifest.getMainAttributes();
+                        String version = mainAttribs.getValue("cowj-build-on");
+                        if(version != null) {
+                            return version;
+                        }
+                    }
+                }
+                catch (Exception ignore) {
+                    // Silently ignore wrong manifests on classpath?
+                }
+            }
+        } catch (IOException ignore) {
+            // Silently ignore wrong manifests on classpath?
+        }
+        return "unknown-local-time";
+    }
+
     /**
      * Runs the Cowj App
      * @param args must be at least 1, pointing to a yaml config file
      */
     public static void main(String[] args) {
+        System.out.printf("Cowj build on : %s %n", getManifestInfo());
         if ( args.length < 1 ){
             System.err.println("Usage : java -jar cowj.jar <config_file_path> [true|false(default)]");
             System.err.println("If the 2nd arg is 'true', then automatically reloads script,json schema resources on save.");

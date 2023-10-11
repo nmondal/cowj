@@ -155,6 +155,7 @@ jar {
     exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF'
     manifest {
         attributes 'Main-Class': 'cowj.App',
+                "cowj-build-on" : new Date().format('yyyy-MM-dd HH:mm:ss'), // setup the build time to be absolutely sure
                 'Class-Path': configurations.runtimeClasspath.files.collect { "deps/$it.name" }.join(' ')
     }
     // to execute anything, go to the libs folder, and then do java -jar cowj
