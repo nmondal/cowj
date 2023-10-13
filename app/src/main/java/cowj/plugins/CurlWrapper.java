@@ -18,6 +18,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 
 import static cowj.AsyncHandler.ASYNC_ROUTE_PREFIX;
 
@@ -43,6 +45,22 @@ public interface CurlWrapper {
      * @return EitherMonad of type ZWeb.ZWebCom
      */
     EitherMonad<ZWeb.ZWebCom> send(String verb, String path, Map<String, String> headers, Map<String, String> params, String body);
+
+    /**
+     * Sends a payload to a remote server Asynchronously
+     *
+     * @param verb    HTTP verb ( get, post, etc )
+     * @param path    non server portion of the URI, e.g. <a href="http://localhost:8080/foo/bar">...</a>
+     *                /foo/bar is the path
+     * @param headers to be sent
+     * @param params  to be sent
+     * @param body    to be sent
+     * @return a Future
+     */
+    default Future<EitherMonad<ZWeb.ZWebCom>> sendAsync(String verb, String path, Map<String, String> headers, Map<String, String> params, String body){
+        Callable<EitherMonad<ZWeb.ZWebCom>> runnable = () -> send(verb,path, headers, params, body);
+        return AsyncHandler.instance().executorService().submit(runnable);
+    }
 
     /**
      * Key for the query to be used in the proxy payload
@@ -168,14 +186,20 @@ public interface CurlWrapper {
      * A DataSource.Creator for the CurlWrapper
      */
     DataSource.Creator CURL = (name, config, parent) -> {
-        String baseUrl = config.getOrDefault(DESTINATION_URL, "").toString();
-        logger.info("{} : base url [{}]", name, baseUrl);
+        String baseUrlKey = config.getOrDefault(DESTINATION_URL, "").toString();
+        logger.info("{} : base url key [{}]", name, baseUrlKey );
+        String baseUrl = parent.envTemplate( baseUrlKey );
+        logger.info("{} : base url [{}]", name, baseUrl );
 
         final CurlWrapper curlWrapper = (verb, path, headers, params, body) -> {
             try {
                 ZWeb zWeb = new ZWeb(baseUrl); // every call gets its own con
                 zWeb.headers.putAll(headers);
                 final ZWeb.ZWebCom com = zWeb.send(verb, path, params, body);
+                if ( com.status >= 400 ){
+                    logger.warn("{} : Non OK Response : [{}]  body : [{}]", name, com.status,
+                            com.bytes == null ? "(null)" : com.body());
+                }
                 return EitherMonad.value(com);
             } catch (Throwable t) {
                 logger.error("{} : Error while Sending Request : {}", name,  t.toString() );
