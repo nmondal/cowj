@@ -176,27 +176,30 @@ public class JWTAuthenticatorTest {
             prov1.token(mockRequest);
         });
         Assert.assertNotNull(throwable);
+        Assert.assertTrue( throwable.getMessage().contains("header"));
     }
 
     @Test
     public void noBearerTokenInAuthHeaderTest(){
         Request mockRequest = mock(Request.class);
-        when(mockRequest.headers()).thenReturn( Set.of("Authentication"));
+        when(mockRequest.headers()).thenReturn( Set.of(JWTAuthenticator.AUTHENTICATION_HEADER));
         when(mockRequest.headers(any())).thenReturn( "boo hhaahah ");
         Throwable throwable = assertThrows(Exception.class, () -> {
             prov1.token(mockRequest);
         });
         Assert.assertNotNull(throwable);
+        Assert.assertTrue( throwable.getMessage().contains("not found"));
     }
 
     @Test
     public void wrongBearerTokenInAuthHeaderTest(){
         Request mockRequest = mock(Request.class);
-        when(mockRequest.headers()).thenReturn( Set.of("Authentication"));
+        when(mockRequest.headers()).thenReturn( Set.of(JWTAuthenticator.AUTHENTICATION_HEADER));
         when(mockRequest.headers(any())).thenReturn( "Bearer  foo bar 42");
         Throwable throwable = assertThrows(Exception.class, () -> {
             prov1.token(mockRequest);
         });
         Assert.assertNotNull(throwable);
+        Assert.assertTrue( throwable.getMessage().contains("misconfigured"));
     }
 }
