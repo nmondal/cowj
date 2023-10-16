@@ -26,15 +26,15 @@ public class ModelRunnerTest {
         if ( mr == null ) return;
         mr.stop();
         mr = null;
+        System.gc(); // garbage collect trigger
         Thread.sleep(1500);
     }
 
     static ModelRunner runModel(String modelPath){
         ModelRunner mr = ModelRunner.fromModel(modelPath) ;
-        Thread server = new Thread(mr);
-        server.start();
+        mr.run();
         try {
-            Thread.sleep(5000);
+            Thread.sleep(1000);
         }catch (Exception ignored){}
         return mr;
     }

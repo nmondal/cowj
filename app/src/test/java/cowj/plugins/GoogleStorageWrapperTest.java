@@ -144,6 +144,9 @@ public class GoogleStorageWrapperTest {
         when(storage.list(anyString(), any(), any())).thenReturn(page);
         when(page.streamAll()).thenReturn(Stream.of(b1, b2));
         GoogleStorageWrapper gsw = () -> storage;
+        // check the data part
+        Assert.assertEquals("", gsw.data(null));
+
         // ensure stream has some stuff
         Stream<String> as = gsw.allContent("foo", "");
         Assert.assertNotNull(as);
@@ -189,6 +192,23 @@ public class GoogleStorageWrapperTest {
         when(page.getValues()).thenReturn( List.of(b1));
         when(storage.list(anyString(), any(), any())).thenReturn(page);
         Assert.assertTrue( gsw.folderExists("foo", "bar"));
+    }
+
+    @Test
+    public void storageFolderExistenceEmptyPageTest(){
+        Storage storage = mock( Storage.class);
+        GoogleStorageWrapper gsw = () -> storage;
+        Assert.assertFalse( gsw.folderExists("foo", "bar"));
+
+        Page<Blob> page = mock(Page.class);
+        Blob b1 = mock(Blob.class);
+        when(b1.getStorage()).thenReturn(storage);
+        when(page.getValues()).thenReturn( Collections.emptyList());
+        // at this point, null should be returned ...
+        Assert.assertFalse( gsw.folderExists("foo", "bar"));
+        // continue with other mocks
+        when(storage.list(anyString(), any(), any())).thenReturn(page);
+        Assert.assertFalse( gsw.folderExists("foo", "bar"));
     }
 
     @Test

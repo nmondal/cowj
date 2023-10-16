@@ -167,11 +167,10 @@ public interface ModelRunner extends Runnable {
                 logger.info("{} -> {} -> {}", filterType, r.getKey(), scriptPath);
             }
         }
-
+        FileWatcher.startWatchDog( baseDir );
         // Attach TypeSystem output schema verification after any after filter
         typeSystem.attachOutput();
         awaitInitialization();
-        FileWatcher.startWatchDog( baseDir );
         logger.info("Cowj is initialized!");
     }
 
