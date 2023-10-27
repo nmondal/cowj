@@ -193,7 +193,7 @@ public interface GoogleStorageWrapper {
         Page<Blob> p ;
                 if ( recurse ) {
                     p = storage().list(bucketName,
-                            Storage.BlobListOption.currentDirectory());
+                            Storage.BlobListOption.prefix(directoryPrefix));
                 } else {
                     p = storage().list(bucketName,
                             Storage.BlobListOption.prefix(directoryPrefix),
