@@ -186,12 +186,19 @@ public interface GoogleStorageWrapper {
      * <a href="https://cloud.google.com/storage/docs/samples/storage-list-files-with-prefix#storage_list_files_with_prefix-java">See In Here.</a>
      * @param bucketName name of the bucket
      * @param directoryPrefix prefix we use to get files in the directory
+     * @param recurse should we go down to the subdirectories
      * @return a Stream of Google Storage Blob
      */
-    default Stream<Blob> all(String bucketName, String directoryPrefix) {
-        Page<Blob> p = storage().list(bucketName,
-                Storage.BlobListOption.prefix(directoryPrefix),
-                Storage.BlobListOption.currentDirectory());
+    default Stream<Blob> stream(String bucketName, String directoryPrefix, boolean recurse) {
+        Page<Blob> p ;
+                if ( recurse ) {
+                    p = storage().list(bucketName,
+                            Storage.BlobListOption.currentDirectory());
+                } else {
+                    p = storage().list(bucketName,
+                            Storage.BlobListOption.prefix(directoryPrefix),
+                            Storage.BlobListOption.currentDirectory());
+                }
         Stream<Blob> resultStream = p.streamAll();
         while ( p.hasNextPage() ){
             p = p.getNextPage();
@@ -206,10 +213,11 @@ public interface GoogleStorageWrapper {
      *
      * @param bucketName name of the bucket
      * @param directoryPrefix prefix we use to get files in the directory
+     * @param recurse should we go down to the subdirectories
      * @return a Stream of String after reading each Blob as String use UTF-8 encoding
      */
-    default Stream<String> allContent(String bucketName, String directoryPrefix) {
-        return all(bucketName,directoryPrefix).map(b -> new String(b.getContent(), UTF_8));
+    default Stream<String> allContent(String bucketName, String directoryPrefix, boolean recurse) {
+        return stream(bucketName,directoryPrefix, recurse).map(b -> new String(b.getContent(), UTF_8));
     }
 
     /**
@@ -218,17 +226,18 @@ public interface GoogleStorageWrapper {
      * In case it can parse it as JSON return that object, else return the string
      * @param bucketName name of the bucket
      * @param directoryPrefix prefix we use to get files in the directory
+     * @param recurse should we go down to the subdirectories
      * @return a Stream of Object or String
      */
-    default Stream<Object> allData(String bucketName, String directoryPrefix) {
-        return all(bucketName, directoryPrefix).map(this::json);
+    default Stream<Object> allData(String bucketName, String directoryPrefix, boolean recurse) {
+        return stream(bucketName, directoryPrefix, recurse).map(this::json);
     }
 
     /**
      * Create a new bucket
      *
      * @param bucketName name of the bucket
-     * @param location location of the bucket. Supported values https://cloud.google.com/storage/docs/locations
+     * @param location location of the bucket. Supported values <a href="https://cloud.google.com/storage/docs/locations">...</a>
      * @param preventPublicAccess if true, sets up iam to prevent public access. Otherwise, does nothing
      * @return bucket
      */

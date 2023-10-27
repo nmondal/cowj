@@ -141,6 +141,7 @@ public class GoogleStorageWrapperTest {
         when(b2.getStorage()).thenReturn(storage);
         when(b2.getContent()).thenReturn( second.getBytes(StandardCharsets.UTF_8));
 
+        when(storage.list(anyString(), any())).thenReturn(page);
         when(storage.list(anyString(), any(), any())).thenReturn(page);
         when(page.streamAll()).thenReturn(Stream.of(b1, b2));
         GoogleStorageWrapper gsw = () -> storage;
@@ -148,7 +149,7 @@ public class GoogleStorageWrapperTest {
         Assert.assertEquals("", gsw.data(null));
 
         // ensure stream has some stuff
-        Stream<String> as = gsw.allContent("foo", "");
+        Stream<String> as = gsw.allContent("foo", "", false);
         Assert.assertNotNull(as);
         List<String> res = as.toList();
         Assert.assertEquals(2, res.size());
@@ -157,7 +158,7 @@ public class GoogleStorageWrapperTest {
 
         when(page.streamAll()).thenReturn(Stream.of(b1, b2));
         when(page2.streamAll()).thenReturn(Stream.of(b2, b1));
-        Stream<Object> ao = gsw.allData("foo", "");
+        Stream<Object> ao = gsw.allData("foo", "", true);
         List<Object> r = ao.toList();
 
         Assert.assertEquals(4, r.size());
