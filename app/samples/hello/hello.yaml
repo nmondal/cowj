@@ -41,6 +41,8 @@ routes:
     /error/z: _/error.zm
     /error/j: _/error.js
     /runtime_error: _/../test_scripts/runtime_error.js
+    # Now just to test code coverage end point
+    /coverage: _/cov.zm
 
   post:
     /hello: _/hello.zm
