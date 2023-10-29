@@ -19,22 +19,17 @@ plugins {
     // maven publish
     id 'maven-publish'
 }
-
-// the maven identifiers
-group = 'org.zoomba-lang'
-version = '0.1-SNAPSHOT'
-
 ext {
     // if this property is set, then we are add the coverage stuff
     isCoverage =  System.properties['cowj.cover'] != null
 }
 
+// the maven identifiers
+group = 'org.zoomba-lang'
+version = isCoverage ? '0.1-cover-SNAPSHOT' :  '0.1-SNAPSHOT'
+
 base{
-    if ( isCoverage ) {
-        archivesName = 'cowj-cover'
-    } else {
-        archivesName = 'cowj'
-    }
+    archivesName = 'cowj'
 }
 
 repositories {
