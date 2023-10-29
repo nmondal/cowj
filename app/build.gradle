@@ -22,6 +22,8 @@ plugins {
 ext {
     // if this property is set, then we are add the coverage stuff
     isCoverage =  System.properties['cowj.cover'] != null
+    zmbPrefix = isCoverage ?  'INSTRUMENTED-' : '' // handle coverage binary
+    zmbBinary = 'org.zoomba-lang:zoomba.lang.core:' + zmbPrefix + '0.3-SNAPSHOT'
 }
 
 // the maven identifiers
@@ -46,12 +48,8 @@ repositories {
 dependencies {
     // This dependency is used by the application.
     implementation 'com.google.guava:guava:31.1-jre'
-    if ( isCoverage ){
-        implementation 'org.zoomba-lang:zoomba.lang.core:INSTRUMENTED-0.3-SNAPSHOT'
-    } else {
-        // local libraries - snapshot moved to org.zoomba-lang
-        implementation 'org.zoomba-lang:zoomba.lang.core:0.3-SNAPSHOT'
-    }
+
+    implementation zmbBinary
     implementation 'org.zoomba-lang:spark-core:3-JDK17-SNAPSHOT'
     // end of local libraries
     implementation 'org.slf4j:slf4j-jdk14:2.0.7'
