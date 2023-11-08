@@ -109,7 +109,7 @@ public class GoogleStorageWrapperTest {
         Blob b = mock(Blob.class);
         when(b.getStorage()).thenReturn(storage);
         when(b.getContent()).thenReturn( dataString.getBytes( StandardCharsets.UTF_8 ));
-        when(storage.get((BlobId) ArgumentMatchers.any())).thenReturn(b);
+        when(storage.get(anyString(), anyString())).thenReturn(b);
         GoogleStorageWrapper gsw = () -> storage;
         Object res = gsw.load("foo", "bar");
         Assert.assertNotNull(res);
@@ -146,7 +146,7 @@ public class GoogleStorageWrapperTest {
         when(page.streamAll()).thenReturn(Stream.of(b1, b2));
         GoogleStorageWrapper gsw = () -> storage;
         // check the data part
-        Assert.assertEquals("", gsw.data(null));
+        Assert.assertEquals("", gsw.utf8(null));
 
         // ensure stream has some stuff
         Stream<String> as = gsw.allContent("foo", "", false);

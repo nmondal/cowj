@@ -4,9 +4,9 @@ import com.google.api.gax.paging.Page;
 import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.*;
 import cowj.DataSource;
+import cowj.StorageWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import zoomba.lang.core.types.ZTypes;
 
 import java.nio.ByteBuffer;
 import java.util.stream.Stream;
@@ -16,7 +16,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * Abstraction for Google Cloud Storage
  */
-public interface GoogleStorageWrapper {
+public interface GoogleStorageWrapper extends StorageWrapper<Bucket, Blob, Blob>  {
 
     /**
      * Logger for the wrapper
@@ -64,22 +64,10 @@ public interface GoogleStorageWrapper {
      * @param data       which to be dumped encoding used is UTF-8
      * @return a Blob object
      */
+    @Override
     default Blob dumps(String bucketName, String fileName, String data) {
         final byte[] dataBytes = data.getBytes(UTF_8); // if done this way, the bug could have been avoided
         return dumpb(bucketName, fileName, dataBytes);
-    }
-
-    /**
-     * Dump Object to Google Cloud Storage after converting it to JSON String
-     *
-     * @param bucketName the bucket
-     * @param fileName   the file
-     * @param obj        which to be dumped
-     * @return a Blob object
-     */
-    default Blob dump(String bucketName, String fileName, Object obj) {
-        String objJsonString = ZTypes.jsonString(obj);
-        return dumps(bucketName, fileName, objJsonString);
     }
 
     /**
@@ -99,85 +87,32 @@ public interface GoogleStorageWrapper {
      * @param fileName having the name
      * @return true if it is a blob , false if it does not exist or is not simple blob
      */
+    @Override
     default boolean fileExist(String bucketName, String fileName) {
-        Blob blob = storage().get(bucketName, fileName);
+        Blob blob = data(bucketName, fileName);
         return blob != null;
     }
 
-    /**
-     * Utility method to get content of a Blob
-     * @param blob the Blob whose content we shall read
-     * @return String content of the Blob imagining UTF-8 encoding
-     */
-    default String data(Blob blob){
-        if (blob == null) {
-            return "";
-        }
-        byte[] prevContent = blob.getContent();
-        return new String(prevContent, UTF_8);
+    @Override
+    default Blob data(String bucketName, String fileName) {
+        return storage().get(bucketName, fileName);
     }
 
-    /**
-     * Utility method to get content of a Blob as JSON Object
-     * If not JSON object simply returns the String
-     * @param blob the Blob whose content we shall read
-     * @return JSON Object if possible - else String content
-     */
-    default Object json(Blob blob){
-        String data = data(blob);
+    @Override
+    default byte[] bytes(Blob input) {
         try {
-            return ZTypes.json(data);
-        } catch (Throwable t) {
-            return data;
-        }
-    }
-
-    /**
-     * Load data from Google Storage as String - encoding is UTF-8
-     *
-     * @param bucketName from this bucket name
-     * @param fileName   from this file
-     * @return data string - content of the file
-     */
-    default String loads(String bucketName, String fileName) {
-        byte[] blob = loadb(bucketName, fileName);
-        if (blob == null) {
-            return "";
-        }
-        return new String(blob, UTF_8);
-    }
-
-    /**
-     * Load data from Google Storage as bytes
-     *
-     * @param bucketName from this bucket name
-     * @param fileName   from this file
-     * @return byte[] - content of the file
-     */
-    default byte[] loadb(String bucketName, String fileName) {
-        Storage storage = storage();
-        BlobId blobId = BlobId.of(bucketName, fileName);
-        Blob blob = storage.get(blobId);
-        if (blob == null) {
+            return input.getContent();
+        }catch (Throwable t){
             return null;
         }
-        return blob.getContent();
     }
 
-    /**
-     * Load data from Google Storage as Object
-     *
-     * @param bucketName from this bucket name
-     * @param fileName   from this file
-     * @return data object - content of the file after parsing it as JSON
-     */
-    default Object load(String bucketName, String fileName) {
-        String data = loads(bucketName, fileName);
-        if (data.isEmpty()) return null;
+    @Override
+    default String utf8(Blob input) {
         try {
-            return ZTypes.json(data);
-        } catch (Throwable t) {
-            return data;
+            return new String( bytes(input), UTF_8);
+        }catch (Throwable t){
+            return "";
         }
     }
 
@@ -208,6 +143,11 @@ public interface GoogleStorageWrapper {
         return resultStream;
     }
 
+    @Override
+    default Stream<Blob> stream(String bucketName, String directoryPrefix) {
+        return stream(bucketName, directoryPrefix, true);
+    }
+
     /**
      * Gets a Stream of String from a bucket
      *
@@ -217,7 +157,7 @@ public interface GoogleStorageWrapper {
      * @return a Stream of String after reading each Blob as String use UTF-8 encoding
      */
     default Stream<String> allContent(String bucketName, String directoryPrefix, boolean recurse) {
-        return stream(bucketName,directoryPrefix, recurse).map(b -> new String(b.getContent(), UTF_8));
+        return stream(bucketName,directoryPrefix, recurse).map(this::utf8);
     }
 
     /**
@@ -241,6 +181,7 @@ public interface GoogleStorageWrapper {
      * @param preventPublicAccess if true, sets up iam to prevent public access. Otherwise, does nothing
      * @return bucket
      */
+    @Override
     default Bucket createBucket(String bucketName, String location, boolean preventPublicAccess) {
         BucketInfo.Builder builder = BucketInfo.newBuilder(bucketName)
                 .setLocation(location);
@@ -260,6 +201,7 @@ public interface GoogleStorageWrapper {
      * @param bucketName name of bucket
      * @return true if bucket was deleted false if bucket does not exist
      */
+    @Override
     default boolean deleteBucket(String bucketName) {
         return storage().delete(bucketName);
     }
@@ -271,6 +213,7 @@ public interface GoogleStorageWrapper {
      * @param path path of the file - example - "abc/def.json"
      * @return true if file was deleted, false if file does not exist
      */
+    @Override
     default boolean delete(String bucketName, String path) {
         return storage().delete(BlobId.of(bucketName, path));
     }

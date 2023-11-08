@@ -114,17 +114,22 @@ public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectRespo
         return resultStream;
     }
 
+    /**
+     * Default Page size for listing on a bucket
+     * @return default page size for any bucket
+     */
     default int pageSize(){ return  1000 ; }
-
 
     /**
      * Create a new bucket
      *
      * @param bucketName name of the bucket
+     * @param location  unused
+     * @param preventPublicAccess unused
      * @return true if it was created, false otherwise
      */
     @Override
-    default Boolean createBucket(String bucketName) {
+    default Boolean createBucket(String bucketName, String location, boolean preventPublicAccess ) {
         final S3Client s3Client = s3client();
         return safeBoolean( () -> {
             s3Client.createBucket(CreateBucketRequest

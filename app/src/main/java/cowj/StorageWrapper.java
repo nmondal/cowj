@@ -20,6 +20,11 @@ public interface  StorageWrapper <B,R,I> {
     Logger logger = LoggerFactory.getLogger(StorageWrapper.class);
 
 
+    /**
+     * Runs a block to return a boolean
+     * @param runnable the code block
+     * @return true if block did not throw any exception, false otherwise
+     */
     default boolean safeBoolean( Runnable runnable ){
         try {
             runnable.run();
@@ -59,10 +64,26 @@ public interface  StorageWrapper <B,R,I> {
      */
     boolean fileExist(String bucketName, String fileName);
 
+    /**
+     * Get the input data type I
+     * @param bucketName name of the bucket
+     * @param fileName name of the file
+     * @return data of type I
+     */
     I data(String bucketName, String fileName);
 
+    /**
+     * Gets Bytes from the blob
+     * @param input blob type I
+     * @return byte array of the data
+     */
     byte[] bytes(I input);
 
+    /**
+     * Gets UTF8 String from the blob
+     * @param input blob type I
+     * @return UTF8 String rep from the data
+     */
     String utf8(I input);
 
     /**
@@ -155,9 +176,11 @@ public interface  StorageWrapper <B,R,I> {
      * Create a new bucket
      *
      * @param bucketName name of the bucket
+     * @param location location of the bucket
+     * @param preventPublicAccess if set to true, ensures global read access is disabled
      * @return a type B
      */
-    B createBucket(String bucketName);
+    B createBucket(String bucketName, String location, boolean preventPublicAccess);
 
     /**
      * Deletes the bucket
