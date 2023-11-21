@@ -46,6 +46,14 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
     }
 
     /**
+     * Gets the current second
+     * @return current second
+     */
+    public static long currentSecond(){
+        return System.currentTimeMillis() / 1000 ;
+    }
+
+    /**
      * A handcrafted simple implementation of JWT Auth mechanism
      */
     public class JWebToken implements UserInfo{
@@ -61,27 +69,12 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
         }
 
         /**
-         * Gets the current second
-         * @return current second
+         * Creates a jwt with payload as its body
+         * @param payload body of jwt
          */
-        public static long currentSecond(){
-            return System.currentTimeMillis() / 1000 ;
-        }
-
-        /**
-         * Creates a JWT token
-         * @param sub subject - the user id
-         * @param aud audience - list of items where user would have access
-         * @param expires time where the token should expire
-         */
-        public JWebToken(String sub, List<?> aud, long expires) {
+        public JWebToken(Map<String, Object> payload) {
             this();
-            payload.put("sub", sub);
-            payload.put("aud", aud); // Authorization
-            payload.put("exp", expires);
-            payload.put("iat", currentSecond());
-            payload.put("iss", JWTAuthenticator.this.issuer());
-            payload.put("jti", UUID.randomUUID().toString()); //how do we use this?
+            this.payload.putAll(payload);
             signature = hmacSha256(encodedHeader + "." + encode(payload), JWTAuthenticator.this.secretKey());
             this.token = toString();
         }
@@ -233,7 +226,14 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
      * @return a token object
      */
     public JWebToken jwt(String sub,long expires, List<?> aud){
-        return new JWebToken(sub, aud, expires);
+        Map<String, Object> payload = new TreeMap<>();
+        payload.put("sub", sub);
+        payload.put("aud", aud); // Authorization
+        payload.put("exp", expires);
+        payload.put("iat", currentSecond());
+        payload.put("iss", JWTAuthenticator.this.issuer());
+        payload.put("jti", UUID.randomUUID().toString()); //how do we use this?
+        return new JWebToken(payload);
     }
 
     /**
@@ -254,7 +254,11 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
      * @return a token object
      */
     public JWebToken jwt(String sub){
-        return jwt(sub, JWebToken.currentSecond() + expiryOffset() );
+        return jwt(sub, currentSecond() + expiryOffset() );
+    }
+
+    public JWebToken rawJwt(Map<String, Object> payload) {
+        return new JWebToken(payload);
     }
 
     @Override
