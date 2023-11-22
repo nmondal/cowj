@@ -62,7 +62,7 @@ public class JWTAuthenticatorTest {
         Assert.assertEquals( jWebToken1.getAudience(), jWebToken.getAudience() );
         Assert.assertEquals( jWebToken1.getSubject(), jWebToken.getSubject() );
         Assert.assertEquals( jWebToken1.expiry(), jWebToken.expiry(), 2 );
-
+        Assert.assertEquals( jWebToken1.json().size(), jWebToken.json().size());
         Assert.assertTrue( jWebToken.isSignatureValid() );
         Assert.assertTrue( jWebToken.getAudience().isEmpty()); // this is what it supposed to be
         // Now create a request with auth stuff
@@ -206,5 +206,33 @@ public class JWTAuthenticatorTest {
         });
         Assert.assertNotNull(throwable);
         Assert.assertTrue( throwable.getMessage().contains("misconfigured"));
+    }
+
+    @Test
+    public void invalidFieldsTest(){
+        // test the param verifying function
+        Assert.assertTrue( JWTAuthenticator.JWebToken.isInt(10));
+        Assert.assertTrue( JWTAuthenticator.JWebToken.isInt(10L));
+        Assert.assertFalse( JWTAuthenticator.JWebToken.isInt("10"));
+
+        // now do rest
+        IllegalArgumentException throwable = assertThrows(IllegalArgumentException.class, () -> {
+            prov1.jwt(Map.of());
+        });
+        Assert.assertNotNull(throwable);
+        Assert.assertTrue( throwable.getMessage().contains("no sub"));
+
+        throwable = assertThrows(IllegalArgumentException.class, () -> {
+            prov1.jwt(Map.of(
+                    "sub", 10,
+                    "aud", 42 ,
+                    "exp", "X" ,
+                    "iat", 42L,
+                    "iss", 78,
+                    "jti", false )
+            );
+        });
+        Assert.assertNotNull(throwable);
+        Assert.assertTrue( throwable.getMessage().contains("Type"));
     }
 }

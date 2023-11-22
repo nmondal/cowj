@@ -89,11 +89,15 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
             this( Map.of("sub", sub, "aud", aud, "exp", expires ));
         }
 
+        public static boolean isInt(Object v){
+           return v instanceof Long || v instanceof Integer  ;
+        }
+
         public static Map<String, Predicate<Object>> JWT_FIELD_VERIFIERS = Map.of(
             "sub", ( (v) -> v instanceof String ),
                 "aud", ( (v) -> v instanceof List<?> ),
-                "exp", ( (v) -> v instanceof Long || v instanceof Integer  ),
-                "iat", ( (v) -> v instanceof Long || v instanceof Integer  ),
+                "exp", ( JWebToken::isInt  ),
+                "iat", ( JWebToken::isInt  ),
                 "iss", ( (v) -> v instanceof String  ),
                 "jti", ( (v) -> v instanceof String  )
         );
