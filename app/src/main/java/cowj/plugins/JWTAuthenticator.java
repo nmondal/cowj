@@ -13,6 +13,8 @@ import zoomba.lang.core.types.ZTypes;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -52,6 +54,15 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
 
         private static final String JWT_HEADER = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
         private final Map<String,Object> payload = new TreeMap<>();
+
+        /**
+         * A view to the underlying payload
+         * @return unmodifiable view of the payload
+         */
+        public Map<String,Object> json(){
+            return Collections.unmodifiableMap(payload);
+        }
+
         private String signature;
         private String encodedHeader;
         private String token;
@@ -72,16 +83,53 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
          * Creates a JWT token
          * @param sub subject - the user id
          * @param aud audience - list of items where user would have access
-         * @param expires time where the token should expire
+         * @param expires time when the token should expire
          */
         public JWebToken(String sub, List<?> aud, long expires) {
+            this( Map.of("sub", sub, "aud", aud, "exp", expires ));
+        }
+
+        public static Map<String, Predicate<Object>> JWT_FIELD_VERIFIERS = Map.of(
+            "sub", ( (v) -> v instanceof String ),
+                "aud", ( (v) -> v instanceof List<?> ),
+                "exp", ( (v) -> v instanceof Long || v instanceof Integer  ),
+                "iat", ( (v) -> v instanceof Long || v instanceof Integer  ),
+                "iss", ( (v) -> v instanceof String  ),
+                "jti", ( (v) -> v instanceof String  )
+        );
+
+        public final Map<String, Supplier<Object>> JWT_FIELD_PRODUCERS = Map.of(
+                "aud", (Collections::emptyList),
+                "iat", (JWebToken::currentSecond),
+                "iss", (JWTAuthenticator.this::issuer),
+                "jti", () -> UUID.randomUUID().toString(),
+                "exp", () -> JWTAuthenticator.this.expiryOffset() + currentSecond()
+        );
+
+        /**
+         * Creates a JWT token
+         * @param map which is the template for the payload for JWT
+         */
+        public JWebToken(Map<String,Object> map) {
             this();
-            payload.put("sub", sub);
-            payload.put("aud", aud); // Authorization
-            payload.put("exp", expires);
-            payload.put("iat", currentSecond());
-            payload.put("iss", JWTAuthenticator.this.issuer());
-            payload.put("jti", UUID.randomUUID().toString()); //how do we use this?
+            if ( !map.containsKey("sub") ){
+                logger.error( "JWT keys does not have mandatory field 'sub'" );
+                throw new IllegalArgumentException("JWT payload has no sub!");
+            }
+            List<?> failed = JWT_FIELD_VERIFIERS.entrySet().stream()
+                    .filter( entry -> map.containsKey( entry.getKey() ) ) // only when key does exist
+                    .filter( entry ->  !entry.getValue().test( map.get(entry.getKey())) ) // type mismatch
+                    .map(Map.Entry::getKey).toList();
+
+            if ( !failed.isEmpty() ){
+                logger.error( "JWT keys failed type validation : {}", failed );
+                throw new IllegalArgumentException("JWT Parameters Type mismatch! " + failed);
+            }
+            payload.putAll(map); // put into payload whatever came as of now
+            JWT_FIELD_PRODUCERS.entrySet().stream()
+                    .filter( (entry) -> ! map.containsKey(entry.getKey()))
+                    .forEach( entry ->  payload.put( entry.getKey(), entry.getValue().get() ));
+
             signature = hmacSha256(encodedHeader + "." + encode(payload), JWTAuthenticator.this.secretKey());
             this.token = toString();
         }
@@ -255,6 +303,15 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
      */
     public JWebToken jwt(String sub){
         return jwt(sub, JWebToken.currentSecond() + expiryOffset() );
+    }
+
+    /**
+     * Creates a token with parameters
+     * @param map underlying payload of the token
+     * @return a token object
+     */
+    public JWebToken jwt(Map<String,Object> map){
+        return new JWebToken(map);
     }
 
     @Override

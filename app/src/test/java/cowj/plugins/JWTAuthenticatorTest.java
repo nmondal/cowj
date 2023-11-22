@@ -58,6 +58,11 @@ public class JWTAuthenticatorTest {
         Assert.assertEquals("42", jwtAuthenticator.secretKey());
         Assert.assertEquals(0, jwtAuthenticator.cacheSize() );
         JWTAuthenticator.JWebToken jWebToken = jwtAuthenticator.jwt("foo");
+        JWTAuthenticator.JWebToken jWebToken1 = jwtAuthenticator.jwt(Map.of("sub", "foo"));
+        Assert.assertEquals( jWebToken1.getAudience(), jWebToken.getAudience() );
+        Assert.assertEquals( jWebToken1.getSubject(), jWebToken.getSubject() );
+        Assert.assertEquals( jWebToken1.expiry(), jWebToken.expiry(), 2 );
+
         Assert.assertTrue( jWebToken.isSignatureValid() );
         Assert.assertTrue( jWebToken.getAudience().isEmpty()); // this is what it supposed to be
         // Now create a request with auth stuff
