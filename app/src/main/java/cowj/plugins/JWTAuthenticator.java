@@ -89,10 +89,19 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
             this( Map.of("sub", sub, "aud", aud, "exp", expires ));
         }
 
+        /**
+         * Is the object of type bounded integer
+         * @param v the input object
+         * @return true if an integer or long false otherwise
+         */
         public static boolean isInt(Object v){
            return v instanceof Long || v instanceof Integer  ;
         }
 
+        /**
+         * Verification rules for the JWT token fields
+         * A map with key as the field name, value a Predicate
+         */
         public static Map<String, Predicate<Object>> JWT_FIELD_VERIFIERS = Map.of(
             "sub", ( (v) -> v instanceof String ),
                 "aud", ( (v) -> v instanceof List<?> ),
@@ -102,6 +111,11 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
                 "jti", ( (v) -> v instanceof String  )
         );
 
+        /**
+         * Verification rules for the JWT token fields
+         * A map with key as the field name,
+         * value a Supplier which supplies the value if missing
+         */
         public final Map<String, Supplier<Object>> JWT_FIELD_PRODUCERS = Map.of(
                 "aud", (Collections::emptyList),
                 "iat", (JWebToken::currentSecond),
