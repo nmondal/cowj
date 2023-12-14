@@ -62,11 +62,13 @@ public interface ModelRunner extends Runnable {
         port(m.port());
         // set threading
         Map<String, Object> tAct = m.threading();
+        boolean useVirtualThread = ZTypes.bool(tAct.getOrDefault("virtual", false), false);
+        useVirtualThread(useVirtualThread); // Java 21 virtual threads
+        logger.info("threading: try Using virtual threads: {}", useVirtualThread);
         int min = ZNumber.integer(tAct.getOrDefault("min", 3),3).intValue();
         int max = ZNumber.integer(tAct.getOrDefault("max", 10),10).intValue();
         int timeout = ZNumber.integer(tAct.getOrDefault("timeout", 30000), 30000).intValue();
-        boolean useVirtualThread = ZTypes.bool(tAct.getOrDefault("virtual", false), false);
-        useVirtualThread(useVirtualThread); // Java 21 virtual threads
+        logger.info("threading: min {}, max {}, timeout(ms) {}", min, max, timeout);
         threadPool(max, min, timeout);
         // Set Async IO
         Map<String, Object> asyncConfig = m.async();
