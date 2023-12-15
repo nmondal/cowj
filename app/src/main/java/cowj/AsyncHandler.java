@@ -282,9 +282,9 @@ public interface AsyncHandler {
      * @return ExecutorService if available, else null
      */
     static ExecutorService getVirtualThreadExecutor(){
-       Object o = ZJVMAccess.callMethod( Executors.class, "newVirtualThreadPerTaskExecutor", new Object[]{});
-       if ( o instanceof ExecutorService ) return ((ExecutorService)o);
-       return null;
+        return (ExecutorService)ZJVMAccess.callMethod(
+                Executors.class, "newVirtualThreadPerTaskExecutor", new Object[]{}
+        );
     }
 
     /**
@@ -310,20 +310,18 @@ public interface AsyncHandler {
         logger.info("Async-IO use of virtual thread set to : {}", useVThread );
         if (useVThread){
             if ( isVirtualThreadAvailable() ){
-                logger.error("Async-IO virtual threads AVAILABLE! will use...");
+                logger.info("Async-IO virtual threads AVAILABLE! will use...");
                 return virtualThreadExecutor;
-            } else {
-                logger.error("Async-IO virtual threads are not available! will fallback on system threads...");
             }
+            logger.warn("Async-IO virtual threads are not available! will fallback on system threads...");
         }
         if ( config.containsKey(THREAD_SIZE ) ){
             final int size = ZNumber.integer(config.get(THREAD_SIZE), 8).intValue();
             logger.info("Async-IO Thread pool size would be {}", size );
             return Executors.newFixedThreadPool( size );
-        } else {
-            logger.info("Async-IO Thread pool size would be expandable");
-            return Executors.newCachedThreadPool();
         }
+        logger.info("Async-IO Thread pool size would be expandable");
+        return Executors.newCachedThreadPool();
     }
 
     /**
