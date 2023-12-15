@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory;
 import spark.QueryParamsMap;
 import spark.Request;
 import spark.Route;
+import zoomba.lang.core.operations.ZJVMAccess;
 import zoomba.lang.core.types.ZNumber;
+import zoomba.lang.core.types.ZTypes;
 
 import javax.script.Bindings;
 import javax.script.SimpleBindings;
@@ -250,6 +252,11 @@ public interface AsyncHandler {
     }
 
     /**
+     * Key to the Async IO Virtual Thread
+     */
+    String VIRTUAL_THREAD = "virtual" ;
+
+    /**
      * Key to the Async IO Executor Service thread size
      */
     String THREAD_SIZE = "threads" ;
@@ -271,21 +278,62 @@ public interface AsyncHandler {
     String RETRY_CONFIG = "retries" ;
 
     /**
+     * if Virtual threads are available returns the virtual thread executor
+     * @return ExecutorService if available, else null
+     */
+    static ExecutorService getVirtualThreadExecutor(){
+       Object o = ZJVMAccess.callMethod( Executors.class, "newVirtualThreadPerTaskExecutor", new Object[]{});
+       if ( o instanceof ExecutorService ) return ((ExecutorService)o);
+       return null;
+    }
+
+    /**
+     * A field that has fixated virtual thread executor or null
+     */
+    ExecutorService  virtualThreadExecutor =  getVirtualThreadExecutor();
+
+    /**
+     * Check if Virtual threads are available
+     * @return true if available, false otherwise
+     */
+    static boolean isVirtualThreadAvailable(){
+        return virtualThreadExecutor != null ;
+    }
+
+    /**
+     * Gets ExecutorService based on config
+     * @param config a map configuration
+     * @return an ExecutorService
+     */
+    static ExecutorService getExecutorService(Map<String,Object> config){
+        final boolean useVThread = ZTypes.bool(config.getOrDefault(VIRTUAL_THREAD, false),false);
+        logger.info("Async-IO use of virtual thread set to : {}", useVThread );
+        if (useVThread){
+            if ( isVirtualThreadAvailable() ){
+                logger.error("Async-IO virtual threads AVAILABLE! will use...");
+                return virtualThreadExecutor;
+            } else {
+                logger.error("Async-IO virtual threads are not available! will fallback on system threads...");
+            }
+        }
+        if ( config.containsKey(THREAD_SIZE ) ){
+            final int size = ZNumber.integer(config.get(THREAD_SIZE), 8).intValue();
+            logger.info("Async-IO Thread pool size would be {}", size );
+            return Executors.newFixedThreadPool( size );
+        } else {
+            logger.info("Async-IO Thread pool size would be expandable");
+            return Executors.newCachedThreadPool();
+        }
+    }
+
+    /**
      * Creates and inserts an AsyncHandler
      * @param config from this configuration
      * @param model using this parent model
      * @return an AsyncHandler
      */
     static AsyncHandler fromConfig(Map<String,Object> config, Model model){
-        final ExecutorService executorService;
-        if ( config.containsKey(THREAD_SIZE ) ){
-            final int size = ZNumber.integer(config.get(THREAD_SIZE), 8).intValue();
-            logger.info("Async-IO Threadpool size would be {}", size );
-            executorService = Executors.newFixedThreadPool( size );
-        } else {
-            logger.info("Async-IO Threadpool size would be expandable");
-            executorService = Executors.newCachedThreadPool();
-        }
+        final ExecutorService executorService = getExecutorService(config);
         final int memSize = ZNumber.integer(config.get(MEM_SIZE), 1024).intValue();
         logger.info("Async memory size would be {}", memSize );
         final Map<String,Object> results = Collections.synchronizedMap(new LinkedHashMap<>() {
