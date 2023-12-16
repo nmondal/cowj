@@ -5,16 +5,15 @@ import org.slf4j.LoggerFactory;
 import spark.QueryParamsMap;
 import spark.Request;
 import spark.Route;
+import spark.Spark;
 import zoomba.lang.core.operations.ZJVMAccess;
 import zoomba.lang.core.types.ZNumber;
 import zoomba.lang.core.types.ZTypes;
 
 import javax.script.Bindings;
 import javax.script.SimpleBindings;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import static cowj.Scriptable.REQUEST;
@@ -277,28 +276,33 @@ public interface AsyncHandler {
      */
     String RETRY_CONFIG = "retries" ;
 
+
     /**
-     * if Virtual threads are available returns the virtual thread executor
-     * @return ExecutorService if available, else null
+     * A safe sandbox to call any method, failing which 401 response would be done
+     * @param callable method must be wrapped around this
+     * @return result of the method or, or null
+     * @param <R> return type of the method which has been sand-boxed
      */
-    static ExecutorService getVirtualThreadExecutor(){
-        return (ExecutorService)ZJVMAccess.callMethod(
-                Executors.class, "newVirtualThreadPerTaskExecutor", new Object[]{}
-        );
+    static  <R> R  safeExecute(Callable<R> callable){
+        try {
+            return callable.call();
+        }catch (Throwable t){
+            logger.warn("Error raised : " + t);
+        }
+        return null;
     }
 
     /**
      * A field that has fixated virtual thread executor or null
      */
-    ExecutorService  virtualThreadExecutor =  getVirtualThreadExecutor();
+    ExecutorService  virtualThreadExecutor =  safeExecute( () ->
+            (ExecutorService)ZJVMAccess.callMethod(
+                    Executors.class, "newVirtualThreadPerTaskExecutor", new Object[]{}) );
 
     /**
-     * Check if Virtual threads are available
-     * @return true if available, false otherwise
+     * A field that has fixated virtual thread support or not
      */
-    static boolean isVirtualThreadAvailable(){
-        return virtualThreadExecutor != null ;
-    }
+    boolean  HAS_VIRTUAL_THREAD_SUPPORT = (virtualThreadExecutor != null);
 
     /**
      * Gets ExecutorService based on config
@@ -309,7 +313,7 @@ public interface AsyncHandler {
         final boolean useVThread = ZTypes.bool(config.getOrDefault(VIRTUAL_THREAD, false),false);
         logger.info("Async-IO use of virtual thread set to : {}", useVThread );
         if (useVThread){
-            if ( isVirtualThreadAvailable() ){
+            if ( HAS_VIRTUAL_THREAD_SUPPORT ){
                 logger.info("Async-IO virtual threads AVAILABLE! will use...");
                 return virtualThreadExecutor;
             }

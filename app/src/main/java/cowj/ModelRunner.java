@@ -63,10 +63,9 @@ public interface ModelRunner extends Runnable {
         // set threading
         Map<String, Object> tAct = m.threading();
         final boolean useVirtualThread = ZTypes.bool(tAct.getOrDefault("virtual", false), false);
-        final boolean isVThreadSupported = AsyncHandler.isVirtualThreadAvailable();
         logger.info("threading: virtual threading supported: {}, specified using virtual threads: {}, will use: {}",
-                isVThreadSupported, useVirtualThread, useVirtualThread && isVThreadSupported );
-        useVirtualThread(useVirtualThread && isVThreadSupported); // Java 21 virtual threads
+                AsyncHandler.HAS_VIRTUAL_THREAD_SUPPORT, useVirtualThread, useVirtualThread && AsyncHandler.HAS_VIRTUAL_THREAD_SUPPORT );
+        useVirtualThread(useVirtualThread && AsyncHandler.HAS_VIRTUAL_THREAD_SUPPORT); // Java 21 virtual threads
 
         int min = ZNumber.integer(tAct.getOrDefault("min", 3),3).intValue();
         int max = ZNumber.integer(tAct.getOrDefault("max", 10),10).intValue();

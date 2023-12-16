@@ -159,9 +159,15 @@ public class AsyncTest {
     }
 
     @Test
+    public void safeExecuteTest() throws Exception {
+        Assert.assertEquals(10L, (long) AsyncHandler.safeExecute( () -> 10L ));
+        Assert.assertNull(AsyncHandler.safeExecute( () -> Long.parseLong("xxx") ) );
+    }
+
+    @Test
     public void virtualThreadTest() throws Exception {
         Assume.assumeTrue("JRE MUST BE AT LEAST 21", getJREVersion() >= 21 );
-        Assert.assertTrue(AsyncHandler.isVirtualThreadAvailable());
+        Assert.assertTrue(AsyncHandler.HAS_VIRTUAL_THREAD_SUPPORT);
         final Model m = () -> "" ;
         final boolean[] virtual = new boolean[] { false } ;
         final Runnable r = () -> {
@@ -175,5 +181,16 @@ public class AsyncTest {
         f = asyncHandlerST.executorService().submit( r );
         f.get(1500, TimeUnit.MILLISECONDS);
         Assert.assertFalse( virtual[0]);
+    }
+
+    @Test
+    public void virtualThreadIgnoreTest() throws Exception {
+        Assume.assumeTrue("JRE MUST BE LESS THAN 21", getJREVersion() < 21 );
+        Assert.assertFalse(AsyncHandler.HAS_VIRTUAL_THREAD_SUPPORT);
+        final Model m = () -> "" ;
+        AsyncHandler asyncHandlerVT = AsyncHandler.fromConfig(Map.of("virtual", true), m);
+        AsyncHandler asyncHandlerST = AsyncHandler.fromConfig(Map.of("virtual", false), m);
+        Assert.assertEquals( asyncHandlerST.executorService().getClass().getName(),
+                asyncHandlerVT.executorService().getClass().getName());
     }
 }
