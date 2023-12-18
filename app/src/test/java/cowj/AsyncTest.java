@@ -30,15 +30,6 @@ public class AsyncTest {
     final QueryParamsMap queryParamsMap = new QueryParamsMap(servletRequest);
 
 
-    static int getJREVersion() {
-        String version = System.getProperty("java.version");
-        if(version.startsWith("1.")) {
-            version = version.substring(2, 3);
-        } else {
-            int dot = version.indexOf(".");
-            if(dot != -1) { version = version.substring(0, dot); }
-        } return Integer.parseInt(version);
-    }
 
     private Request mockRequest(){
         Request request = mock(Request.class);
@@ -166,7 +157,7 @@ public class AsyncTest {
 
     @Test
     public void virtualThreadTest() throws Exception {
-        Assume.assumeTrue("JRE MUST BE AT LEAST 21", getJREVersion() >= 21 );
+        Assume.assumeTrue("JRE MUST BE AT LEAST 21", App.JRE_VERSION >= 21 );
         Assert.assertTrue(AsyncHandler.HAS_VIRTUAL_THREAD_SUPPORT);
         final Model m = () -> "" ;
         final boolean[] virtual = new boolean[] { false } ;
@@ -185,7 +176,7 @@ public class AsyncTest {
 
     @Test
     public void virtualThreadIgnoreTest() throws Exception {
-        Assume.assumeTrue("JRE MUST BE LESS THAN 21", getJREVersion() < 21 );
+        Assume.assumeTrue("JRE MUST BE LESS THAN 21", App.JRE_VERSION < 21 );
         Assert.assertFalse(AsyncHandler.HAS_VIRTUAL_THREAD_SUPPORT);
         final Model m = () -> "" ;
         AsyncHandler asyncHandlerVT = AsyncHandler.fromConfig(Map.of("virtual", true), m);

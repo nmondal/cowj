@@ -55,12 +55,24 @@ public class App {
         return "unknown-local-time";
     }
 
+    static int getJREVersion() {
+        String version = System.getProperty("java.version");
+        if(version.startsWith("1.")) {
+            version = version.substring(2, 3);
+        } else {
+            int dot = version.indexOf(".");
+            if(dot != -1) { version = version.substring(0, dot); }
+        } return Integer.parseInt(version);
+    }
+
+    static final int JRE_VERSION = getJREVersion();
+
     /**
      * Runs the Cowj App
      * @param args must be at least 1, pointing to a yaml config file
      */
     public static void main(String[] args) {
-        System.out.printf("Cowj build on : %s %n", getManifestInfo());
+        System.out.printf("Cowj build on : %s currently running with Java-%s %n", getManifestInfo(), getJREVersion());
         if ( args.length < 1 ){
             System.err.println("Usage : java -jar cowj.jar <config_file_path> [true|false(default)]");
             System.err.println("If the 2nd arg is 'true', then automatically reloads script,json schema resources on save.");
