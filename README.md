@@ -197,6 +197,11 @@ async:
    threads: 8 # for async io, if not specified, infinite in practice  
    keep: 32 # keep only 32 task results , if not specified 1024 by default 
    fail: _/scripts/js/async_task_failure_handler.js #  async task failure handler 
+   retries:  # retry strategy 
+      strategy: exp
+      max: 4 
+      interval: 1500
+
 
 # routes information
 routes:
@@ -246,6 +251,10 @@ cron:
   cache:
     exec: _/cache.md
     boot: true
+    retries: 
+       strategy: counter
+       max: 3 
+       interval : 1500
     at: "*/5 * * * *"
 ```
 
@@ -395,6 +404,25 @@ while:
 1. `exec` : script that needs to be executed
 2. `boot` : to run while system startup 
 3. `at` : cron expression to define the recurrence
+4. `retries` : retry strategy in case the cron job at boot fails
+
+A cron boot failure can hang the system, hence a proper `retry` makes sense.
+
+### Retries 
+They can be applied on `async` routes as well as cron jobs which will be
+used in the boot time. A typical retry looks like this:
+
+```yaml
+retries:
+   strategy: counter | random | exp # one of the strategy 
+   max : 3 # max no of tries before it fails
+   interval: 100 # delta time between two successive tries 
+```
+Strategies are `counter` for simple counter strategy, 
+`random` for a derivative of counter, 
+but the interval will be random distributed approximating the mean value of `interval`
+and finally `exp` for Exponential Backoff, where the `interval` is the starting point of the 
+delta between successive tries.
 
 ### Data Sources
 
