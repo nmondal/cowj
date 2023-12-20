@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.quartz.*;
 
+import javax.script.Bindings;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -18,7 +19,7 @@ import static org.mockito.Mockito.when;
 
 public class CronTest {
 
-    private final List<EitherMonad<Object>> results = Collections.synchronizedList( new ArrayList<>(4));
+    private final List<EitherMonad<Object>> results = Collections.synchronizedList( new ArrayList<>());
 
     private final JobListener jobListener = new JobListener() {
         @Override
@@ -43,6 +44,7 @@ public class CronTest {
 
     @After
     public void cleanUp(){
+        CronModel.stop();
         results.clear();
     }
 
@@ -66,7 +68,7 @@ public class CronTest {
     }
 
     @Test
-    public void errorTest() throws Exception {
+    public void normalErrorTest() throws Exception {
         Map<String,Object> cronJob = Map.of(
                 CronModel.Task.EXEC, "samples/test_scripts/error_1_arg.zm",
                 CronModel.Task.BOOT, false,
@@ -101,6 +103,54 @@ public class CronTest {
         Assert.assertNotNull(exception);
         Assert.assertTrue(exception.getCause().getCause() instanceof Scriptable.TestAsserter.HaltException );
     }
+
+    @Test
+    public void errorAtBootTestWithMultipleTries(){
+        Map<String,Object> cronJob = Map.of(
+                CronModel.Task.EXEC, "samples/test_scripts/error_1_arg.zm",
+                CronModel.Task.BOOT, true,
+                CronModel.Task.RETRY, Map.of("strategy", "counter", "max" ,  3 , "interval", 100 ),
+                CronModel.Task.SCHEDULE, "0/8 * * * * ? *"
+        );
+        Model model = () -> "." ;
+        Map<String,Map<String,Object>> cron = Map.of("bar", cronJob);
+        CronModel cronModel = CronModel.fromConfig( model, cron);
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            CronModel.schedule(cronModel);
+        });
+        Assert.assertNotNull(exception);
+        Assert.assertTrue(exception.getCause().getCause() instanceof Retry.MaximumRetryExceededException );
+    }
+
+    public static class Dummy implements  Scriptable{
+        static int counter = 0;
+        public Dummy(){ counter = 0 ;}
+        @Override
+        public Object exec(Bindings bindings) throws Exception {
+            if ( counter <= 0 ){
+                counter ++;
+                throw new Exception("Boom!");
+            }
+            return counter;
+        }
+    }
+
+    @Test
+    public void successAtBootTestWithMultipleTries(){
+        final String execClass = Dummy.class.getName() + ".class" ;
+        Map<String,Object> cronJob = Map.of(
+                CronModel.Task.EXEC, execClass,
+                CronModel.Task.BOOT, true,
+                CronModel.Task.RETRY, Map.of("strategy", "counter", "max" ,  2 , "interval", 100 ),
+                CronModel.Task.SCHEDULE, "0/8 * * * * ? *"
+        );
+        Model model = () -> "." ;
+        Map<String,Map<String,Object>> cron = Map.of("bar-success", cronJob);
+        CronModel cronModel = CronModel.fromConfig( model, cron);
+        CronModel.schedule(cronModel);
+        Assert.assertEquals(1, Dummy.counter );
+    }
+
 
     @Test
     public void getSchedulerErrorTest() throws SchedulerException {
