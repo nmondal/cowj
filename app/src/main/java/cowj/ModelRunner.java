@@ -4,6 +4,7 @@ import cowj.plugins.CurlWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.*;
+import zoomba.lang.core.types.ZNumber;
 import zoomba.lang.core.types.ZTypes;
 
 import java.util.*;
@@ -60,10 +61,16 @@ public interface ModelRunner extends Runnable {
         // bind port
         port(m.port());
         // set threading
-        Map<String, Integer> tAct = m.threading();
-        int min = tAct.getOrDefault("min", 3);
-        int max = tAct.getOrDefault("max", 10);
-        int timeout = tAct.getOrDefault("timeout", 30000);
+        Map<String, Object> tAct = m.threading();
+        final boolean useVirtualThread = ZTypes.bool(tAct.getOrDefault("virtual", false), false);
+        logger.info("threading: virtual threading supported: {}, specified using virtual threads: {}, will use: {}",
+                AsyncHandler.HAS_VIRTUAL_THREAD_SUPPORT, useVirtualThread, useVirtualThread && AsyncHandler.HAS_VIRTUAL_THREAD_SUPPORT );
+        useVirtualThread(useVirtualThread && AsyncHandler.HAS_VIRTUAL_THREAD_SUPPORT); // Java 21 virtual threads
+
+        int min = ZNumber.integer(tAct.getOrDefault("min", 3),3).intValue();
+        int max = ZNumber.integer(tAct.getOrDefault("max", 10),10).intValue();
+        int timeout = ZNumber.integer(tAct.getOrDefault("timeout", 30000), 30000).intValue();
+        logger.info("threading: min {}, max {}, timeout(ms) {}", min, max, timeout);
         threadPool(max, min, timeout);
         // Set Async IO
         Map<String, Object> asyncConfig = m.async();

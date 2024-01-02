@@ -137,7 +137,7 @@ public interface Retry {
             Map<String,Object> map = Map.of( "failures",
                     failures.stream().map( f -> Map.of("t", f.when(), "e" , f.error() ) ).collect(Collectors.toList()),
                     "retry", retry.toString(),
-                    "numTries", failures.size() + 1);
+                    "numTries", failures.size());
             return ZTypes.jsonString(map);
         }
 

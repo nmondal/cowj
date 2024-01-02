@@ -76,11 +76,12 @@ public interface Model {
      * max : max no of threads
      * @return threading properties
      */
-    default Map<String,Integer> threading(){
+    default Map<String,Object> threading(){
         return Map.of(
                 "min", 3,
                 "max", 10,
-                "timeout" , 30000
+                "timeout" , 30000,
+                "virtual", false
         );
     }
 
@@ -296,7 +297,7 @@ public interface Model {
             }
 
             @Override
-            public Map<String, Integer> threading() {
+            public Map<String, Object> threading() {
                 return (Map) map.getOrDefault( THREADING, Model.super.threading());
             }
 

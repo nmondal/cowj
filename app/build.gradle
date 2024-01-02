@@ -50,7 +50,7 @@ dependencies {
     implementation 'com.google.guava:guava:31.1-jre'
 
     implementation zmbBinary
-    implementation 'org.zoomba-lang:spark-core:3-JDK17-SNAPSHOT'
+    implementation 'org.zoomba-lang:spark-core:3.0-SNAPSHOT'
     // end of local libraries
     implementation 'org.slf4j:slf4j-jdk14:2.0.7'
     // Scripting Engines JSR-223
@@ -142,9 +142,8 @@ jacocoTestReport {
 
 // Apply a specific Java toolchain to ease working on different environments.
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
     withSourcesJar()
     withJavadocJar()
 }
