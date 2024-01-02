@@ -188,12 +188,14 @@ port : 8000
 
 # threading related stuff
 threading:
+  virtual: true # in case of JRE 21 it would use virtual green threads 
   min: 4 # min no of threads 
   max : 8 # max no of threads 
   timeout: 30000 # which ms to give timeouts 
 
 # async IO configuration 
 async:
+   virtual: true # in case of JRE 21 it would use virtual green threads 	
    threads: 8 # for async io, if not specified, infinite in practice  
    keep: 32 # keep only 32 task results , if not specified 1024 by default 
    fail: _/scripts/js/async_task_failure_handler.js #  async task failure handler 
@@ -318,7 +320,7 @@ See the document  "A Guide to COWJ Scripting" found here - [Scripting](manual/sc
 
 ### Threading 
 
-We can specify the `min` , `max`, and `timeout` for the underlying jetty threadpool.
+We can specify the `min` , `max`, and `timeout` for the underlying jetty threadpool. In case we specify `virtual` which can take either `true` or `false` - under JRE 21 it would spawn green threads - or virtual threads.
 
 
 ### Routes
@@ -407,6 +409,8 @@ while:
 4. `retries` : retry strategy in case the cron job at boot fails
 
 A cron boot failure can hang the system, hence a proper `retry` makes sense.
+
+Cron threadpool is not Java 21 green thread aware ( yet ) but there is a PR (https://github.com/quartz-scheduler/quartz/pull/1093) submitted which if and when incorporated will be used immediately to spawn green threads for the jobs. The guarantee is needed from the core Quartz team that the system works with green threads.  
 
 ### Retries 
 They can be applied on `async` routes as well as cron jobs which will be
