@@ -188,7 +188,7 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
          * @return true if it is, false otherwise
          */
         public boolean isSignatureValid() {
-            final String data = encodedHeader + "." + encode(payload);
+            final String data = token.substring(0, token.lastIndexOf('.'));
             final String computed = hmacSha256(data, JWTAuthenticator.this.secretKey());
             return signature.equals(computed); //signature matched
         }
