@@ -7,7 +7,6 @@ import org.python.core.Options;
 import org.python.jsr223.PyScriptEngineFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.helpers.SubstituteLogger;
 import spark.*;
 import zoomba.lang.core.interpreter.ZScript;
 import zoomba.lang.core.operations.Function;
@@ -623,7 +622,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         String extension = extension(handler);
         Creator r = switch (extension) {
             case "zmb", "zm" -> ZMB;
-            case "js", "groovy", "py", "kt", "kts", "scala" -> JSR;
+            case "js", "groovy", "py", "kt", "kts" -> JSR;
             case "class" -> BINARY;
             default -> {
                 logger.error("No pattern matched for path '{}' -> For handler '{}' Using NOP!", path, handler);

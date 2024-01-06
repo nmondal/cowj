@@ -9,8 +9,12 @@
 *
 * */
 import spark.Request
-//val req : Request = bindings["req"] as Request  // do not make it non-nullable
-println(req)
+import org.slf4j.Logger
+
+val req : Request = bindings["req"] as Request  // do not make it non-nullable
+val _log : Logger = bindings["_log"] as Logger  // do not make it non-nullable
+
+_log.info("{}", req)
 "hello, world!" // last line is the response value
 
 

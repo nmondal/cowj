@@ -16,6 +16,8 @@ plugins {
     // id 'com.github.johnrengelman.shadow'  version "8.1.1"
     // code coverage jacoco
     id 'jacoco'
+    // dependencies update check
+    id "com.github.ben-manes.versions" version "0.50.0"
     // maven publish
     id 'maven-publish'
 }
@@ -46,27 +48,21 @@ repositories {
 
 
 dependencies {
-    // This dependency is used by the application.
-    implementation 'com.google.guava:guava:31.1-jre'
 
     implementation zmbBinary
     implementation 'org.zoomba-lang:spark-core:3.0-SNAPSHOT'
     // end of local libraries
-    implementation 'org.slf4j:slf4j-jdk14:2.0.7'
+    implementation 'org.slf4j:slf4j-jdk14:2.1.0-alpha1'
     // Scripting Engines JSR-223
     implementation 'org.mozilla:rhino-engine:1.7.14' //js
     // groovy
-    implementation 'org.apache.groovy:groovy:4.0.12'
-    implementation 'org.apache.groovy:groovy-jsr223:4.0.12'
+    implementation 'org.apache.groovy:groovy:5.0.0-alpha-4'
+    implementation 'org.apache.groovy:groovy-jsr223:5.0.0-alpha-4'
     // jython ???
     implementation 'org.python:jython:2.7.3'
     // Kotlin hold all libs to same version, as long as it works
     implementation 'org.jetbrains.kotlin:kotlin-compiler-embeddable:1.8.22'
     implementation 'org.jetbrains.kotlin:kotlin-scripting-jsr223:1.8.22'
-    // scala 2 - reason backward compat
-    implementation 'org.scala-lang:scala-library:2.13.12'
-    implementation 'org.scala-lang:scala-reflect:2.13.12'
-    implementation 'org.scala-lang:scala-compiler:2.13.12'
 
     // Cron
     // https://mvnrepository.com/artifact/org.quartz-scheduler/quartz
@@ -74,43 +70,42 @@ dependencies {
 
     // schema handler
     implementation 'org.zoomba-lang:medeia-validator-jackson:1.5-SNAPSHOT'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
 
     // Auth
-    implementation 'org.casbin:jcasbin:1.34.0'
+    implementation 'org.casbin:jcasbin:1.42.1'
 
     // File Watching ....
     implementation 'io.methvin:directory-watcher:0.18.0'
 
     // Expiring map
     // For Auth Token, JDBC Connection Expiry,
-    implementation 'net.jodah:expiringmap:0.5.10'
+    implementation 'net.jodah:expiringmap:0.5.11'
     ////////// Plugin Stuff //////////////
 
     // Storage...
-    implementation 'redis.clients:jedis:5.0.0-beta1'
-    implementation 'com.google.cloud:google-cloud-storage:2.22.3'
-    implementation 'software.amazon.awssdk:s3:2.21.15'
-    implementation 'software.amazon.awssdk:apache-client:2.21.15'
-
+    implementation 'redis.clients:jedis:5.2.0-alpha2'
+    implementation 'com.google.cloud:google-cloud-storage:2.30.1'
+    implementation 'software.amazon.awssdk:s3:2.22.12'
+    implementation 'software.amazon.awssdk:apache-client:2.22.12'
 
     // fcm
     implementation 'com.google.firebase:firebase-admin:9.2.0'
 
     // mysql connector
-    implementation 'com.mysql:mysql-connector-j:8.0.33'
+    implementation 'com.mysql:mysql-connector-j:8.2.0'
 
     /// secret manager
-    implementation 'com.google.cloud:google-cloud-secretmanager:2.19.0'
+    implementation 'com.google.cloud:google-cloud-secretmanager:2.32.0'
 
     ///// test stuff
     testImplementation 'junit:junit:4.13.2'
     // JDBC
-    testImplementation 'org.apache.derby:derby:10.16.1.1'
+    testImplementation 'org.apache.derby:derby:10.17.1.0'
     // REDIS
     testImplementation 'it.ozimov:embedded-redis:0.7.3'
     // Mockito ...
-    testImplementation 'org.mockito:mockito-core:5.4.0'
+    testImplementation 'org.mockito:mockito-core:5.8.0'
 }
 
 /**
