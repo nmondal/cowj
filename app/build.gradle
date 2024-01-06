@@ -60,9 +60,9 @@ dependencies {
     implementation 'org.apache.groovy:groovy-jsr223:5.0.0-alpha-4'
     // jython ???
     implementation 'org.python:jython:2.7.3'
-    // Kotlin hold all libs to same version, as long as it works
-    implementation 'org.jetbrains.kotlin:kotlin-compiler-embeddable:1.8.22'
-    implementation 'org.jetbrains.kotlin:kotlin-scripting-jsr223:1.8.22'
+    // Kotlin - hold all libs to same version, as long as it works
+    implementation 'org.jetbrains.kotlin:kotlin-compiler-embeddable:1.9.22'
+    implementation 'org.jetbrains.kotlin:kotlin-scripting-jsr223:1.9.22'
 
     // Cron
     // https://mvnrepository.com/artifact/org.quartz-scheduler/quartz

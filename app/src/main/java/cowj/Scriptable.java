@@ -289,15 +289,14 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
 
     /**
      * Various Scripting Engines
+     * Extensions -> Name of the Engine
      */
     Map<String, String> ENGINES = Map.of(
             "js", "JavaScript",
             "groovy", "groovy",
             "py", "python",
-            "kts", "kts",
-            "kt", "kts",
-            "scala", "scala"
-            );
+            "kts", "kotlin",
+            "kt", "kotlin");
 
     /**
      * Various data sources store as map
@@ -406,7 +405,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
             MANAGER.registerEngineName("JavaScript", new RhinoScriptEngineFactory());
             MANAGER.registerEngineName("groovy", new GroovyScriptEngineFactory());
             MANAGER.registerEngineName("python", new PyScriptEngineFactory());
-            MANAGER.registerEngineName("kts", new KotlinJsr223DefaultScriptEngineFactory());
+            MANAGER.registerEngineName("kotlin", new KotlinJsr223DefaultScriptEngineFactory());
             FileWatcher.ofCacheAndRegister(zScripts, (path) -> loadZScript("reload", path));
             FileWatcher.ofCacheAndRegister(scripts, (path) -> loadScript("reload", path));
         }
