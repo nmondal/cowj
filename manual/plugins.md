@@ -414,6 +414,21 @@ public interface GoogleStorageWrapper {
 
 
 
+### Authenticators 
+
+There are two types of authentication mechanism provided in plugins. 
+
+1. Storage Based : [StorageAuthenticator]()
+2. JWT Based : [JWTAuthenticator](../app/src/)
+
+To use any of these authenticators, one must create the authentication by adding a `auth/auth.yaml` file in the app directory.
+
+Cowj system automatically loads the authentication scheme. 
+
+
+
+
+
 ## Using Jython
 
 As people might be aware of, Jython is pretty much dead, end of life, and we are yet to find out better solutions for the same which are portable.  

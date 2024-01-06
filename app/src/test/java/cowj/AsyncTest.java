@@ -2,6 +2,7 @@ package cowj;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import spark.QueryParamsMap;
 import spark.Request;
@@ -9,9 +10,12 @@ import spark.Response;
 import spark.Route;
 
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -24,6 +28,8 @@ public class AsyncTest {
     final Map<String,String> headers = Map.of("a","b");
     final Map<String,String> params = Map.of("c","d");
     final QueryParamsMap queryParamsMap = new QueryParamsMap(servletRequest);
+
+
 
     private Request mockRequest(){
         Request request = mock(Request.class);
@@ -141,5 +147,41 @@ public class AsyncTest {
         Assert.assertTrue( asyncHandler.results().isEmpty());
         // in the end...
         AsyncHandler.stop();
+    }
+
+    @Test
+    public void safeExecuteTest() throws Exception {
+        Assert.assertEquals(10L, (long) AsyncHandler.safeExecute( () -> 10L ));
+        Assert.assertNull(AsyncHandler.safeExecute( () -> Long.parseLong("xxx") ) );
+    }
+
+    @Test
+    public void virtualThreadTest() throws Exception {
+        Assume.assumeTrue("JRE MUST BE AT LEAST 21", App.JRE_VERSION >= 21 );
+        Assert.assertTrue(AsyncHandler.HAS_VIRTUAL_THREAD_SUPPORT);
+        final Model m = () -> "" ;
+        final boolean[] virtual = new boolean[] { false } ;
+        final Runnable r = () -> {
+            virtual[0] = Thread.currentThread().getClass().getName().toLowerCase(Locale.ROOT).contains("virtual");
+        };
+        AsyncHandler asyncHandlerVT = AsyncHandler.fromConfig(Map.of("virtual", true), m);
+        Future<?> f = asyncHandlerVT.executorService().submit( r );
+        f.get(1500, TimeUnit.MILLISECONDS);
+        Assert.assertTrue( virtual[0]);
+        AsyncHandler asyncHandlerST = AsyncHandler.fromConfig(Map.of("virtual", false), m);
+        f = asyncHandlerST.executorService().submit( r );
+        f.get(1500, TimeUnit.MILLISECONDS);
+        Assert.assertFalse( virtual[0]);
+    }
+
+    @Test
+    public void virtualThreadIgnoreTest() throws Exception {
+        Assume.assumeTrue("JRE MUST BE LESS THAN 21", App.JRE_VERSION < 21 );
+        Assert.assertFalse(AsyncHandler.HAS_VIRTUAL_THREAD_SUPPORT);
+        final Model m = () -> "" ;
+        AsyncHandler asyncHandlerVT = AsyncHandler.fromConfig(Map.of("virtual", true), m);
+        AsyncHandler asyncHandlerST = AsyncHandler.fromConfig(Map.of("virtual", false), m);
+        Assert.assertEquals( asyncHandlerST.executorService().getClass().getName(),
+                asyncHandlerVT.executorService().getClass().getName());
     }
 }

@@ -46,14 +46,14 @@ public class AuthTest {
 
     @Test
     public void loadAuthTest(){
-        AuthSystem authSystem = AuthSystem.fromFile( "samples/auth_demo/auth/auth.yaml");
+        AuthSystem authSystem = AuthSystem.fromFile( "samples/auth_demo/auth/auth.yaml", mr.model());
         Assert.assertFalse( authSystem.disabled() );
         Assert.assertFalse( authSystem.policy().isEmpty());
     }
 
     @Test
     public void loadWrongFile(){
-        AuthSystem as = AuthSystem.fromFile( "samples/auth_demo/auth/auth111.yaml");
+        AuthSystem as = AuthSystem.fromFile( "samples/auth_demo/auth/auth111.yaml", mr.model() );
         Assert.assertEquals( AuthSystem.NULL, as);
         Assert.assertTrue( as.policy().isEmpty());
     }

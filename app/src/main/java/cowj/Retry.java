@@ -137,7 +137,7 @@ public interface Retry {
             Map<String,Object> map = Map.of( "failures",
                     failures.stream().map( f -> Map.of("t", f.when(), "e" , f.error() ) ).collect(Collectors.toList()),
                     "retry", retry.toString(),
-                    "numTries", failures.size() + 1);
+                    "numTries", failures.size());
             return ZTypes.jsonString(map);
         }
 
@@ -167,17 +167,19 @@ public interface Retry {
                 try {
                     return function.apply(t);
                 }catch (Throwable th){
-                    logger.debug("Retry num {} for {} with {} for error {}", numTries, t, this, th.toString());
+                    logger.warn("Try num {} for {} with {} for error {}", numTries + 1, t, this, th.toString());
                     failures.add(Failure.failure( th) );
                     numTries++;
                     numTries(numTries);
                     try {
                         Thread.sleep(interval());
                     }catch (InterruptedException e){
+                        logger.error("Got Interrupted ..." + e);
                         throw new RuntimeException( new TimeoutException("Possible Timeout Not sure..."));
                     }
                 }
             }
+            logger.error("Maximum retry exceeded!");
             throw new MaximumRetryExceededException( this, failures);
         };
     }

@@ -1,0 +1,3 @@
+user_name = req.attribute("user-id")
+#"Hello, '#{user_name}'!" // just be done with it
+

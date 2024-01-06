@@ -1,0 +1,21 @@
+# The standard location auth file
+# is it enabled?
+disabled: false
+
+provider:
+  type: "auth-jwt"
+  secret-key: "42"
+  issuer: "test"
+  expiry: 60 # 1 minute, JWT everything is seconds
+  risks:
+    - "/token"
+
+
+user-header: "u"
+# casbin policy
+policy:
+  # this is adapter type file
+  adapter: file
+  # for a file type, CSV is the way
+  file: policy.csv
+message: "thou shall not pass!"

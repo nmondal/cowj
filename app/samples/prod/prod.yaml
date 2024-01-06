@@ -20,3 +20,27 @@ routes:
   get:
     /person/:personId : _/fetch_person.zm
 
+proxies:
+  get:
+    /users: json_place/users
+
+filters:
+  finally:
+    /users: _/after.zm
+
+plugins:
+  cowj.plugins:
+    curl: CurlWrapper::CURL
+
+data-sources:
+  json_place:
+    type: curl
+    url: https://jsonplaceholder.typicode.com
+
+
+cron:
+  r:
+    exec: _/cron.zm
+    boot: true
+    at: "0/30 * * * * ? *"
+    # https://stackoverflow.com/questions/35214149/cron-expression-for-every-30-seconds-in-quartz-scheduler

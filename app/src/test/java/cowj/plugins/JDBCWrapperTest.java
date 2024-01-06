@@ -9,7 +9,6 @@ import zoomba.lang.core.operations.ZJVMAccess;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -41,7 +40,7 @@ public class JDBCWrapperTest {
     static SecretManager SM = () -> smMap;
 
     @BeforeClass
-    public static void boot() throws Exception {
+    public static void boot() {
         Scriptable.DATA_SOURCES.put(TEST_SECRET_MGR_NAME, SM );
         final String driverClassName = org.apache.derby.iapi.jdbc.AutoloadedDriver.class.getName();
         // in memory stuff...
@@ -58,13 +57,11 @@ public class JDBCWrapperTest {
         String query = "CREATE TABLE Data( "
                 + "Name VARCHAR(255), "
                 + "Age INT NOT NULL) " ;
-        Statement stmt = con.createStatement();
-        stmt.execute(query);
+        derby.update(query, Collections.emptyList());
         System.out.println("Table created");
         // insert 2 rows of data
         for ( int i = 0; i < UPTO ; i ++ ){
-            String sql = String.format( "INSERT into Data values ( 'n_%d' , %d )", i+1, i+1 )  ;
-            stmt.executeUpdate(sql);
+            derby.update("INSERT into Data values ( 'n_%d' , %d )", List.of(i+1, i+1));
             System.out.println("Row Inserted...: " + i );
         }
     }
@@ -334,5 +331,11 @@ public class JDBCWrapperTest {
         // wait for some time.. more than 200 ms
         Thread.sleep(200);
         verify(con, times(1)).close();
+    }
+
+    @Test
+    public void updateFailureTest(){
+       EitherMonad<Integer> rm  = derby.update("this should go bonkers!", List.of());
+       Assert.assertTrue(rm.inError());
     }
 }

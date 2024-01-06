@@ -4,10 +4,12 @@ import org.junit.*;
 import spark.Filter;
 import spark.Request;
 import spark.Response;
+import zoomba.lang.core.io.ZWeb;
 import zoomba.lang.core.types.ZTypes;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.Mockito.mock;
@@ -31,7 +33,7 @@ public class SchemaTest {
     public void loadSchemaTest(){
         TypeSystem typeSystem = TypeSystem.fromFile( "samples/prod/static/types/schema.yaml");
         Assert.assertFalse( typeSystem.routes().isEmpty() );
-        Assert.assertEquals( 3, typeSystem.routes().size());
+        Assert.assertEquals( 4, typeSystem.routes().size());
     }
 
     @Test
@@ -56,6 +58,39 @@ public class SchemaTest {
         r = ModelRunnerTest.get( "http://localhost:5042", "/person/" + id );
         Assert.assertNotNull(r);
         Assert.assertTrue( r.contains(id) );
+        // check json with match
+        m = (Map)ZTypes.json(r);
+        Object ds = Scriptable.DATA_SOURCES.get("ds:types");
+        Assert.assertTrue( ds instanceof  TypeSystem );
+        TypeSystem ts = (TypeSystem) ds;
+        // these are all should be ok
+        Assert.assertTrue( ts.match( "Person.json", r ) ); // string case
+        Assert.assertTrue( ts.match( "Person.json", m ) ); // a map case
+        // This should not be ok ... throws error and hence false
+        // https://stackoverflow.com/questions/26716020/how-to-get-a-jsonprocessingexception-using-jackson
+        Object o = new Object(){
+            private final Object self = this;
+            @Override
+            public String toString(){
+                return self.getClass().getName();
+            }
+        };
+        Assert.assertFalse( ts.match( "Person.json", o) );
+    }
+
+    @Test
+    public void outputShouldFireAfterEveryoneElseTest(){
+        ZWeb zWeb = new ZWeb("http://localhost:5042");
+        try {
+            ZWeb.ZWebCom r = zWeb.get("/users", Collections.emptyMap());
+            // Yes, the output schema validation is passed
+            Assert.assertEquals(List.of(TypeSystem.RESP_CONTENT_TYPE), r.map.get("Content-Type"));
+            Map<String,String> m = (Map)ZTypes.json(r.body());
+            // it supposed to return what to return
+            Assert.assertEquals("bar", m.get("foo"));
+        }catch (Exception ignored){
+            Assert.fail();
+        }
     }
 
     @Test

@@ -1,0 +1,5 @@
+g, alice, admin
+g, bob, member
+p, member, /entity/:id, GET
+g, admin, member
+p, admin, /entity, POST

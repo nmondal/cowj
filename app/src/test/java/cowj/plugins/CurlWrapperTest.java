@@ -16,6 +16,7 @@ import zoomba.lang.core.types.ZTypes;
 import java.net.ConnectException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -43,6 +44,29 @@ public class CurlWrapperTest {
         EitherMonad<ZWeb.ZWebCom> res = ((CurlWrapper) cw).send("get", "/", Collections.emptyMap(), Collections.emptyMap(), "");
         Assert.assertTrue( res.inError() );
         Assert.assertTrue( res.error().getMessage().contains("no protocol") );
+    }
+
+    @Test
+    public void curlStatusWarnTest(){
+        DataSource dataSource = CurlWrapper.CURL.create( "foo", Map.of("url", "https://google.co.in"), model);
+        Assert.assertEquals( "foo", dataSource.name());
+        Object cw = dataSource.proxy();
+        Assert.assertTrue( cw instanceof  CurlWrapper );
+        EitherMonad<ZWeb.ZWebCom> res = ((CurlWrapper) cw).send("get", "/foobar", Collections.emptyMap(), Collections.emptyMap(), "");
+        Assert.assertFalse( res.inError() );
+        Assert.assertEquals( 404, res.value().status);
+    }
+
+    @Test
+    public void asyncSendTest() throws Exception {
+        DataSource dataSource = CurlWrapper.CURL.create( "foo", Map.of("url", "https://google.co.in"), model);
+        Assert.assertEquals( "foo", dataSource.name());
+        Object cw = dataSource.proxy();
+        Assert.assertTrue( cw instanceof  CurlWrapper );
+        Future<EitherMonad<ZWeb.ZWebCom>> future = ((CurlWrapper) cw).sendAsync("get", "/", Collections.emptyMap(), Collections.emptyMap(), "");
+        EitherMonad<ZWeb.ZWebCom> res = future.get();
+        Assert.assertEquals(200, res.value().status);
+        Assert.assertFalse(res.value().body().isEmpty());
     }
 
     static String  callAsynchProxy(String url, String destinationPath) throws Exception {

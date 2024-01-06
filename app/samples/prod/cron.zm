@@ -1,0 +1,4 @@
+// print to console...
+_log.info("{} : I am cron!!! {} ", @SCRIPT.location , time())
+// check if type system is loaded or not
+panic( empty( _ds["ds:types"] ) , "could not load type system!" )

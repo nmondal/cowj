@@ -3,7 +3,7 @@
 # Also, using JCasbin
 #########################
 
-port: 6042
+port: 6044
 
 # threading related stuff
 threading:
@@ -13,13 +13,11 @@ threading:
 
 # path mapping
 routes:
-  post:
-    /entity: _/create.zm
   get:
-    /entity/:entityId : _/fetch.zm
+    /token : _/create_token.zm
+    /hello : _/hello.zm
 
 plugins:
   cowj.plugins:
-    auth-jdbc: StorageAuthenticator::JDBC
     auth-jwt : JWTAuthenticator::JWT
 

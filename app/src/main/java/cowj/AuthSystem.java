@@ -165,21 +165,25 @@ public interface AuthSystem {
      * Tries to create an Authenticator from a Map of string, object
      * In case conf is empty  - then returns a default authenticator
      * @param conf the map of string, object to create the authenticator
+     * @param model underlying model
      * @param def default authenticator to be passed in case of empty conf
      * @return an Authenticator from the conf, failing returns the def
      */
-    static Authenticator fromConfig(Map<String,Object> conf, Authenticator def){
+    static Authenticator fromConfig(Map<String,Object> conf, Model model, Authenticator def){
         if ( conf.isEmpty() ) return def;
-        DataSource ds = DataSource.UNIVERSAL.create( "ds:auth", conf, null);
+        DataSource ds = DataSource.UNIVERSAL.create( "ds:auth", conf, model);
+        // load the stuff as data source
+        Scriptable.DATA_SOURCES.put(ds.name(), ds.proxy());
         return (Authenticator) ds.proxy();
     }
 
     /**
      * Creates an AuthSystem
      * @param file from this file
+     * @param model underlying Model
      * @return AuthSystem
      */
-    static AuthSystem fromFile(String file){
+    static AuthSystem fromFile(String file, Model model ){
         try {
             File f = new File(file).getCanonicalFile().getAbsoluteFile();
             final String filePath = f.getAbsolutePath();
@@ -189,7 +193,7 @@ public interface AuthSystem {
 
             return new AuthSystem() {
                 final Authenticator authenticator =
-                        fromConfig((Map) conf.getOrDefault( AUTHENTICATOR_PROVIDER, Collections.emptyMap()),
+                        fromConfig((Map) conf.getOrDefault( AUTHENTICATOR_PROVIDER, Collections.emptyMap()), model,
                         AuthSystem.super.authenticator() );
                 @Override
                 public boolean disabled() {

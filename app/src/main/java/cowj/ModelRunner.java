@@ -4,6 +4,7 @@ import cowj.plugins.CurlWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.*;
+import zoomba.lang.core.types.ZNumber;
 import zoomba.lang.core.types.ZTypes;
 
 import java.util.*;
@@ -60,10 +61,16 @@ public interface ModelRunner extends Runnable {
         // bind port
         port(m.port());
         // set threading
-        Map<String, Integer> tAct = m.threading();
-        int min = tAct.getOrDefault("min", 3);
-        int max = tAct.getOrDefault("max", 10);
-        int timeout = tAct.getOrDefault("timeout", 30000);
+        Map<String, Object> tAct = m.threading();
+        final boolean useVirtualThread = ZTypes.bool(tAct.getOrDefault("virtual", false), false);
+        logger.info("threading: virtual threading supported: {}, specified using virtual threads: {}, will use: {}",
+                AsyncHandler.HAS_VIRTUAL_THREAD_SUPPORT, useVirtualThread, useVirtualThread && AsyncHandler.HAS_VIRTUAL_THREAD_SUPPORT );
+        useVirtualThread(useVirtualThread && AsyncHandler.HAS_VIRTUAL_THREAD_SUPPORT); // Java 21 virtual threads
+
+        int min = ZNumber.integer(tAct.getOrDefault("min", 3),3).intValue();
+        int max = ZNumber.integer(tAct.getOrDefault("max", 10),10).intValue();
+        int timeout = ZNumber.integer(tAct.getOrDefault("timeout", 30000), 30000).intValue();
+        logger.info("threading: min {}, max {}, timeout(ms) {}", min, max, timeout);
         threadPool(max, min, timeout);
         // Set Async IO
         Map<String, Object> asyncConfig = m.async();
@@ -79,6 +86,8 @@ public interface ModelRunner extends Runnable {
         // load libraries
         logger.info("Library Directory : " +libDir);
         ZTypes.loadJar(libDir);
+        // load type system ... other folks may depend on this
+        TypeSystem typeSystem = TypeSystem.fromFile( m.schemaPath());
 
         // loading plugins...
         logger.info("Loading plugins now...");
@@ -105,7 +114,6 @@ public interface ModelRunner extends Runnable {
                 logger.error("DS '{}' failed to create! {}", dsName, t.toString());
             }
         }
-
         // now everything is done, run cron...
         CronModel cronModel = CronModel.fromConfig(m, m.cron());
         CronModel.schedule(cronModel);
@@ -144,11 +152,10 @@ public interface ModelRunner extends Runnable {
             }
         }
         // load auth...
-        AuthSystem authSystem = AuthSystem.fromFile(m.auth());
+        AuthSystem authSystem = AuthSystem.fromFile(m.auth(), m );
         authSystem.attach();
-        // load type system ...
-        TypeSystem typeSystem = TypeSystem.fromFile( m.schemaPath());
-        typeSystem.attach();
+        // Attach input before any before filter
+        typeSystem.attachInput();
         // load filters
         logger.info("Filters mapping are as follows...");
         Map<String, Map<String, String>> filters = m.filters();
@@ -167,8 +174,10 @@ public interface ModelRunner extends Runnable {
                 logger.info("{} -> {} -> {}", filterType, r.getKey(), scriptPath);
             }
         }
-        awaitInitialization();
         FileWatcher.startWatchDog( baseDir );
+        // Attach TypeSystem output schema verification after any after filter
+        typeSystem.attachOutput();
+        awaitInitialization();
         logger.info("Cowj is initialized!");
     }
 

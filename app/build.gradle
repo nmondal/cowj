@@ -19,10 +19,16 @@ plugins {
     // maven publish
     id 'maven-publish'
 }
+ext {
+    // if this property is set, then we are add the coverage stuff
+    isCoverage =  System.properties['cowj.cover'] != null
+    zmbPrefix = isCoverage ?  'INSTRUMENTED-' : '' // handle coverage binary
+    zmbBinary = 'org.zoomba-lang:zoomba.lang.core:' + zmbPrefix + '0.3-SNAPSHOT'
+}
 
 // the maven identifiers
 group = 'org.zoomba-lang'
-version = '0.1-SNAPSHOT'
+version = isCoverage ? '0.1-cover-SNAPSHOT' :  '0.1-SNAPSHOT'
 
 base{
     archivesName = 'cowj'
@@ -38,12 +44,13 @@ repositories {
     gradlePluginPortal()
 }
 
+
 dependencies {
     // This dependency is used by the application.
     implementation 'com.google.guava:guava:31.1-jre'
-    // local libraries - snapshot moved to org.zoomba-lang
-    implementation 'org.zoomba-lang:zoomba.lang.core:0.3-SNAPSHOT'
-    implementation 'org.zoomba-lang:spark-core:3-JDK17-SNAPSHOT'
+
+    implementation zmbBinary
+    implementation 'org.zoomba-lang:spark-core:3.0-SNAPSHOT'
     // end of local libraries
     implementation 'org.slf4j:slf4j-jdk14:2.0.7'
     // Scripting Engines JSR-223
@@ -83,6 +90,9 @@ dependencies {
     // Storage...
     implementation 'redis.clients:jedis:5.0.0-beta1'
     implementation 'com.google.cloud:google-cloud-storage:2.22.3'
+    implementation 'software.amazon.awssdk:s3:2.21.15'
+    implementation 'software.amazon.awssdk:apache-client:2.21.15'
+
 
     // fcm
     implementation 'com.google.firebase:firebase-admin:9.2.0'
@@ -139,9 +149,8 @@ jacocoTestReport {
 
 // Apply a specific Java toolchain to ease working on different environments.
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
     withSourcesJar()
     withJavadocJar()
 }
@@ -162,6 +171,7 @@ jar {
     exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF'
     manifest {
         attributes 'Main-Class': 'cowj.App',
+                "cowj-build-on" : new Date().format('yyyy-MM-dd HH:mm:ss'), // setup the build time to be absolutely sure
                 'Class-Path': configurations.runtimeClasspath.files.collect { "deps/$it.name" }.join(' ')
     }
     // to execute anything, go to the libs folder, and then do java -jar cowj

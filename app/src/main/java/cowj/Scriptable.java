@@ -7,6 +7,7 @@ import org.python.core.Options;
 import org.python.jsr223.PyScriptEngineFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.helpers.SubstituteLogger;
 import spark.*;
 import zoomba.lang.core.interpreter.ZScript;
 import zoomba.lang.core.operations.Function;
@@ -17,6 +18,7 @@ import javax.script.*;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Serializable;
+import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -349,6 +351,12 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      */
     String HALT_ERROR = "_ex";
 
+
+    /**
+     * Key name for the logger in the script
+     */
+    String LOGGER = "_log";
+
     /**
      * Constant to be used to have the script inline
      */
@@ -474,15 +482,53 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
     Creator NOP = (path, handler) -> bindings -> "";
 
     /**
+     * Cached map of all Prefixed Loggers
+     * Key - location of the scripts, e.g. prefix
+     * Value - A Proxy Prefixed Logger
+     */
+    Map<String, Logger> prefixedLoggers = new HashMap<>(); // TODO ? Should be LRU? What?
+
+    /**
+     * Creates a prefixed Logger from underlying Logger
+     * @see <a href="https://www.baeldung.com/java-dynamic-proxies"></a>
+     * @param underlying a Logger to be used
+     * @param prefix a String that will be prefixed on each call
+     * @return a proxy prefixed Logger
+     */
+    static Logger prefixedLogger(Logger underlying, String prefix){
+        if ( prefixedLoggers.containsKey(prefix) ) return prefixedLoggers.get(prefix);
+        final Logger _logger =  (Logger) Proxy.newProxyInstance(
+                Logger.class.getClassLoader(),
+                new Class[] { Logger.class },
+                (proxy, method, methodArgs) -> {
+                    switch (method.getName()){
+                        case "debug", "trace", "info", "warn", "error" -> {
+                            if ( methodArgs.length > 0 && methodArgs[0] instanceof String ){
+                                final String fmt = prefix + methodArgs[0];
+                                methodArgs[0] = fmt;
+                                return method.invoke(underlying, methodArgs);
+                            }
+                        }
+                    }
+                    return method.invoke(underlying, methodArgs);
+                });
+        prefixedLoggers.put(prefix,_logger);
+        return _logger;
+    }
+
+    /**
      * Adds some parameters to the Bindings passed
      *
      * @param bindings a binding which is being prepared
+     * @param scriptPath full path of the script
      */
-    static void prepareBinding(Bindings bindings) {
+    static void prepareBinding(Bindings bindings, String scriptPath ) {
         bindings.put(DATA_SOURCE, DATA_SOURCES);
         bindings.put(TestAsserter.ASSERTER, (TestAsserter) () -> bindings);
         bindings.put(ENVIRON, System.getenv());
         bindings.put(SHARED, SHARED_MEMORY);
+        Logger _logger = prefixedLogger(logger, "[" + scriptPath + "] ");
+        bindings.put(LOGGER, _logger);
     }
 
     /**
@@ -490,7 +536,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      */
     Creator JSR = (path, handler) -> (bindings) -> {
         CompiledScript cs = loadScript(path, handler);
-        prepareBinding(bindings);
+        prepareBinding(bindings, handler );
         Object r = cs.eval(bindings);
         if (r != null) return r;
         // Jython issue...
@@ -505,7 +551,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      */
     Creator ZMB = (path, handler) -> (bindings) -> {
         ZScript zs = loadZScript(path, handler);
-        prepareBinding(bindings);
+        prepareBinding(bindings, handler);
         // This ensures things are pure function
         Function.MonadicContainer mc = zs.eval(bindings);
         if (mc.isNil()) return "";
@@ -563,7 +609,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      * Binary - class based creator
      */
     Creator BINARY = (path, handler) -> (bindings) -> {
-        prepareBinding(bindings);
+        prepareBinding(bindings, handler);
         Scriptable scriptable = loadClass(handler);
         return scriptable.exec(bindings);
     };

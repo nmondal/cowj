@@ -8,6 +8,7 @@ import zoomba.lang.core.types.ZTypes;
 
 import javax.script.Bindings;
 import javax.script.SimpleBindings;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -34,6 +35,14 @@ public interface CronModel {
          * If true, task gets executed in system startup
          */
         String BOOT = "boot";
+
+        /**
+         * Name of the retry key
+         * If exists, if the task is running on system startup, failure will be automatically retried
+         * If not, it would be still wrapped around one Retry which will not retry
+         * See more from @{Retry}
+         */
+        String RETRY = "retries";
 
         /**
          * Name of the exec key
@@ -114,6 +123,20 @@ public interface CronModel {
         Scriptable scriptable();
 
         /**
+         * Retry  for the Job
+         * @return a Retry object
+         */
+        Retry retry();
+
+        /**
+         * A Function that is decorator with  Retry for the Job
+         * @return a java.util.function.Function wrapping scriptable
+         */
+        default java.util.function.Function<Bindings,Object> withRetry(){
+            return retry().withRetry(scriptable());
+        }
+
+        /**
          * Creates a task from config
          * @param model Cowj Data Model
          * @param name of the task
@@ -132,6 +155,7 @@ public interface CronModel {
                     .withIdentity(name)
                     .withSchedule(CronScheduleBuilder.cronSchedule(cronString))
                     .forJob(name).build();
+            final Retry retry = Retry.fromConfig( (Map)config.getOrDefault( RETRY, Collections.emptyMap() ));
 
             return new Task() {
                 @Override
@@ -157,6 +181,11 @@ public interface CronModel {
                 @Override
                 public Trigger trigger() {
                     return trigger;
+                }
+
+                @Override
+                public Retry retry() {
+                    return retry;
                 }
             };
         }
@@ -221,7 +250,7 @@ public interface CronModel {
                     try {
                         logger.info("Running immediate : " + name);
                         try {
-                            task.scriptable().exec( new SimpleBindings());
+                            task.withRetry().apply( new SimpleBindings());
                             logger.info("Successfully ran: " + name);
                         } catch (Throwable t) {
                             logger.error("Error Running Task {} => {}", name, t.toString());

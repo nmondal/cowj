@@ -107,10 +107,10 @@ With this note, we shall dive into the world of BED - back end development.
 3. Clone https://github.com/nmondal/cowj
 4. Run `gradle build -x test`
 5. `cd app/build/libs`
-6. Ensure `ls` returns `java -jar cow-0.1-SNAPSHOT.jar` as well as a
+6. Ensure `ls` returns `java -jar cowj-0.1-SNAPSHOT.jar` as well as a
 `deps/` folder. If those two don’t exist, run `gradle clean` and 
 `gradle build -x test`
-7. `java -jar cow-0.1-SNAPSHOT.jar ../../samples/hello/hello.yaml`
+7. `java -jar cowj-0.1-SNAPSHOT.jar ../../samples/hello/hello.yaml`
 8. Open localhost:5003/hello/z in browser or curl. This should return hello world
 
 
@@ -188,15 +188,22 @@ port : 8000
 
 # threading related stuff
 threading:
+  virtual: true # in case of JRE 21 it would use virtual green threads 
   min: 4 # min no of threads 
   max : 8 # max no of threads 
   timeout: 30000 # which ms to give timeouts 
 
 # async IO configuration 
 async:
+   virtual: true # in case of JRE 21 it would use virtual green threads 	
    threads: 8 # for async io, if not specified, infinite in practice  
    keep: 32 # keep only 32 task results , if not specified 1024 by default 
    fail: _/scripts/js/async_task_failure_handler.js #  async task failure handler 
+   retries:  # retry strategy 
+      strategy: exp
+      max: 4 
+      interval: 1500
+
 
 # routes information
 routes:
@@ -246,6 +253,10 @@ cron:
   cache:
     exec: _/cache.md
     boot: true
+    retries: 
+       strategy: counter
+       max: 3 
+       interval : 1500
     at: "*/5 * * * *"
 ```
 
@@ -309,7 +320,7 @@ See the document  "A Guide to COWJ Scripting" found here - [Scripting](manual/sc
 
 ### Threading 
 
-We can specify the `min` , `max`, and `timeout` for the underlying jetty threadpool.
+We can specify the `min` , `max`, and `timeout` for the underlying jetty threadpool. In case we specify `virtual` which can take either `true` or `false` - under JRE 21 it would spawn green threads - or virtual threads.
 
 
 ### Routes
@@ -395,6 +406,27 @@ while:
 1. `exec` : script that needs to be executed
 2. `boot` : to run while system startup 
 3. `at` : cron expression to define the recurrence
+4. `retries` : retry strategy in case the cron job at boot fails
+
+A cron boot failure can hang the system, hence a proper `retry` makes sense.
+
+Cron threadpool is not Java 21 green thread aware ( yet ) but there is a PR (https://github.com/quartz-scheduler/quartz/pull/1093) submitted which if and when incorporated will be used immediately to spawn green threads for the jobs. The guarantee is needed from the core Quartz team that the system works with green threads.  
+
+### Retries 
+They can be applied on `async` routes as well as cron jobs which will be
+used in the boot time. A typical retry looks like this:
+
+```yaml
+retries:
+   strategy: counter | random | exp # one of the strategy 
+   max : 3 # max no of tries before it fails
+   interval: 100 # delta time between two successive tries 
+```
+Strategies are `counter` for simple counter strategy, 
+`random` for a derivative of counter, 
+but the interval will be random distributed approximating the mean value of `interval`
+and finally `exp` for Exponential Backoff, where the `interval` is the starting point of the 
+delta between successive tries.
 
 ### Data Sources
 

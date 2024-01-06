@@ -5,14 +5,15 @@ import org.slf4j.LoggerFactory;
 import spark.QueryParamsMap;
 import spark.Request;
 import spark.Route;
+import spark.Spark;
+import zoomba.lang.core.operations.ZJVMAccess;
 import zoomba.lang.core.types.ZNumber;
+import zoomba.lang.core.types.ZTypes;
 
 import javax.script.Bindings;
 import javax.script.SimpleBindings;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import static cowj.Scriptable.REQUEST;
@@ -137,7 +138,9 @@ public interface AsyncHandler {
          */
         static AsyncRequest fromRequest(Request request) {
             final String uri = request.uri();
-            final String requestId = System.nanoTime() + "." + System.nanoTime() + "." + System.nanoTime() + "|" + uri;
+            // ensure that the time is understandable unix epoch time
+            // nanoTime() does not give epoch time
+            final String requestId = System.currentTimeMillis() + "." + System.nanoTime() + "." + System.nanoTime() + "|" + uri;
 
             final Map<String, String> headers = new HashMap<>();
             request.headers().forEach(h -> headers.put(h, request.headers(h)));
@@ -248,6 +251,11 @@ public interface AsyncHandler {
     }
 
     /**
+     * Key to the Async IO Virtual Thread
+     */
+    String VIRTUAL_THREAD = "virtual" ;
+
+    /**
      * Key to the Async IO Executor Service thread size
      */
     String THREAD_SIZE = "threads" ;
@@ -268,6 +276,58 @@ public interface AsyncHandler {
      */
     String RETRY_CONFIG = "retries" ;
 
+
+    /**
+     * A safe sandbox to call any method, failing which 401 response would be done
+     * @param callable method must be wrapped around this
+     * @return result of the method or, or null
+     * @param <R> return type of the method which has been sand-boxed
+     */
+    static  <R> R  safeExecute(Callable<R> callable){
+        try {
+            return callable.call();
+        }catch (Throwable t){
+            logger.warn("Error raised : " + t);
+        }
+        return null;
+    }
+
+    /**
+     * A field that has fixated virtual thread executor or null
+     */
+    ExecutorService  virtualThreadExecutor =  safeExecute( () ->
+            (ExecutorService)ZJVMAccess.callMethod(
+                    Executors.class, "newVirtualThreadPerTaskExecutor", new Object[]{}) );
+
+    /**
+     * A field that has fixated virtual thread support or not
+     */
+    boolean  HAS_VIRTUAL_THREAD_SUPPORT = (virtualThreadExecutor != null);
+
+    /**
+     * Gets ExecutorService based on config
+     * @param config a map configuration
+     * @return an ExecutorService
+     */
+    static ExecutorService getExecutorService(Map<String,Object> config){
+        final boolean useVThread = ZTypes.bool(config.getOrDefault(VIRTUAL_THREAD, false),false);
+        logger.info("Async-IO use of virtual thread set to : {}", useVThread );
+        if (useVThread){
+            if ( HAS_VIRTUAL_THREAD_SUPPORT ){
+                logger.info("Async-IO virtual threads AVAILABLE! will use...");
+                return virtualThreadExecutor;
+            }
+            logger.warn("Async-IO virtual threads are not available! will fallback on system threads...");
+        }
+        if ( config.containsKey(THREAD_SIZE ) ){
+            final int size = ZNumber.integer(config.get(THREAD_SIZE), 8).intValue();
+            logger.info("Async-IO Thread pool size would be {}", size );
+            return Executors.newFixedThreadPool( size );
+        }
+        logger.info("Async-IO Thread pool size would be expandable");
+        return Executors.newCachedThreadPool();
+    }
+
     /**
      * Creates and inserts an AsyncHandler
      * @param config from this configuration
@@ -275,15 +335,7 @@ public interface AsyncHandler {
      * @return an AsyncHandler
      */
     static AsyncHandler fromConfig(Map<String,Object> config, Model model){
-        final ExecutorService executorService;
-        if ( config.containsKey(THREAD_SIZE ) ){
-            final int size = ZNumber.integer(config.get(THREAD_SIZE), 8).intValue();
-            logger.info("Async-IO Threadpool size would be {}", size );
-            executorService = Executors.newFixedThreadPool( size );
-        } else {
-            logger.info("Async-IO Threadpool size would be expandable");
-            executorService = Executors.newCachedThreadPool();
-        }
+        final ExecutorService executorService = getExecutorService(config);
         final int memSize = ZNumber.integer(config.get(MEM_SIZE), 1024).intValue();
         logger.info("Async memory size would be {}", memSize );
         final Map<String,Object> results = Collections.synchronizedMap(new LinkedHashMap<>() {

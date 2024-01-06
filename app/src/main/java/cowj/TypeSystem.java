@@ -225,6 +225,7 @@ public interface TypeSystem {
             Map<String,Object> config = (Map)ZTypes.yaml(f.getPath(),true);
             TypeSystem ts =  fromConfig( config, f.getParent());
             logger.info("Schema is found in the system. Attaching...: " + filePath );
+            Scriptable.DATA_SOURCES.put("ds:types", ts); // load the data source type system
             return ts;
         }catch (Throwable ignore){
             logger.error("No Valid Schema is attached to the system - returning NULL Type Checker!");
@@ -287,6 +288,48 @@ public interface TypeSystem {
     String INPUT_SCHEMA_VALIDATION_FAILED = "_is_failed" ;
 
     /**
+     * A validating json string to json object converter
+     * @param schemaPath path of the JSON Schema file to validate against
+     * @param potentialJsonBody input string to be converted to json
+     * @return an EitherMonad consist of potential parsed json object
+     */
+    default EitherMonad<Object> json(String schemaPath, String potentialJsonBody) {
+        try {
+            final String jsonSchemaPath = definitionsDir() + "/"+  schemaPath;
+            SchemaValidator validator = loadSchema(jsonSchemaPath);
+            JsonParser unvalidatedParser =
+                    OBJECT_MAPPER.getFactory().createParser(potentialJsonBody);
+            JsonParser validatedParser = API.decorateJsonParser(validator, unvalidatedParser);
+            Object parsedBody = OBJECT_MAPPER.readValue(validatedParser, Object.class);
+            return EitherMonad.value(parsedBody);
+        } catch (Throwable ex){
+            logger.debug("Schema verification error : {}", ex.toString());
+            return EitherMonad.error(ex);
+        }
+    }
+
+    /**
+     * Checks whether an Object matches against a schema or not
+     * @param schemaPath path of the schema file
+     * @param o object, which needs to be matched
+     * @return true if matches, false if does not match
+     */
+    default boolean match(String schemaPath, Object o) {
+        try {
+            final String jsonString;
+            if ( o instanceof CharSequence ){
+                jsonString = o.toString();
+            } else {
+                jsonString =  OBJECT_MAPPER.writeValueAsString(o);
+            }
+            return json(schemaPath, jsonString).isSuccessful();
+        }catch (Throwable ex){
+            logger.debug("Object {} to JSON String Conversion error : {}", o , ex.toString());
+        }
+        return false;
+    }
+
+    /**
      * Creates a spark.Filter before filter from JSON Schema path to verify input schema
      * @param path to the JSON Schema file
      * @return a spark.Filter before filter
@@ -301,27 +344,31 @@ public interface TypeSystem {
             if ( signature == null ){ return; }
             final String schemaPath = signature.inputSchema();
             if ( schemaPath.isEmpty() ) { return; }
-            final String jsonSchemaPath = definitionsDir() + "/"+  schemaPath;
-            SchemaValidator validator = loadSchema(jsonSchemaPath);
+
             final String potentialJsonBody = request.body() ;
-            JsonParser unvalidatedParser =
-                    OBJECT_MAPPER.getFactory().createParser(potentialJsonBody);
-            JsonParser validatedParser = API.decorateJsonParser(validator, unvalidatedParser);
+            EitherMonad<Object> typedParsing = json( schemaPath, potentialJsonBody);
+            final boolean success = typedParsing.isSuccessful();
+            request.attribute(INPUT_SCHEMA_VALIDATION_FAILED, !success );
             try {
-                Object  parsedBody = OBJECT_MAPPER.readValue(validatedParser, Object.class);
-                // we should also add this to the request to ensure no further parsing for the same?
-                request.attribute(PARSED_BODY, parsedBody );
-                request.attribute(INPUT_SCHEMA_VALIDATION_FAILED, false );
-            } catch (Throwable e) {
-                request.attribute(INPUT_SCHEMA_VALIDATION_FAILED, true );
-                Spark.halt(409,"Input Schema Validation failed : " + e);
-            } finally {
+                if ( success ){
+                    // we should also add this to the request to ensure no further parsing for the same?
+                    request.attribute(PARSED_BODY, typedParsing.value() );
+                } else {
+                    final String message = "Input Schema Validation failed : " + typedParsing.error();
+                    logger.debug(message);
+                    Spark.halt(409, message);
+                }
+            } finally { // this is necessary because of schema failures...
                 final long endTime = System.currentTimeMillis();
-                logger.info("?? Input Verification took {} ms", endTime - startTime);
+                logger.info("?? Input Verification [success: {}] took {} ms", success, endTime - startTime);
             }
         };
     }
 
+    /**
+     * Once the output schema is verified, the content type would be set to this
+     */
+    String RESP_CONTENT_TYPE = "application/json" ;
 
     /**
      * Creates a spark.Filter afterAfter filter from JSON Schema path to verify output schema
@@ -355,42 +402,40 @@ public interface TypeSystem {
             if ( optLabel.isEmpty() ) return;
             final String schemaPath = signature.schema(optLabel.get());
             if ( schemaPath.isEmpty() ) return;
-            final String jsonSchemaPath = definitionsDir() + "/"+  schemaPath;
-            SchemaValidator validator = loadSchema(jsonSchemaPath);
-
-            JsonParser unvalidatedParser =
-                    OBJECT_MAPPER.getFactory().createParser(potentialJsonBody);
-            JsonParser validatedParser = API.decorateJsonParser(validator, unvalidatedParser);
-            try {
-                OBJECT_MAPPER.readValue(validatedParser, Object.class);
+            EitherMonad<Object> typedParsing = json( schemaPath, potentialJsonBody);
+            final boolean success = typedParsing.isSuccessful();
+            if ( success){
                 // automatically set JSON type in response
-                response.type("application/json");
-            } catch (Throwable e) {
+                response.type(RESP_CONTENT_TYPE);
+            } else {
                 logger.error("Original Response: {} ==> {}", response.status(), response.body());
-                logger.error("Output Schema Validation failed. Route '{}' : \n {}", path, e.toString());
-            } finally {
-                final long endTime = System.currentTimeMillis();
-                logger.info("?? Output Verification took {} ms", endTime - startTime);
+                logger.error("Output Schema Validation failed. Route '{}' : \n {}", path, typedParsing.error().toString());
             }
+            final long endTime = System.currentTimeMillis();
+            logger.info("?? Output Verification [success: {}] took {} ms", success, endTime - startTime);
         };
     }
 
     /**
-     * Attaches the TypeSystem to a Spark instance
+     * Attaches the TypeSystem Input Schema Validation to a Spark instance
      */
-    default void attach() {
-        if (verification().in()) { // only if verification is in...
-            routes().keySet().forEach(path -> {
-                Filter schemaVerifier = inputSchemaVerificationFilter(path);
-                Spark.before(path, schemaVerifier);
-            });
-        }
-        if ( verification().out() ){ // only if verification out is set in
-            routes().keySet().forEach(path -> {
-                Filter schemaVerifier = outputSchemaVerificationFilter(path);
-                // this is costly, we should avoid it...
-                Spark.afterAfter(path, schemaVerifier);
-            });
-        }
+    default void attachInput(){
+        if (!verification().in()) return;
+        routes().keySet().forEach(path -> {
+            Filter schemaVerifier = inputSchemaVerificationFilter(path);
+            Spark.before(path, schemaVerifier);
+        });
+    }
+
+    /**
+     * Attaches the TypeSystem Output Schema Validation to a Spark instance
+     */
+    default void attachOutput(){
+        if ( !verification().out() ) return;
+        routes().keySet().forEach(path -> {
+            Filter schemaVerifier = outputSchemaVerificationFilter(path);
+            // this is costly, we should avoid it...
+            Spark.afterAfter(path, schemaVerifier);
+        });
     }
 }

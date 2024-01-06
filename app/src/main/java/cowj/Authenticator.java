@@ -150,6 +150,7 @@ public interface Authenticator {
             logger.info("Allowing route in risks setting : {}", pathInfo);
             return "";
         }
+        logger.debug("Before Auth : [{}]", pathInfo); // log it
         UserInfo userInfo = safeAuthExecute( () -> userInfo(request));
         assert userInfo != null;
         // already expired...

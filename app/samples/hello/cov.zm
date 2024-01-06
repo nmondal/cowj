@@ -1,0 +1,5 @@
+// This is the code coverage data dump for zmb scripts
+import zoomba.lang.Main as M
+// dump this
+M.dumpCoverage()
+'{ "status" : true }' // return
