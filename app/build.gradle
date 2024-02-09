@@ -17,7 +17,7 @@ plugins {
     // code coverage jacoco
     id 'jacoco'
     // dependencies update check
-    id "com.github.ben-manes.versions" version "0.50.0"
+    id "com.github.ben-manes.versions" version "0.51.0"
     // maven publish
     id 'maven-publish'
 }
@@ -56,8 +56,8 @@ dependencies {
     // Scripting Engines JSR-223
     implementation 'org.mozilla:rhino-engine:1.7.14' //js
     // groovy
-    implementation 'org.apache.groovy:groovy:5.0.0-alpha-4'
-    implementation 'org.apache.groovy:groovy-jsr223:5.0.0-alpha-4'
+    implementation 'org.apache.groovy:groovy:5.0.0-alpha-5'
+    implementation 'org.apache.groovy:groovy-jsr223:5.0.0-alpha-5'
     // jython ???
     implementation 'org.python:jython:2.7.3'
     // Kotlin - hold all libs to same version, as long as it works
@@ -73,7 +73,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
 
     // Auth
-    implementation 'org.casbin:jcasbin:1.43.0'
+    implementation 'org.casbin:jcasbin:1.46.0'
 
     // File Watching ....
     implementation 'io.methvin:directory-watcher:0.18.0'
@@ -85,18 +85,18 @@ dependencies {
 
     // Storage...
     implementation 'redis.clients:jedis:5.2.0-alpha2'
-    implementation 'com.google.cloud:google-cloud-storage:2.31.0'
-    implementation 'software.amazon.awssdk:s3:2.23.1'
-    implementation 'software.amazon.awssdk:apache-client:2.23.1'
+    implementation 'com.google.cloud:google-cloud-storage:2.33.0'
+    implementation 'software.amazon.awssdk:s3:2.23.21'
+    implementation 'software.amazon.awssdk:apache-client:2.23.21'
 
     // fcm
     implementation 'com.google.firebase:firebase-admin:9.2.0'
 
     // mysql connector
-    implementation 'com.mysql:mysql-connector-j:8.2.0'
+    implementation 'com.mysql:mysql-connector-j:8.3.0'
 
     /// secret manager
-    implementation 'com.google.cloud:google-cloud-secretmanager:2.33.0'
+    implementation 'com.google.cloud:google-cloud-secretmanager:2.34.0'
 
     ///// test stuff
     testImplementation 'junit:junit:4.13.2'
@@ -105,7 +105,7 @@ dependencies {
     // REDIS
     testImplementation 'it.ozimov:embedded-redis:0.7.3'
     // Mockito ...
-    testImplementation 'org.mockito:mockito-core:5.8.0'
+    testImplementation 'org.mockito:mockito-core:5.10.0'
 }
 
 /**
