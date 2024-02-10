@@ -78,7 +78,7 @@ Check plugins document to see more.
 A script essentially abstracts a java 8 `Function` of the form:
 
 ```java
-Function<Binding,Object> 
+Function<Binding,Object> function;
 ```
 
 while a `Binding` is nothing but a name,value pair map - an abstraction created for JSR-223.
@@ -224,6 +224,12 @@ panic(true, "Message") // raise error with message
 panic(true, "Message", 418 ) // raise error with message with a status 
 ```
 
+### Logging
+
+The special variable `_log` is always inside any script to `log` messages.
+This is a `sl4j` log binding via proxy - and always prints the name of the script 
+from which it got invoked.
+
 ## Debugging
 
 WIP.
@@ -237,13 +243,73 @@ https://www.tutorialspoint.com/jython/jython_importing_java_libraries.htm
 Also, there is `app/samples/jython` project to see how to get `json` working out.
 Evidently the dialect will be Pythonic, rest would be `JVM` based.
 
+### Returning Values
+
+Jython scripts, if they were to return a value, must store the value
+into a special variable `_res` . Apparently scripts can not return, so 
+a custom hack is in place for returning.
+
+### Installing Packages 
+
+One can install Python packages by the following.
+First, install `pip` as follows:
+Go to the `libs/deps` directory and run the command:
+
+```shell
+java -jar jython-standalone-2.7.3.jar -m ensurepip 
+```
+This will install the `pip` .
+Now, say you want to install `requests` module:
+
+```shell
+java -jar jython-standalone-2.7.3.jar -m pip install requests 
+```
+To test that the module runs - you run the following:
+
+```shell
+java -jar jython-standalone-2.7.3.jar 
+```
+
+And then simply try:
+```python
+# imports request 
+import requests
+```
+This should be error free.
+Now any python script will be able to import `requests` module.
+
+## JavaScript Usage
+
+Rhino gets used as the underlying engine. 
+Rhino got a bug which does not allow it to print to console, hence `Test.print()` and `Test.printe()`
+to be used for now.
+
+
+### Installing Packages
+`require()` is supported in JavaScript, thus one can simply import any javascript file which is hosted
+inside the `lib/js/` directory of the project.
+
+See the file `app/samples/hello/hello.js` :
+
+```javascript
+let add = require( "./demo.js")
+_log.info( "10 + 20 is {}", add(10,20) )
+```
+where `demo.js` is situated at `lib/js/demo.js` location for the `hello` app.
 
 
 ## References
 
 1. JSR 223 - https://en.wikipedia.org/wiki/Scripting_for_the_Java_Platform 
 2. Script Engines - https://en.wikipedia.org/wiki/List_of_JVM_languages 
-3. Bindings - https://docs.oracle.com/javase/9/docs/api/javax/script/Bindings.html 
-4. Routes - https://sparkjava.com/documentation#routes 
-5. Filters - https://sparkjava.com/documentation#filters 
-6. Forward Proxy - https://en.wikipedia.org/wiki/Proxy_server 
+3. Rhino - https://github.com/mozilla/rhino 
+4. Jython - https://www.jython.org 
+5. Groovy - https://groovy-lang.org 
+6. ZoomBA - https://gitlab.com/non.est.sacra/zoomba/ 
+7. Kotlin Scripting - https://github.com/Kotlin/kotlin-script-examples/blob/master/jvm/jsr223/jsr223.md 
+8. Bindings - https://docs.oracle.com/javase/9/docs/api/javax/script/Bindings.html 
+9. Routes - https://sparkjava.com/documentation#routes 
+10. Request - https://sparkjava.com/documentation#request 
+11. Response - https://sparkjava.com/documentation#response 
+12. Filters - https://sparkjava.com/documentation#filters 
+13. Forward Proxy - https://en.wikipedia.org/wiki/Proxy_server 
