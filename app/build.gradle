@@ -59,7 +59,7 @@ dependencies {
     implementation 'org.apache.groovy:groovy:5.0.0-alpha-5'
     implementation 'org.apache.groovy:groovy-jsr223:5.0.0-alpha-5'
     // jython ???
-    implementation 'org.python:jython:2.7.3'
+    implementation 'org.python:jython-standalone:2.7.3'
     // Kotlin - hold all libs to same version, as long as it works
     implementation 'org.jetbrains.kotlin:kotlin-compiler-embeddable:1.9.22'
     implementation 'org.jetbrains.kotlin:kotlin-scripting-jsr223:1.9.22'

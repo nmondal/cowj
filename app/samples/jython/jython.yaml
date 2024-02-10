@@ -4,9 +4,11 @@
 # Also, use PIP - from Jython
 ###################
 
-port : 5001
+port : 5009
 
 routes:
   post:
     /zmb : _/zoomba_json.py
     /jackson : _/jackson_json.py
+    /python: _/python.py
+
