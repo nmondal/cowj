@@ -18,6 +18,7 @@ public class ModelRunnerTest {
     final String hello = "samples/hello/hello.yaml" ;
     final String proxy = "samples/proxy/proxy.yaml" ;
     final String test = "samples/test_scripts/test.yml" ;
+    final String jython = "samples/jython/jython.yaml" ;
 
     private ModelRunner mr ;
 
@@ -89,6 +90,8 @@ public class ModelRunnerTest {
         Assert.assertEquals( expected, get("http://localhost:5003", "/hello/j"));
         // python
         Assert.assertEquals( expected, get("http://localhost:5003", "/hello/p"));
+        // kotlin
+        Assert.assertEquals( expected, get("http://localhost:5003", "/hello/k"));
         // zoomba
         Assert.assertEquals( expected, get("http://localhost:5003", "/hello/z"));
         // cache run
@@ -97,6 +100,15 @@ public class ModelRunnerTest {
         Assert.assertEquals( expected, post("http://localhost:5003", "/hello", ""));
     }
 
+    @Test
+    public void jythonIntegrationTest(){
+        mr = runModel(jython);
+        final String expected = "Hello :42!" ;
+        final String body = ZTypes.jsonString( Map.of("name", "42"));
+        Assert.assertEquals( expected, post("http://localhost:5009", "/python", body ));
+        Assert.assertEquals( expected, post("http://localhost:5009", "/zmb", body ));
+        Assert.assertEquals( expected, post("http://localhost:5009", "/jackson", body ));
+    }
     @Test
     public void multiThreadedPostTest() throws Exception{
         mr = runModel(hello);

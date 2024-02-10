@@ -1,12 +1,12 @@
 package cowj;
 
+import kotlin.script.experimental.jsr223.KotlinJsr223DefaultScriptEngineFactory;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
 import org.mozilla.javascript.engine.RhinoScriptEngineFactory;
 import org.python.core.Options;
 import org.python.jsr223.PyScriptEngineFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.helpers.SubstituteLogger;
 import spark.*;
 import zoomba.lang.core.interpreter.ZScript;
 import zoomba.lang.core.operations.Function;
@@ -79,10 +79,10 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
                 return Spark.halt(he.code, he.getMessage());
             }
             logger.error("unchecked error : " + t);
-            final String message ;
+            final String message;
             if (App.isProdMode()) {
                 // in here, do not tell consumers what error happened
-                message = "Internal Server Error!" ;
+                message = "Internal Server Error!";
             } else {
                 // in here tell consumers why we goofed up
                 message = t.toString();
@@ -289,13 +289,14 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
 
     /**
      * Various Scripting Engines
+     * Extensions -> Name of the Engine
      */
     Map<String, String> ENGINES = Map.of(
             "js", "JavaScript",
             "groovy", "groovy",
-            "py", "python"
-
-    );
+            "py", "python",
+            "kts", "kotlin",
+            "kt", "kotlin");
 
     /**
      * Various data sources store as map
@@ -404,6 +405,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
             MANAGER.registerEngineName("JavaScript", new RhinoScriptEngineFactory());
             MANAGER.registerEngineName("groovy", new GroovyScriptEngineFactory());
             MANAGER.registerEngineName("python", new PyScriptEngineFactory());
+            MANAGER.registerEngineName("kotlin", new KotlinJsr223DefaultScriptEngineFactory());
             FileWatcher.ofCacheAndRegister(zScripts, (path) -> loadZScript("reload", path));
             FileWatcher.ofCacheAndRegister(scripts, (path) -> loadScript("reload", path));
         }
@@ -421,6 +423,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         if (!ENGINES.containsKey(extension)) throw new IllegalArgumentException("script type not registered : " + path);
         String engineName = ENGINES.get(extension);
         final ScriptEngine engine = MANAGER.getEngineByName(engineName);
+        ModuleManager.UNIVERSAL.enable(engine);
         return engine;
     }
 
@@ -533,6 +536,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
     Creator JSR = (path, handler) -> (bindings) -> {
         CompiledScript cs = loadScript(path, handler);
         prepareBinding(bindings, handler );
+        ModuleManager.UNIVERSAL.updateModuleBindings(cs, bindings);
         Object r = cs.eval(bindings);
         if (r != null) return r;
         // Jython issue...
@@ -619,7 +623,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         String extension = extension(handler);
         Creator r = switch (extension) {
             case "zmb", "zm" -> ZMB;
-            case "js", "groovy", "py" -> JSR;
+            case "js", "groovy", "py", "kt", "kts" -> JSR;
             case "class" -> BINARY;
             default -> {
                 logger.error("No pattern matched for path '{}' -> For handler '{}' Using NOP!", path, handler);

@@ -33,6 +33,7 @@ routes:
   get:
     /hello/g: _/hello.groovy
     /hello/j: _/hello.js
+    /hello/k: _/hello.kts
     /hello/p: _/hello.py
     /hello/z: _/hello.zm
     /hello/b: "cowj.plugins.SampleJVMScriptable.class"
