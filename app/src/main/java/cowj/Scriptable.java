@@ -423,6 +423,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         if (!ENGINES.containsKey(extension)) throw new IllegalArgumentException("script type not registered : " + path);
         String engineName = ENGINES.get(extension);
         final ScriptEngine engine = MANAGER.getEngineByName(engineName);
+        ModuleManager.UNIVERSAL.enable(engine);
         return engine;
     }
 
@@ -535,6 +536,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
     Creator JSR = (path, handler) -> (bindings) -> {
         CompiledScript cs = loadScript(path, handler);
         prepareBinding(bindings, handler );
+        ModuleManager.UNIVERSAL.updateModuleBindings(cs, bindings);
         Object r = cs.eval(bindings);
         if (r != null) return r;
         // Jython issue...

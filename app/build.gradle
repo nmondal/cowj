@@ -55,6 +55,8 @@ dependencies {
     implementation 'org.slf4j:slf4j-jdk14:2.1.0-alpha1'
     // Scripting Engines JSR-223
     implementation 'org.mozilla:rhino-engine:1.7.14' //js
+    implementation 'com.github.a-langer:jsr223-commonjs-modules:1.0.1'
+
     // groovy
     implementation 'org.apache.groovy:groovy:5.0.0-alpha-5'
     implementation 'org.apache.groovy:groovy-jsr223:5.0.0-alpha-5'

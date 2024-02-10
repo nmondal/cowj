@@ -85,7 +85,9 @@ public interface ModelRunner extends Runnable {
         final String libDir = m.interpretPath( m.libPath() );
         // load libraries
         logger.info("Library Directory : " +libDir);
-        ZTypes.loadJar(libDir);
+        // Setup modular scripting
+        ModuleManager.UNIVERSAL.modulePath(libDir);
+
         // load type system ... other folks may depend on this
         TypeSystem typeSystem = TypeSystem.fromFile( m.schemaPath());
 
