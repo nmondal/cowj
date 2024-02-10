@@ -278,12 +278,26 @@ import requests
 This should be error free.
 Now any python script will be able to import `requests` module.
 
+Now, for any project, you should copy the entire `bin` and `Lib` folder 
+created there into the applications `lib/py` folder. For example, for 
+`app/samples/jython` project you should put the site package installed 
+folders in the following location:
+
+`app/samples/jython/lib/py/bin` and
+`app/samples/jython/lib/py/Lib` folder.
+
+Cowj system automatically adds the `lib/py/Lib/site-packages` 
+into the jython `sys.path` so that now you can use it.
+
+Alternatively, you can install the packages directly into the
+`lib/py` directory.
+
+
 ## JavaScript Usage
 
 Rhino gets used as the underlying engine. 
 Rhino got a bug which does not allow it to print to console, hence `Test.print()` and `Test.printe()`
 to be used for now.
-
 
 ### Installing Packages
 `require()` is supported in JavaScript, thus one can simply import any javascript file which is hosted
