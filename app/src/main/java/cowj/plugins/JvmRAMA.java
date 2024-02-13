@@ -54,12 +54,20 @@ public interface JvmRAMA {
     default EitherMonad<Boolean> put(String topic, String data){
         long curTime = System.currentTimeMillis();
         // More than good enough to be honest... for any scale > 50 calls per msec
-        String randomSuffix = System.nanoTime() + "." + System.nanoTime() ;
+        String randomSuffix = suffix() ;
         String fileName = directoryPrefix(curTime) + "/" + curTime + "_" + randomSuffix ;
         StorageWrapper<?,?,?> st = prefixedStorage();
         final boolean ret = st.safeBoolean( () -> st.dumps( topic, fileName, data)) ;
         return EitherMonad.value(ret);
     }
+
+    /**
+     * A suffix that guarantees the following:
+     * 1. Multiple caller would have different suffix
+     * 2. Universally unique
+     * @return a suffix to be used as suffix of the key
+     */
+    String suffix();
 
     /**
      * A Response structure for the message queue get
@@ -128,9 +136,16 @@ public interface JvmRAMA {
     }
 
     /**
-     * Storage data source to use
+     * key for Storage data source to use
      */
     String STORAGE = "storage" ;
+
+    /**
+     * Key for Unique Identifier for per node processor
+     * This would be used to suffix to key to avoid key collision at scale
+     * Default is "-"
+     */
+    String NODE_UNIQUE_IDENTIFIER = "uuid" ;
 
     /**
      * A Creator for RAMA
@@ -144,8 +159,20 @@ public interface JvmRAMA {
             throw new IllegalArgumentException("RAMA Storage is wrongly specified - Must be a  StorageWrapper!");
         }
         logger.info("RAMA {} storage type is found to be : {}", name, storage );
+        final String uuid = config.getOrDefault(NODE_UNIQUE_IDENTIFIER, "-").toString();
+        logger.info("RAMA {} uuid is et to be : [{}]", name, uuid );
 
-        JvmRAMA jvmRAMA = () -> (StorageWrapper<?,?,?>)storage;
+        final JvmRAMA jvmRAMA = new JvmRAMA() {
+            @Override
+            public StorageWrapper<?, ?, ?> prefixedStorage() {
+                return (StorageWrapper<?, ?, ?>)storage;
+            }
+
+            @Override
+            public String suffix() {
+                return uuid + Thread.currentThread().getId() + "." + System.nanoTime() ;
+            }
+        };
         return DataSource.dataSource(name, jvmRAMA);
     };
 }
