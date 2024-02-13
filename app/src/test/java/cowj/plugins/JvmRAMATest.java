@@ -3,6 +3,7 @@ package cowj.plugins;
 import cowj.DataSource;
 import cowj.EitherMonad;
 import cowj.Scriptable;
+import cowj.StorageWrapper;
 import org.junit.*;
 
 import java.text.SimpleDateFormat;
@@ -10,6 +11,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertThrows;
 
@@ -118,5 +120,30 @@ public class JvmRAMATest {
         Assert.assertFalse(mon.inError());
         Assert.assertEquals( 5000, mon.value().data.size());
         Assert.assertFalse( mon.value().hasMoreData);
+    }
+
+    @Test
+    public void errorInGetTest(){
+        final StorageWrapper<?,?,?> wrapper = new MemoryBackedStorage(){
+            @Override
+            public Stream<String> stream(String bucketName, String directoryPrefix) {
+                throw new RuntimeException("Boom!");
+            }
+        };
+        JvmRAMA rama = new JvmRAMA() {
+            @Override
+            public StorageWrapper<?, ?, ?> prefixedStorage() {
+                return wrapper;
+            }
+
+            @Override
+            public String suffix() {
+                return "";
+            }
+        };
+        EitherMonad<JvmRAMA.Response> mon =
+                rama.get("whatever", "foobar", 10, 0 );
+        Assert.assertTrue(mon.inError());
+        Assert.assertTrue(mon.error().getMessage().contains("Boom!"));
     }
 }
