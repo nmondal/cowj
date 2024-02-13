@@ -444,7 +444,7 @@ data-sources:
   event_bus:
     type: rama 
     storage: google-storage # underlying prefixed storage impl to be used 
-    uid: my-name-is-nobody # unique id for the RAMA writer node 
+    uuid: my-name-is-nobody # unique id for the RAMA writer node 
 ```
 
 Usage is very simple, once the plugins are loaded, simply use:
