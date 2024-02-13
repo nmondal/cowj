@@ -4,6 +4,9 @@ import com.google.cloud.secretmanager.v1.AccessSecretVersionResponse;
 import com.google.cloud.secretmanager.v1.SecretManagerServiceClient;
 import com.google.cloud.secretmanager.v1.SecretVersionName;
 import cowj.DataSource;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 import zoomba.lang.core.types.ZTypes;
 
 import java.io.IOException;
@@ -74,6 +77,24 @@ public interface SecretManager {
             final SecretManager secretManager = from(object);
             return DataSource.dataSource(name, secretManager);
         } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    };
+
+    DataSource.Creator ASM = (name, config, parent) -> {
+        try(SecretsManagerClient secretsClient = SecretsManagerClient.create()) {
+            String secretKey = config.getOrDefault("config", "").toString();
+            String secret = parent.envTemplate(secretKey);
+            GetSecretValueRequest valueRequest = GetSecretValueRequest.builder()
+                    .secretId(secret)
+                    .build();
+
+            GetSecretValueResponse valueResponse = secretsClient.getSecretValue(valueRequest);
+            String jsonString = valueResponse.secretString();
+            Map object = (Map) ZTypes.json(jsonString);
+            final SecretManager secretManager = from(object);
+            return DataSource.dataSource(name, secretManager);
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     };

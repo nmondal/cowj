@@ -10,9 +10,13 @@ import cowj.Model;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.MockedStatic;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Map;
 
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.*;
@@ -53,6 +57,32 @@ public class SecretManagerTest {
         smscStatic.when( SecretManagerServiceClient::create).thenThrow(new IOException("Boom!"));
         Exception exception = assertThrows(RuntimeException.class, () -> {
             SecretManager.GSM.create("bar", Collections.emptyMap(), model  );
+        });
+        Assert.assertNotNull(exception);
+    }
+
+    @Test
+    public void testASM(){
+        MockedStatic<SecretsManagerClient> smscStatic =  mockStatic(SecretsManagerClient.class);
+        SecretsManagerClient smsc = mock( SecretsManagerClient.class);
+        smscStatic.when( SecretsManagerClient::create).thenReturn(smsc);
+
+        when(smsc.getSecretValue(argThat((GetSecretValueRequest request) ->
+                "bar".equals(request.secretId())
+        ))).thenReturn(GetSecretValueResponse.builder().secretString("{ \"a\" : \"423\" }").build());
+
+        Map<String, Object> config = Map.of("config", "bar");
+        DataSource ds =  SecretManager.ASM.create("foo", config, model  );
+        Assert.assertNotNull(ds);
+        Assert.assertEquals("foo", ds.name() );
+        Assert.assertTrue( ds.proxy() instanceof SecretManager );
+        SecretManager sm = (SecretManager) ds.proxy();
+        String r = sm.getOrDefault("a", "0" );
+        Assert.assertEquals("423", r);
+
+        smscStatic.when( SecretsManagerClient::create).thenThrow(new IllegalStateException("Boom!"));
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            SecretManager.ASM.create("bar", Collections.emptyMap(), model  );
         });
         Assert.assertNotNull(exception);
     }
