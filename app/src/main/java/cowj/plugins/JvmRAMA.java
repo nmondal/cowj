@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 
 /**
  * A Minimal RAMA implementation - See RAMA.md in the manual section of the Git repo
+ * <a href="https://github.com/nmondal/cowj/blob/main/manual/RAMA.md">...</a>
  * Essentially a throwaway poor mens Kafka substitute running over Cloud Storage
  */
 public interface JvmRAMA {
@@ -160,7 +161,7 @@ public interface JvmRAMA {
         }
         logger.info("RAMA {} storage type is found to be : {}", name, storage );
         final String uuid = config.getOrDefault(NODE_UNIQUE_IDENTIFIER, "-").toString();
-        logger.info("RAMA {} uuid is et to be : [{}]", name, uuid );
+        logger.info("RAMA {} uuid is set to be : [{}]", name, uuid );
 
         final JvmRAMA jvmRAMA = new JvmRAMA() {
             @Override
