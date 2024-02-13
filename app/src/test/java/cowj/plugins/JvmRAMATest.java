@@ -3,10 +3,7 @@ package cowj.plugins;
 import cowj.DataSource;
 import cowj.EitherMonad;
 import cowj.Scriptable;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -40,6 +37,11 @@ public class JvmRAMATest {
     public static void afterClass(){
         storage.deleteBucket(TOPIC);
         Scriptable.DATA_SOURCES.remove(MEM);
+    }
+
+    @Before
+    public void cleanTopic(){
+        storage.dataMemory.get( TOPIC).clear();
     }
 
     long appendEvent(JvmRAMA rama )  {
@@ -81,5 +83,22 @@ public class JvmRAMATest {
         Assert.assertEquals( gap, mon.value().data.size() );
         Assert.assertFalse( mon.value().hasMoreData );
 
+    }
+
+    @Test
+    public void batchedRead(){
+        DataSource ds = JvmRAMA.RAMA.create( "rama", Map.of("storage", MEM), ()->"" );
+        JvmRAMA rama = (JvmRAMA) ds.proxy();
+        long ts = appendEvent( rama);
+        EitherMonad<JvmRAMA.Response> mon =
+                rama.get(TOPIC, directoryPrefix( ts ), 5000, 0);
+        Assert.assertFalse(mon.inError());
+        Assert.assertEquals( 5000, mon.value().data.size());
+        Assert.assertEquals( 5000, mon.value().readOffset);
+        Assert.assertTrue( mon.value().hasMoreData);
+        mon = rama.get(TOPIC, directoryPrefix( ts ), 5000, mon.value().readOffset);
+        Assert.assertFalse(mon.inError());
+        Assert.assertEquals( 5000, mon.value().data.size());
+        Assert.assertFalse( mon.value().hasMoreData);
     }
 }
