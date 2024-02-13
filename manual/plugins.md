@@ -426,29 +426,67 @@ To use any of these authenticators, one must create the authentication by adding
 Cowj system automatically loads the authentication scheme. 
 
 
+### RAMA 
+First check the basic idea behind RAMA from here:
+https://github.com/nmondal/cowj/manual/RAMA.md
 
+The syntax is as follows:
 
+```yaml
+plugins:
+  cowj.plugins:
+    g_storage: GoogleStorageWrapper::STORAGE
+    rama: JvmRAMA::RAMA
 
-## Using Jython
+data-sources:
+  google-storage:
+    type: g_storage
+  event_bus:
+    type: rama 
+    storage: google-storage # underlying prefixed storage impl to be used 
+    uid: my-name-is-nobody # unique id for the RAMA writer node 
+```
 
-As people might be aware of, Jython is pretty much dead, end of life, and we are yet to find out better solutions for the same which are portable.  
+Usage is very simple, once the plugins are loaded, simply use:
 
-[Future of Jython · Issue #24 · jython/jython · GitHub](https://github.com/jython/jython/issues/24)
+#### Write Events 
+```scala
+// this is how you put stuff into the RAMA bus 
+_ds.event_bus.put("topic_name", "this is my data")
+```
 
-In any case, we can still use Jython.
+#### Read Events
+```scala
+// this is how you get stuff from the RAMA bus 
+em = _ds.event_bus.get("topic_name", "2024/02/13/20/05", 100, 0)
+// 2nd param is the time stamp which you want to data to be extracted 
+// 3rd param is the number of record you want to extract 
+// 4th param is the offset within the time stamp 
+```
 
-A related question is many things which are given in Python 3+, say `json` support and all are not supported out of the box for Jython.
+The `em` will be an `EitherMonad` of type `JvmRAMA.Response` object 
+which is defined here : https://github.com/nmondal/cowj/app/src/main/java/cowj/plugins/JvmRAMA.java#L76
+having basic structure:
 
-In those cases 2 things possible:
-
-1.  Use the awesomeness of `ZTypes.json()` and `ZTypes.string()` functions from ZoomBA, or any other standard Java libraries to parse JSON - here is a manual on how to do it:  [Jython - Importing Java Libraries | Tutorialspoint](https://www.tutorialspoint.com/jython/jython_importing_java_libraries.htm) - it is a breeze. We have also created a sample Python project in the `app/samples/jython` to showcase this in the file `jvm_int.py`  which uses multiple Java libraries to run  stuff from Python.
-
-2. Install Jython PIP and then install `pythonic`  dependencies. This is much harder to maintain - but this is discussed in this link :  [java - How can I install various Python libraries in Jython? - Stack Overflow](https://stackoverflow.com/questions/6787015/how-can-i-install-various-python-libraries-in-jython)
-   
-   This is also done in the `pip_demo.py`  file where we installed `json` package for Python 2.7 and run.
-
-
-
+```java
+class Response {
+    /**
+     * List of data Strings, each string is string rep of the data object
+     */
+    public final List<String> data;
+    /**
+     * Till how much it read in the current get call
+     * Greater than 0 implies we have more data for same prefix
+     * Less than or equal to zero implies all data has been read
+     */
+    public final long readOffset;
+    /**
+     * Does the prefix has more data to read? Then true, else false
+     */
+    public final boolean hasMoreData;
+}
+```
+So that we know there are more data.
 
 
 ## References
