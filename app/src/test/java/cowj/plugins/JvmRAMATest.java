@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.stream.IntStream;
 
+import static org.junit.Assert.assertThrows;
+
 public class JvmRAMATest {
     static final MemoryBackedStorage storage = new MemoryBackedStorage();
     static final String MEM = "__mem__" ;
@@ -53,6 +55,22 @@ public class JvmRAMATest {
 
         Assert.assertEquals( TOT_EVENTS, storage.dataMemory.get(TOPIC).size());
         return ts;
+    }
+
+    @Test
+    public void incorrectConfigurationTests(){
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            JvmRAMA.RAMA.create( "rama", Map.of(), ()->"" );
+        });
+        Assert.assertNotNull(exception);
+        Assert.assertTrue( exception.getMessage().contains("empty"));
+
+        exception = assertThrows(IllegalArgumentException.class, () -> {
+            JvmRAMA.RAMA.create( "rama", Map.of("storage", "key_does_not_exists!"), ()->"" );
+        });
+        Assert.assertNotNull(exception);
+        Assert.assertTrue( exception.getMessage().contains("StorageWrapper"));
+
     }
 
     @Test

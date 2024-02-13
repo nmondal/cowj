@@ -153,13 +153,13 @@ public interface JvmRAMA {
      */
     DataSource.Creator RAMA = (name, config, parent) -> {
         final String storageName = config.getOrDefault(STORAGE, "").toString();
-        logger.info("RAMA {} storage name specified : {}", name, storageName );
+        logger.info("RAMA {} storage name specified : '{}'", name, storageName );
         if ( storageName.isEmpty() ) throw new IllegalArgumentException("RAMA Storage must not be empty!");
         final Object storage = Scriptable.DATA_SOURCES.get( storageName);
         if ( !(storage instanceof StorageWrapper<?,?,?>)) {
             throw new IllegalArgumentException("RAMA Storage is wrongly specified - Must be a  StorageWrapper!");
         }
-        logger.info("RAMA {} storage type is found to be : {}", name, storage );
+        logger.info("RAMA {} storage type is found to be : '{}'", name, storage );
         final String uuid = config.getOrDefault(NODE_UNIQUE_IDENTIFIER, "-").toString();
         logger.info("RAMA {} uuid is set to be : [{}]", name, uuid );
 
