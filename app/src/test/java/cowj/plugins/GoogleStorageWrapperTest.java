@@ -122,6 +122,33 @@ public class GoogleStorageWrapperTest {
     }
 
     @Test
+    public void defaultStreamTest(){
+        Storage storage = mock( Storage.class);
+        Page<Blob> page = mock(Page.class);
+        when(page.hasNextPage()).thenReturn(true);
+        Page<Blob> page2 = mock(Page.class);
+        when(page.getNextPage()).thenReturn(page2);
+        // two items
+        Blob b1 = mock(Blob.class);
+        when(b1.getStorage()).thenReturn(storage);
+
+        final  String first = "hello, world!" ;
+        final  String second = "{ \"a\" : 42 }" ;
+
+        when(b1.getContent()).thenReturn( first.getBytes(StandardCharsets.UTF_8));
+
+        Blob b2 = mock(Blob.class);
+        when(b2.getStorage()).thenReturn(storage);
+        when(b2.getContent()).thenReturn( second.getBytes(StandardCharsets.UTF_8));
+
+        when(storage.list(anyString(), any())).thenReturn(page);
+        when(storage.list(anyString(), any(), any())).thenReturn(page);
+        when(page.streamAll()).thenReturn(Stream.of(b1, b2));
+        GoogleStorageWrapper gsw = () -> storage;
+        Assert.assertEquals(2, gsw.stream("foo", "").toList().size());
+    }
+
+    @Test
     public void streamTest(){
         Storage storage = mock( Storage.class);
         Page<Blob> page = mock(Page.class);
