@@ -185,10 +185,11 @@ public class ScriptableTest {
 
     @Test
     public void prefixLoggerTest(){
+        final Logger logger = Scriptable.logger ; // this may take a bit of time to get inited
         // create 100000 loggers with random ids
         long start = System.currentTimeMillis();
         for ( int i =0; i < 100000; i++ ){
-            Scriptable.prefixedLogger( Scriptable.logger, String.valueOf(i));
+            Scriptable.prefixedLogger( logger, String.valueOf(i));
         }
         long end = System.currentTimeMillis();
         final long create = end  - start ;
@@ -197,7 +198,7 @@ public class ScriptableTest {
         // create 100000 loggers with random ids
         start = System.currentTimeMillis();
         for ( int i =0; i < 100000; i++ ){
-            Scriptable.prefixedLogger( Scriptable.logger, String.valueOf(i));
+            Scriptable.prefixedLogger( logger, String.valueOf(i));
         }
         end = System.currentTimeMillis();
         final long access = end  - start ;
@@ -206,7 +207,7 @@ public class ScriptableTest {
 
         // now the access of methods which use marker
         Marker m = MarkerFactory.getMarker("marker");
-        Logger l = Scriptable.prefixedLogger( Scriptable.logger, String.valueOf(42));
+        Logger l = Scriptable.prefixedLogger( logger, String.valueOf(42));
         l.info(m, "this is a test marker");
         Assert.assertTrue(true);
     }

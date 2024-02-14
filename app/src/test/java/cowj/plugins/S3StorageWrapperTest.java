@@ -8,9 +8,12 @@ import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 import software.amazon.awssdk.services.s3.waiters.S3Waiter;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -96,6 +99,28 @@ public class S3StorageWrapperTest {
 
     @Test
     public void paginationTest(){
+        S3Client s3Client = mock(S3Client.class);
+        ListObjectsV2Iterable iterable = mock(ListObjectsV2Iterable.class);
+        ListObjectsV2Response resp = mock(ListObjectsV2Response.class);
+        final String hello = "hello!" ;
+        final byte[] bytes = hello.getBytes(StandardCharsets.UTF_8) ;
+        ResponseBytes<GetObjectResponse> respBytes = mock(ResponseBytes.class);
 
+        when(respBytes.asByteArray()).thenReturn(bytes );
+        when(respBytes.asUtf8String()).thenReturn( hello);
+        when(s3Client.getObjectAsBytes((GetObjectRequest) any())).thenReturn(respBytes);
+
+        S3Object s3Object = mock(S3Object.class);
+        when(resp.contents()).thenReturn( List.of(s3Object, s3Object, s3Object ));
+
+        Iterator<ListObjectsV2Response> iterator = List.of(resp,resp).iterator();
+
+        when( iterable.iterator() ).thenReturn(iterator);
+        when(s3Client.listObjectsV2Paginator( (ListObjectsV2Request) any())).thenReturn(iterable);
+
+        S3StorageWrapper s3 = () -> s3Client;
+        List<?> list = s3.stream("a", "abc").toList();
+        Assert.assertNotNull(list);
+        Assert.assertEquals(6, list.size());
     }
 }
