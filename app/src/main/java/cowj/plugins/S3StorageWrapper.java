@@ -1,6 +1,7 @@
 package cowj.plugins;
 
 import cowj.StorageWrapper;
+import org.jetbrains.kotlin.com.intellij.util.ArrayUtil;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -49,12 +50,12 @@ public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectRespo
 
     @Override
     default byte[] bytes(ResponseBytes<GetObjectResponse> input){
-        return input.asByteArray();
+        return input == null ? ArrayUtil.EMPTY_BYTE_ARRAY : input.asByteArray();
     }
 
     @Override
     default String utf8(ResponseBytes<GetObjectResponse> input){
-        return input.asUtf8String();
+        return input == null ? "" : input.asUtf8String();
     }
 
     /**
