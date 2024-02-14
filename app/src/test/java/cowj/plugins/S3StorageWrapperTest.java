@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.waiters.S3Waiter;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -22,10 +22,11 @@ public class S3StorageWrapperTest {
 
     @Test
     public void initTest(){
-        DataSource ds = S3StorageWrapper.STORAGE.create("foo", Collections.emptyMap(), model);
+        DataSource ds = S3StorageWrapper.STORAGE.create("foo", Map.of("page-size", 50), model);
         Assert.assertNotNull( ds.proxy() );
         Assert.assertTrue( ds.proxy() instanceof S3StorageWrapper );
         Assert.assertNotNull( ((S3StorageWrapper) ds.proxy()).s3client() );
+        Assert.assertEquals(50, ((S3StorageWrapper)ds.proxy()).pageSize() );
     }
 
     @Test
@@ -93,4 +94,8 @@ public class S3StorageWrapperTest {
         Assert.assertNull( s3.data("a","b" ));
     }
 
+    @Test
+    public void paginationTest(){
+
+    }
 }

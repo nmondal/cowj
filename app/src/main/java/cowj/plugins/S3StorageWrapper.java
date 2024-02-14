@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
+import zoomba.lang.core.types.ZNumber;
 
 import java.util.stream.Stream;
 
@@ -174,18 +175,37 @@ public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectRespo
     String REGION_ID = "region-id";
 
     /**
+     * The key to be used to find the Page Size for Streaming
+     * In the configuration map
+     */
+    String PAGE_SIZE = "page-size";
+
+    /**
      * A DataSource.Creator for GoogleStorageWrapper
      */
     DataSource.Creator STORAGE = (name, config, parent) -> {
         ProfileCredentialsProvider credentialsProvider = ProfileCredentialsProvider.create();
         Region region = Region.of( config.getOrDefault( REGION_ID, "ap-southeast-1" ).toString());
-        logger.info("[{}] region is [{}]", name,  region.id());
+        logger.info("S3Storage [{}] region is [{}]", name,  region.id());
+        final int pageSize = ZNumber.integer(config.getOrDefault( PAGE_SIZE, 1000 ) ).intValue();
+        logger.info("S3Storage [{}] page size is [{}]", name,  pageSize);
+
         final S3Client s3Client = S3Client.builder()
                 .credentialsProvider(credentialsProvider)
                 .httpClientBuilder(ApacheHttpClient.builder())
                 .region(region)
                 .build();
-        final S3StorageWrapper s3sw = () -> s3Client;
+        final S3StorageWrapper s3sw = new S3StorageWrapper() {
+            @Override
+            public int pageSize() {
+                return pageSize;
+            }
+
+            @Override
+            public S3Client s3client() {
+                return s3Client;
+            }
+        };
         return DataSource.dataSource(name, s3sw);
     };
 }
