@@ -15,6 +15,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -69,7 +71,7 @@ public class S3StorageWrapperTest {
         when(resp.asByteArray()).thenReturn(bytes );
         when(resp.asUtf8String()).thenReturn( hello);
         when(s3Client.getObjectAsBytes((GetObjectRequest) any())).thenReturn(resp);
-        final Map.Entry<String,ResponseBytes<GetObjectResponse>> data = Map.entry("b", resp);
+        final Entry<String,ResponseBytes<GetObjectResponse>> data = S3StorageWrapper.entry("b", resp);
 
         S3StorageWrapper s3 = () -> s3Client;
 
@@ -78,13 +80,16 @@ public class S3StorageWrapperTest {
 
         Assert.assertEquals( "", s3.utf8(null));
         Assert.assertEquals( 0, s3.bytes(null).length );
+        Entry<String,ResponseBytes<GetObjectResponse>> nullResp = S3StorageWrapper.entry("", null);
+        Assert.assertEquals( "", s3.utf8( nullResp));
+        Assert.assertEquals( 0, s3.bytes(nullResp).length );
 
 
         Assert.assertTrue( s3.delete("a","b"));
         Assert.assertTrue( s3.deleteBucket("a"));
 
         Assert.assertTrue( s3.fileExist("a","b"));
-        Assert.assertEquals( data, s3.data("a","b" ));
+        Assert.assertEquals( data.getValue(), s3.data("a","b" ).getValue());
 
     }
 

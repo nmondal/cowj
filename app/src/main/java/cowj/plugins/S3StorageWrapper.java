@@ -16,7 +16,6 @@ import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 import zoomba.lang.core.types.ZNumber;
 
-import java.util.Map;
 import java.util.stream.Stream;
 import java.util.Map.Entry;
 
@@ -25,6 +24,32 @@ import java.util.Map.Entry;
  */
 public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectResponse,
         Entry<String, ResponseBytes<GetObjectResponse>>> {
+
+
+    /**
+     * Creates an Entry
+     * @param s String key
+     * @param r Response value
+     * @return an Entry
+     */
+    static Entry<String,ResponseBytes<GetObjectResponse>> entry(String s, ResponseBytes<GetObjectResponse> r){
+        return new Entry<>(){
+            @Override
+            public String getKey() {
+                return s;
+            }
+
+            @Override
+            public ResponseBytes<GetObjectResponse> getValue() {
+                return r;
+            }
+
+            @Override
+            public ResponseBytes<GetObjectResponse> setValue(ResponseBytes<GetObjectResponse> value) {
+                return r;
+            }
+        };
+    }
 
     /**
      * Logger for the wrapper
@@ -96,8 +121,8 @@ public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectRespo
                     .key(fileName)
                     .bucket(bucketName)
                     .build();
-            ResponseBytes<GetObjectResponse> responseBytes = s3client().getObjectAsBytes(objectRequest);;
-            return Map.entry(fileName, responseBytes);
+            ResponseBytes<GetObjectResponse> responseBytes = s3client().getObjectAsBytes(objectRequest);
+            return entry(fileName, responseBytes);
         }catch (Throwable th){
             logger.warn("Error loading data : " + th);
             return null;
