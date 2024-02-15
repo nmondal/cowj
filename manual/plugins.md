@@ -364,10 +364,166 @@ public interface FCMWrapper {
 }
 ```
 
-### Cloud Storage - Google Storage
+### Storage 
 
 We try to avoid all database, because they are the architectural bottleneck, in the end.
-We do directly support cloud storage, specifically google storage as follows:
+We do directly support cloud storage.
+
+#### Universal Implementation 
+This is the universal implementaion
+
+```java
+    /**
+     * Dump String to Cloud Storage
+     * @param bucketName the bucket
+     * @param fileName   the file
+     * @param data       which to be dumped encoding used is UTF-8
+     * @return a R object
+     */
+    R dumps( String bucketName, String fileName, String data);
+    /**
+     * Dump Object to Storage after converting it to JSON String
+     *
+     * @param bucketName the bucket
+     * @param fileName   the file
+     * @param obj        which to be dumped
+     * @return a Blob object
+     */
+    R dump(String bucketName, String fileName, Object obj);
+
+    /**
+     * In case file exists
+     * @param bucketName in the bucket name
+     * @param fileName having the name
+     * @return true if it is a blob , false if it does not exist
+     */
+    boolean fileExist(String bucketName, String fileName);
+
+    /**
+     * Get the input data type I
+     * @param bucketName name of the bucket
+     * @param fileName name of the file
+     * @return data of type I
+     */
+    I data(String bucketName, String fileName);
+
+    /**
+     * Load data from Google Storage as bytes
+     *
+     * @param bucketName from this bucket name
+     * @param fileName   from this file
+     * @return byte[] - content of the file
+     */
+    default byte[] loadb(String bucketName, String fileName);
+
+    /**
+     * Load data from Google Storage as String - encoding is UTF-8
+     *
+     * @param bucketName from this bucket name
+     * @param fileName   from this file
+     * @return data string - content of the file
+     */
+    default String loads(String bucketName, String fileName);
+
+    /**
+     * Load data from Google Storage as Object
+     *
+     * @param bucketName from this bucket name
+     * @param fileName   from this file
+     * @return data object - content of the file after parsing it as JSON
+     */
+    default Object load(String bucketName, String fileName);
+
+    /**
+     * Gets a Stream of objects from a bucket
+     * @param bucketName name of the bucket
+     * @param directoryPrefix prefix we use to get files in the directory
+     * @return a Stream of Blob of type I
+     */
+    Stream<I> stream(String bucketName, String directoryPrefix);
+
+    /**
+     * Gets a Stream of String from a bucket
+     *
+     * @param bucketName name of the bucket
+     * @param directoryPrefix prefix we use to get files in the directory
+     * @return a Stream of String after reading each Blob as String use UTF-8 encoding
+     */
+    default Stream<String> allContent(String bucketName, String directoryPrefix);
+
+    /**
+     * Gets a Stream of Object from a bucket
+     * after reading each Blob as String use UTF-8 encoding
+     * In case it can parse it as JSON return that object, else return the string
+     * @param bucketName name of the bucket
+     * @param directoryPrefix prefix we use to get files in the directory
+     * @return a Stream of Object or String
+     */
+    default Stream<Object> allData(String bucketName, String directoryPrefix);
+
+    /**
+     * Create a new bucket
+     *
+     * @param bucketName name of the bucket
+     * @param location location of the bucket
+     * @param preventPublicAccess if set to true, ensures global read access is disabled
+     * @return a type B
+     */
+    B createBucket(String bucketName, String location, boolean preventPublicAccess);
+
+    /**
+     * Deletes the bucket
+     * @param bucketName name of bucket
+     * @return true if bucket was deleted false if bucket does not exist
+     */
+    boolean deleteBucket(String bucketName);
+
+    /**
+     * Deletes the file from the bucket
+     * @param bucketName name of the bucket
+     * @param path path of the file - example - "abc/def.json"
+     * @return true if file was deleted, false if file does not exist
+     */
+    boolean delete(String bucketName, String path);
+
+```
+
+#### S3 Storage 
+
+Usage is as follows:
+
+```yaml
+plugins:
+  cowj.plugins:
+    s3-storage: S3StorageWrapper::STORAGE
+
+data-sources:
+  storage:
+    type: s3-storage
+    region-id : ap-southeast-1 # region of the bucket 
+    page-size: 5000 # 5000 S3Objects, per page
+
+```
+
+There are some extra methods defined on the Google Storage, as follows:
+
+```java
+public interface S3StorageWrapper {
+  
+    /**
+     * Underlying S3Client instance
+     *
+     * @return S3Client
+     */
+    S3Client s3client();
+}
+```
+
+
+
+#### Google Storage
+
+Usage is as follows:
 
 ```yaml
 plugins:
@@ -388,27 +544,24 @@ _shared["qa:cowj:notification:team"] = data
 panic (empty(data), "teams are empty Please report to on call", 500)
 ```
 
-There are various methods defined on the storage, as follows:
+There are some extra methods defined on the Google Storage, as follows:
 
 ```java
 public interface GoogleStorageWrapper {
   // underlying storage 
   Storage storage();
-  // dumps the data to a bucket name with file name 
-  Blob dumps(String bucketName, String fileName, String data);
-  // dumps the object after converting it into json to a bucket name with file name
-  Blob dump(String bucketName, String fileName, Object obj);
-  // loads a bucket, file combo as string 
-  String loads(String bucketName, String fileName);
-  // loads a bucket, file combo - and then try converting to json obj 
-  Object load(String bucketName, String fileName);
-  // Generates a stream of blob objects from the various files in the bucket 
-  Stream<Blob> all(String bucketName);
-  // Gets stream of all string contents.. 
-  Stream<String> allContent(String bucketName);
-  // Gets objects of all ... if can not convert to json retain as string 
-  Stream<Object> allData(String bucketName);
 
+    /**
+     * Gets a Stream of Object from a bucket
+     * after reading each Blob as String use UTF-8 encoding
+     * In case it can parse it as JSON return that object, else return the string
+     * @param bucketName name of the bucket
+     * @param directoryPrefix prefix we use to get files in the directory
+     * @param recurse should we go down to the subdirectories
+     * @return a Stream of Object or String
+     */
+    default Stream<Object> allData(String bucketName, String directoryPrefix, boolean recurse);
+    
 }
 ```
 
