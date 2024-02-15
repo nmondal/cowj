@@ -102,6 +102,16 @@ public interface  StorageWrapper <B,R,I> {
     }
 
     /**
+     * Dump String to Google Cloud Storage
+     *
+     * @param bucketName the bucket
+     * @param fileName   the file
+     * @param data       which to be dumped
+     * @return an  object
+     */
+    R dumpb(String bucketName, String fileName, byte[] data) ;
+
+    /**
      * Load data from Google Storage as bytes
      *
      * @param bucketName from this bucket name

@@ -69,11 +69,12 @@ public class S3StorageWrapperTest {
         when(resp.asByteArray()).thenReturn(bytes );
         when(resp.asUtf8String()).thenReturn( hello);
         when(s3Client.getObjectAsBytes((GetObjectRequest) any())).thenReturn(resp);
+        final Map.Entry<String,ResponseBytes<GetObjectResponse>> data = Map.entry("b", resp);
 
         S3StorageWrapper s3 = () -> s3Client;
 
-        Assert.assertEquals( hello, s3.utf8(resp));
-        Assert.assertEquals( bytes, s3.bytes(resp));
+        Assert.assertEquals( hello, s3.utf8(data));
+        Assert.assertEquals( bytes, s3.bytes(data));
 
         Assert.assertEquals( "", s3.utf8(null));
         Assert.assertEquals( 0, s3.bytes(null).length );
@@ -83,7 +84,7 @@ public class S3StorageWrapperTest {
         Assert.assertTrue( s3.deleteBucket("a"));
 
         Assert.assertTrue( s3.fileExist("a","b"));
-        Assert.assertEquals( resp, s3.data("a","b" ));
+        Assert.assertEquals( data, s3.data("a","b" ));
 
     }
 

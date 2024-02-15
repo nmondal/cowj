@@ -16,12 +16,15 @@ import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 import zoomba.lang.core.types.ZNumber;
 
+import java.util.Map;
 import java.util.stream.Stream;
+import java.util.Map.Entry;
 
 /**
  * Abstraction for AWS S3 Cloud Storage
  */
-public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectResponse, ResponseBytes<GetObjectResponse>> {
+public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectResponse,
+        Entry<String, ResponseBytes<GetObjectResponse>>> {
 
     /**
      * Logger for the wrapper
@@ -34,6 +37,12 @@ public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectRespo
      * @return S3Client
      */
     S3Client s3client();
+
+    @Override
+    default PutObjectResponse dumpb(String bucketName, String fileName, byte[] data) {
+        return s3client().putObject(PutObjectRequest.builder().bucket(bucketName).key(fileName).build(),
+                RequestBody.fromBytes(data));
+    }
 
     /**
      * Dump String to S3 Cloud Storage
@@ -50,13 +59,15 @@ public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectRespo
     }
 
     @Override
-    default byte[] bytes(ResponseBytes<GetObjectResponse> input){
-        return input == null ? ArrayUtil.EMPTY_BYTE_ARRAY : input.asByteArray();
+    default byte[] bytes(Entry<String, ResponseBytes<GetObjectResponse>> input){
+        return (input == null || input.getValue() == null) ?
+                ArrayUtil.EMPTY_BYTE_ARRAY : input.getValue().asByteArray();
     }
 
     @Override
-    default String utf8(ResponseBytes<GetObjectResponse> input){
-        return input == null ? "" : input.asUtf8String();
+    default String utf8(Entry<String, ResponseBytes<GetObjectResponse>> input){
+        return (input == null || input.getValue() == null) ?
+                "" : input.getValue().asUtf8String();
     }
 
     /**
@@ -78,14 +89,15 @@ public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectRespo
     }
 
     @Override
-    default ResponseBytes<GetObjectResponse> data(String bucketName, String fileName){
+    default Entry<String, ResponseBytes<GetObjectResponse>> data(String bucketName, String fileName){
         try {
             GetObjectRequest objectRequest = GetObjectRequest
                     .builder()
                     .key(fileName)
                     .bucket(bucketName)
                     .build();
-            return s3client().getObjectAsBytes(objectRequest);
+            ResponseBytes<GetObjectResponse> responseBytes = s3client().getObjectAsBytes(objectRequest);;
+            return Map.entry(fileName, responseBytes);
         }catch (Throwable th){
             logger.warn("Error loading data : " + th);
             return null;
@@ -99,7 +111,7 @@ public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectRespo
      * @return a Stream of Google Storage Blob
      */
     @Override
-    default Stream<ResponseBytes<GetObjectResponse>> stream(String bucketName, String directoryPrefix) {
+    default Stream<Entry<String, ResponseBytes<GetObjectResponse>>> stream(String bucketName, String directoryPrefix) {
         ListObjectsV2Request listObjectsV2Request = ListObjectsV2Request.builder()
                 .bucket(bucketName )
                 .maxKeys(pageSize()) // Set the maxKeys parameter to control the page size
@@ -107,10 +119,10 @@ public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectRespo
                 .build();
 
         ListObjectsV2Iterable listObjectsV2Iterable = s3client().listObjectsV2Paginator(listObjectsV2Request);
-        Stream<ResponseBytes<GetObjectResponse>> resultStream = Stream.of();
+        Stream<Entry<String, ResponseBytes<GetObjectResponse>>> resultStream = Stream.of();
         for (ListObjectsV2Response page : listObjectsV2Iterable) {
-            final Stream<ResponseBytes<GetObjectResponse>> stream =
-                    page.contents().stream().map( so -> data(bucketName, so.key() ));
+            final Stream<Entry<String, ResponseBytes<GetObjectResponse>>> stream =
+                    page.contents().stream().map( so -> data(bucketName, so.key()  ));
             resultStream = Stream.concat(resultStream, stream );
         }
         return resultStream;

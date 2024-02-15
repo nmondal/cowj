@@ -10,6 +10,10 @@ import java.util.TreeMap;
 import java.util.stream.Stream;
 
 class MemoryBackedStorage implements StorageWrapper<Boolean,Boolean,String> {
+    @Override
+    public Boolean dumpb(String bucketName, String fileName, byte[] data) {
+        return false;
+    }
 
     Map<String, Map<String,String>> dataMemory = new HashMap<>();
     @Override

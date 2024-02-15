@@ -38,6 +38,7 @@ public interface GoogleStorageWrapper extends StorageWrapper<Bucket, Blob, Blob>
      * @param data       which to be dumped
      * @return a Blob object
      */
+    @Override
     default Blob dumpb(String bucketName, String fileName, byte[] data) {
         Storage storage = storage();
         BlobId blobId = BlobId.of(bucketName, fileName);
