@@ -565,24 +565,104 @@ public interface GoogleStorageWrapper {
 }
 ```
 
-
-
 ### Authenticators 
 
 There are two types of authentication mechanism provided in plugins. 
 
-1. Storage Based : [StorageAuthenticator]()
-2. JWT Based : [JWTAuthenticator](../app/src/)
+1. Storage Based : [StorageAuthenticator](../app/src/main/java/cowj/plugins/StorageAuthenticator.java)
+2. JWT Based : [JWTAuthenticator](../app/src/main/java/cowj/plugins/JWTAuthenticator.java)
 
 To use any of these authenticators, one must create the authentication by adding a `auth/auth.yaml` file in the app directory.
-
 Cowj system automatically loads the authentication scheme. 
 
+#### Storage Authentication 
+
+In the actual app `yaml` file:
+
+```yaml
+plugins:
+  cowj.plugins:
+    auth-jdbc : StorageAuthenticator::JDBC
+
+data-sources:  
+  mysql: #  mysql connection 
+    type: jdbc
+    secrets: secret_source # use the secret manager 
+    properties:
+      user: ${DB_USERNAME_READ}
+      password: ${DB_PASSWORD_READ}
+    connection: "jdbc:mysql://${DB_HOST_READ}/${DB_DATABASE_READ}"
+
+```
+And in the actual `auth/auth.yaml` :
+
+```yaml
+# The standard location auth file
+# is it enabled?
+disabled: false
+
+
+provider:
+  type: "auth-jdbc"
+  jdbc: "mysql"
+  token: "body:token"
+  query: "select user, expiry from users_table where token = '%s'"
+  user: "user"
+  expiry: "expiry"
+
+
+user-header: "u"
+# casbin policy
+policy:
+  # this is adapter type file
+  adapter: file
+  # for a file type, CSV is the way
+  file: policy.csv
+message: "thou shall not pass!"
+
+```
+
+
+#### JWT Authentication 
+
+In the actual app `yaml` file:
+
+```yaml
+plugins:
+  cowj.plugins:
+    auth-jwt : JWTAuthenticator::JWT
+
+```
+
+In the `auth.yaml` file inside the app `auth` folder:
+```yaml
+# The standard location auth file
+# is it enabled?
+disabled: false
+
+provider:
+  type: "auth-jwt"
+  secret-key: "42"
+  issuer: "test"
+  expiry: 60 # 1 minute, JWT everything is seconds
+  risks:
+    - "/token"
+
+
+user-header: "u"
+# casbin policy
+policy:
+  # this is adapter type file
+  adapter: file
+  # for a file type, CSV is the way
+  file: policy.csv
+message: "thou shall not pass!"
+
+```
 
 ### RAMA 
-First check the basic idea behind RAMA from here:
-https://github.com/nmondal/cowj/manual/RAMA.md
 
+First check the basic idea behind [RAMA event bus](./RAMA.md)
 The syntax is as follows:
 
 ```yaml
