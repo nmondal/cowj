@@ -2,7 +2,6 @@ package cowj.plugins;
 
 import cowj.StorageWrapper;
 import org.jetbrains.kotlin.com.intellij.util.ArrayUtil;
-import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
@@ -221,14 +220,12 @@ public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectRespo
      * A DataSource.Creator for GoogleStorageWrapper
      */
     DataSource.Creator STORAGE = (name, config, parent) -> {
-        ProfileCredentialsProvider credentialsProvider = ProfileCredentialsProvider.create();
         Region region = Region.of( config.getOrDefault( REGION_ID, "ap-southeast-1" ).toString());
         logger.info("S3Storage [{}] region is [{}]", name,  region.id());
         final int pageSize = ZNumber.integer(config.getOrDefault( PAGE_SIZE, 1000 ) ).intValue();
         logger.info("S3Storage [{}] page size is [{}]", name,  pageSize);
 
         final S3Client s3Client = S3Client.builder()
-                .credentialsProvider(credentialsProvider)
                 .httpClientBuilder(ApacheHttpClient.builder())
                 .region(region)
                 .build();
