@@ -32,6 +32,11 @@ public class S3StorageWrapperTest {
         Assert.assertTrue( ds.proxy() instanceof S3StorageWrapper );
         Assert.assertNotNull( ((S3StorageWrapper) ds.proxy()).s3client() );
         Assert.assertEquals(50, ((S3StorageWrapper)ds.proxy()).pageSize() );
+        Entry<String,String> es = S3StorageWrapper.entry("1","2");
+        // check that the Entries also works out well
+        Assert.assertEquals("1", es.getKey());
+        Assert.assertEquals("2", es.getValue());
+        Assert.assertEquals("2", es.setValue("42"));
     }
 
     @Test
@@ -42,6 +47,9 @@ public class S3StorageWrapperTest {
         S3StorageWrapper s3 = () -> s3Client;
         PutObjectResponse actual= s3.dumps( "a","b", "c");
         Assert.assertEquals( resp, actual);
+        actual= s3.dumpb( "a","b", "c".getBytes(StandardCharsets.UTF_8));
+        Assert.assertEquals( resp, actual);
+
         Assert.assertEquals(1000, s3.pageSize() );
     }
 

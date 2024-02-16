@@ -81,6 +81,9 @@ public interface SecretManager {
         }
     };
 
+    /**
+     * A DataSource.Creator for AWS SecretManager
+     */
     DataSource.Creator ASM = (name, config, parent) -> {
         try(SecretsManagerClient secretsClient = SecretsManagerClient.create()) {
             String secretKey = config.getOrDefault("config", "").toString();

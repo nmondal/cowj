@@ -27,25 +27,25 @@ public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectRespo
 
     /**
      * Creates an Entry
-     * @param s String key
-     * @param r Response value
-     * @return an Entry
+     * @param k K key
+     * @param v V value
+     * @return an Entry(K,V)
      */
-    static Entry<String,ResponseBytes<GetObjectResponse>> entry(String s, ResponseBytes<GetObjectResponse> r){
+    static  <K,V> Entry<K,V>  entry(K k, V v){
         return new Entry<>(){
             @Override
-            public String getKey() {
-                return s;
+            public K getKey() {
+                return k;
             }
 
             @Override
-            public ResponseBytes<GetObjectResponse> getValue() {
-                return r;
+            public V getValue() {
+                return v;
             }
 
             @Override
-            public ResponseBytes<GetObjectResponse> setValue(ResponseBytes<GetObjectResponse> value) {
-                return r;
+            public V setValue(Object value) {
+                return v;
             }
         };
     }
