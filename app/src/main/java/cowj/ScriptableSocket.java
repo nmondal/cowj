@@ -91,6 +91,35 @@ public final class ScriptableSocket {
     }
 
     /**
+     * Sends a message to a client via  session
+     * @param session jetty Session
+     * @param message String to be sent
+     * @return EitherMonad true if success, on error the error
+     */
+    public static EitherMonad<Boolean> send(Session session, String message){
+        return EitherMonad.call( () -> {
+            session.getRemote().sendString(message);
+            return true;
+        } );
+    }
+
+    /**
+     * Sends same message to all clients in the specific path
+     * @param path websocket path
+     * @param message String to be sent
+     * @return EitherMonad true if no error, else returns last error encountered
+     */
+    public static EitherMonad<Boolean> broadcast(String path, String message){
+        final Set<Session> sessions = SESSIONS.getOrDefault(path, Collections.emptySet());
+        final List<Throwable> errors =
+                sessions.parallelStream().map( s -> send(s,message))
+                        .filter(EitherMonad::inError).map(EitherMonad::error)
+                        .toList();
+        if ( errors.isEmpty() ) return EitherMonad.value(true);
+        return EitherMonad.error(errors.getLast());
+    }
+
+    /**
      * Event Variable Key for the Scriptable
      */
     public static final String EVENT = "event" ;

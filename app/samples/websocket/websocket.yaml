@@ -26,8 +26,8 @@ routes:
 sockets:
   /ws: _/ws.groovy
 
-#cron:
-#  r:
-#    exec: _/periodic_send.groovy
-#    boot: true
-#    at: "0/30 * * * * ? *"
+cron:
+  ping:
+    exec: _/periodic_send.groovy # sends pings to all connected sessions
+    boot: true
+    at: "0/30 * * * * ? *"
