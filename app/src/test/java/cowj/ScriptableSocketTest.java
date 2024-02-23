@@ -1,5 +1,6 @@
 package cowj;
 
+import org.eclipse.jetty.websocket.api.Session;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.junit.AfterClass;
@@ -10,6 +11,8 @@ import org.junit.Test;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.mockito.Mockito.mock;
 
 public class ScriptableSocketTest {
 
@@ -65,5 +68,16 @@ public class ScriptableSocketTest {
         Assert.assertTrue( messages.contains("ya!") );
         Assert.assertTrue( messages.size() >= 3 );
         Assert.assertEquals(true, status[0]);
+    }
+
+    @Test
+    public void errorTest(){
+        ScriptableSocket ss = ScriptableSocket.socket( "/err", "samples/test_scripts/error_1_arg.zm" );
+        Session session = mock(Session.class);
+        ss.connected(session); // load it up
+        ss.error(session, new Throwable("Boom!"));
+        EitherMonad<Boolean> em = ScriptableSocket.broadcast("/err", "hey!");
+        Assert.assertTrue(em.inError());
+        ss.closed(session, 42, "boom!" );
     }
 }
