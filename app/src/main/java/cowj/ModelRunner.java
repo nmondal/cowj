@@ -120,6 +120,16 @@ public interface ModelRunner extends Runnable {
         CronModel cronModel = CronModel.fromConfig(m, m.cron());
         CronModel.schedule(cronModel);
 
+        // web sockets, if any...
+        logger.info("WebSocket mapping are as follows...");
+        Map<String, String> sockets = m.sockets();
+        for ( Map.Entry<String,String> r : sockets.entrySet() ){
+            final String scriptPath = m.interpretPath(r.getValue());
+            ScriptableSocket socketInstance = ScriptableSocket.socket(r.getKey(), scriptPath);
+            webSocket(r.getKey(), socketInstance);
+            logger.info("scriptable websocket: {} -> {}", r.getKey(), scriptPath);
+        }
+
         logger.info("Routes mapping are as follows...");
         Map<String, Map<String, String>> paths = m.routes();
         for (String verb : paths.keySet()) {
@@ -153,6 +163,7 @@ public interface ModelRunner extends Runnable {
                 logger.info("proxy route: {} -> {} -> {}", verb, r.getKey(), r.getValue());
             }
         }
+
         // load auth...
         AuthSystem authSystem = AuthSystem.fromFile(m.auth(), m );
         authSystem.attach();

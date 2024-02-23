@@ -139,6 +139,15 @@ public interface Model {
     }
 
     /**
+     * WebSocket definition
+     * path : script_path
+     * @return a map returning the web socket mapping
+     */
+    default Map<String, String> sockets(){
+        return Collections.emptyMap();
+    }
+
+    /**
      * Location from where Auth System will be loaded
      * @return full path for Auth.yaml file
      */
@@ -206,6 +215,12 @@ public interface Model {
      * Name for the key for routes configuration
      */
     String ROUTES = "routes" ;
+
+    /**
+     * Name for the key for sockets configuration
+     */
+    String SOCKETS = "sockets" ;
+
 
     /**
      * Name for the key for threading configuration
@@ -294,6 +309,11 @@ public interface Model {
             @Override
             public Map<String, Map<String, String>> routes() {
                 return (Map) map.getOrDefault( ROUTES, Model.super.routes());
+            }
+
+            @Override
+            public Map<String,String> sockets() {
+                return (Map) map.getOrDefault( SOCKETS, Model.super.sockets());
             }
 
             @Override
