@@ -13,8 +13,9 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Template jetty based WebSocket implementation
  * This wraps around a Scriptable
+ * Default timeout is 2 minutes
  */
-@WebSocket
+@WebSocket(idleTimeout=120000)
 public final class ScriptableSocket {
 
     /**
