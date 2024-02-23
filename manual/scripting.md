@@ -230,6 +230,98 @@ The special variable `_log` is always inside any script to `log` messages.
 This is a `sl4j` log binding via proxy - and always prints the name of the script 
 from which it got invoked.
 
+
+### Web Socket Handling 
+
+A fixed timed out (2 minutes) jetty `WebSocket` implementation is used to wrap around the 
+underlying script.
+Example of websocket is in [websocket](../app/samples/websocket) app.
+
+The handler script receives the `ScriptableSocket.SocketEvent` class as payload which as the structure:
+
+```java
+class SocketEvent {
+
+    /**
+     * Type of the event, one of
+     * connect, closed, message, error, frame
+     * As verbatim
+     */
+    public final String type;
+
+    /**
+     * A jetty WebSocket Session
+     */
+    public final Session session;
+
+    /**
+     * Either null, String, Frame, Throwable
+     * Based on the event type
+     * closed, message : String
+     * frame : Frame
+     * error : Throwable
+     */
+    public final Object data;
+
+    /**
+     * Code , always -1, except in close, when it depicts the code for closure
+     */
+    public final int code;
+}
+```
+Now to handle various event type inside the handler:
+
+```groovy
+// ws.groovy 
+_log.info(event.type)
+switch (event.type){
+    case "connect" -> event.session.getRemote().sendString("Welcome!")
+    case "message" -> event.session.getRemote().sendString("ya!")
+    case "error" ->  event.data.printStackTrace()
+}
+```
+
+System automatically keeps track of the `Session`s, and 
+session store is maintained in the [ScriptableSocket](../app/src/main/java/cowj/ScriptableSocket.java)
+as below:
+
+```java
+// ScriptableSocket.java 
+/**
+ * A holder for all sessions across all WebSocket connections across paths
+ */
+public static final Map<String, Set<Session>> SESSIONS = new ConcurrentHashMap<>();
+
+/**
+ * Sends a message to a client via  session
+ * @param session jetty Session
+ * @param message String to be sent
+ * @return EitherMonad true if success, on error the error
+ */
+public static EitherMonad<Boolean> send(Session session, String message);
+
+/**
+ * Sends same message to all clients in the specific path
+ * @param path websocket path
+ * @param message String to be sent
+ * @return EitherMonad true if no error, else returns last error encountered
+ */
+public static EitherMonad<Boolean> broadcast(String path, String message);
+```
+
+Usage of the function `broadcast(String, String)` can be found in the 
+[cron script](../app/samples/websocket/periodic_send.groovy) which broadcasts to every active session:
+
+```groovy
+// periodic_send.groovy 
+import cowj.ScriptableSocket
+// just ping current time
+dt = "" + new Date()
+_log.info("Date is {}", dt )
+ScriptableSocket.broadcast("/ws", dt )
+```
+
+
 ## Debugging
 
 WIP.
