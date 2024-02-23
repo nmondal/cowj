@@ -30,4 +30,4 @@ cron:
   ping:
     exec: _/periodic_send.groovy # sends pings to all connected sessions
     boot: true
-    at: "0/30 * * * * ? *"
+    at: "0/3 * * * * ? *" # ping every 5 secs...
