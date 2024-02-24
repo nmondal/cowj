@@ -1,0 +1,33 @@
+# This is the sample routes file
+# basic support are given
+
+# port in which to connect
+port: 5555
+
+# for all static files, js, html pages, pds and what not
+static: _/.
+
+# to load all external jars which are not part of the distribution
+lib: _/lib
+
+# threading related stuff
+threading:
+  min: 4
+  max : 8
+  timeout: 30000
+
+
+# path mapping
+routes:
+  get:
+    /pulse: _/pulse.groovy
+
+# Web Socket handling
+sockets:
+  /ws: _/ws.groovy
+
+cron:
+  ping:
+    exec: _/periodic_send.groovy # sends pings to all connected sessions
+    boot: true
+    at: "0/3 * * * * ? *" # ping every 5 secs...

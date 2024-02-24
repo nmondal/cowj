@@ -1,5 +1,7 @@
 package cowj;
 
+import java.util.concurrent.Callable;
+
 /**
  * Abstraction over Result of any operation
  * Either The result of Type V, or that of Throwable
@@ -59,5 +61,20 @@ public final class EitherMonad<V> {
      */
     public static <V> EitherMonad<V> value(V value){
         return new EitherMonad<>(value, null);
+    }
+
+    /**
+     * Creates an EitherMonad by running the callable code
+     * If successful, returns the result , if not returns error
+     * @param callable Callable code to be called
+     * @return EitherMonad of type of the Callable
+     * @param <V> type of the Callable
+     */
+    public static <V> EitherMonad<V> call( Callable<V> callable){
+        try {
+            return value(callable.call());
+        }catch (Throwable t){
+            return error(t);
+        }
     }
 }

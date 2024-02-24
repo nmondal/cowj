@@ -107,6 +107,8 @@ dependencies {
     testImplementation 'org.apache.derby:derby:10.17.1.0'
     // REDIS
     testImplementation 'it.ozimov:embedded-redis:0.7.3'
+    // WebSocket
+    testImplementation 'org.java-websocket:Java-WebSocket:1.5.6'
     // Mockito ...
     testImplementation 'org.mockito:mockito-core:5.10.0'
 }

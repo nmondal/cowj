@@ -58,8 +58,10 @@ public interface JvmRAMA {
         String randomSuffix = suffix() ;
         String fileName = directoryPrefix(curTime) + "/" + curTime + "_" + randomSuffix ;
         StorageWrapper<?,?,?> st = prefixedStorage();
-        final boolean ret = st.safeBoolean( () -> st.dumps( topic, fileName, data)) ;
-        return EitherMonad.value(ret);
+        return EitherMonad.call( () -> {
+            st.dumps( topic, fileName, data);
+            return true;
+        } );
     }
 
     /**

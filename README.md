@@ -231,6 +231,11 @@ filters:
   after:
     "*": _/after.zm
 
+# Web Sockets 
+sockets:
+   /ws : my_socket_handler.zm
+   
+
 # how to load various data sources - plugin based architecture 
 plugins:
   # the package 
@@ -396,6 +401,12 @@ resp.body( jstr( { "error" : error_msg } ) )
 ```
 
 This ensures all errors are formatted as json.
+
+### Web Sockets
+
+Read more on the [scripting](manual/scripting.md) documentation.
+Idea is the same, various WebSocket server states are handled by the script handler.
+Example of websocket is in [websocket](app/samples/websocket) app. 
 
 ### Cron
 
