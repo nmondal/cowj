@@ -35,7 +35,7 @@ public class ScriptableSocketTest {
         final List<String> messages = new ArrayList<>();
         // TODO handling errors, how?
         final Object[] status = new Object[]{ false, null };
-        final WebSocketClient clientEndPoint = new WebSocketClient(new URI("ws://localhost:6042/ws")) {
+        final WebSocketClient clientEndPoint = new WebSocketClient(new URI("ws://localhost:5555/ws")) {
 
             @Override
             public void onOpen(ServerHandshake handshakedata) {}

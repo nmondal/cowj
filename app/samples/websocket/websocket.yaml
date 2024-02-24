@@ -2,7 +2,7 @@
 # basic support are given
 
 # port in which to connect
-port: 6042
+port: 5555
 
 # for all static files, js, html pages, pds and what not
 static: _/.
