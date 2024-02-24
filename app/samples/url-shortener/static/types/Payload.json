@@ -1,0 +1,14 @@
+{
+  "$id": "https://cowj/Generic.out.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Schema for URL Shortener service",
+  "title": "Payload",
+  "type": "object",
+  "properties": {
+    "u": {
+      "type": "string"
+    }
+  },
+  "required": ["u"],
+  "additionalProperties": false
+}

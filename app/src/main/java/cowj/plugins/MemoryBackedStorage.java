@@ -1,5 +1,6 @@
 package cowj.plugins;
 
+import cowj.DataSource;
 import cowj.StorageWrapper;
 
 import java.nio.charset.StandardCharsets;
@@ -9,7 +10,11 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
-class MemoryBackedStorage implements StorageWrapper<Boolean,Boolean,String> {
+/**
+ * A Memory Backed Storage Reference Implementation
+ * This can be used to simulate actual S3, Google Cloud Storage implementations
+ */
+public class MemoryBackedStorage implements StorageWrapper<Boolean,Boolean,String> {
     @Override
     public Boolean dumpb(String bucketName, String fileName, byte[] data) {
         return false;
@@ -71,4 +76,12 @@ class MemoryBackedStorage implements StorageWrapper<Boolean,Boolean,String> {
         bucket.remove(path);
         return true;
     }
+
+    /**
+     * A Field to create the storage
+     */
+    public static final  DataSource.Creator STORAGE = (name, config, parent) -> {
+        logger.info("MemoryBackedStorage [{}] ", name);
+        return DataSource.dataSource(name, new MemoryBackedStorage());
+    };
 }

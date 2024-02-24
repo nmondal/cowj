@@ -1,0 +1,5 @@
+// create the bucket if not created already
+_log.info("Creating bucket if not created!!")
+res = _ds.storage.createBucket( "URLS", "dummy" , false )
+_log.info("Bucket Creation was Success? {}", res )
+

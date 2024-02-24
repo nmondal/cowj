@@ -1,0 +1,16 @@
+#####################
+# Defines the Schemas for routes
+# https://json-schema.org/learn/miscellaneous-examples.html
+#####################
+labels:
+  ok:  "resp.status == 200"
+
+verify:
+  in: true
+  out: true
+
+routes:
+  /shorten:
+    post:
+      in: Payload.json
+      ok: Payload.json

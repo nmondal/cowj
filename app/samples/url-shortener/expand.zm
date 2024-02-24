@@ -1,0 +1,5 @@
+url_id = req.params("shortId")
+data = _ds.storage.load( "URLS", url_id) ?? {:}
+assert( "u" @ data , "Page Does not exist!", 404 )
+_log.info( "URL found '{}'", data.u )
+resp.redirect( data.u ) // just redirect

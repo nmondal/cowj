@@ -1,0 +1,11 @@
+payload = req.body // get the raw string
+t = int( time() ) // ms level time
+// Add 2 digits of randomization
+n = t * 100 + random( 100 )
+url_key = str(n, 62 )
+// this - because storage can take time hence do async
+thread( file_name = url_key , data = payload ) as {
+    _log.info( "Data being dumped {} -> {}", file_name, data )
+    _ds.storage.dumps( "URLS", url_key, data )
+}
+jstr ( { "u" : url_key } ) // return
