@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 public class MemoryBackedStorage implements StorageWrapper<Boolean,Boolean,String> {
     @Override
     public Boolean dumpb(String bucketName, String fileName, byte[] data) {
-        return false;
+        return dumps( bucketName, fileName, new String(data) );
     }
 
     Map<String, Map<String,String>> dataMemory = new HashMap<>();
