@@ -338,4 +338,16 @@ public class JDBCWrapperTest {
        EitherMonad<Integer> rm  = derby.update("this should go bonkers!", List.of());
        Assert.assertTrue(rm.inError());
     }
+
+    @Test
+    public void queryFormatTest(){
+        String res = JDBCWrapper.format("%s %s", List.of("a","b"));
+        Assert.assertEquals("a b", res);
+
+        res = JDBCWrapper.format("${a} ${b}", Map.of("a","x", "b","y"));
+        Assert.assertEquals("x y", res);
+
+        res = JDBCWrapper.format("x y", 42);
+        Assert.assertEquals("x y", res);
+    }
 }

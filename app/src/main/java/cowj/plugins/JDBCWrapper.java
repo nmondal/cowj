@@ -140,16 +140,33 @@ public interface JDBCWrapper {
     }
 
     /**
+     * Formats the query
+     * @param query a String query which needs to be formatted
+     * @param args arguments, either a list or Map
+     * @return formatted query as String
+     */
+    static String format(String query, Object args){
+        if ( args instanceof List){
+            return query.formatted(((List<?>)args).toArray());
+        }
+        if ( args instanceof Map<?,?>){
+            return Model.formatParams( query, (Map<?,?>)args );
+        }
+        logger.warn("Query '{}' argument is passed non list/map, will return as is!",query);
+        return query;
+    }
+
+    /**
      * Runs Select Query using connection and args
      * @param con the Connection to use
      * @param query to be executed
-     * @param args the arguments to be passed
-     * @return a EitherMonad of type List of Map - rather list of json objects
+     * @param args the arguments to be passed, List or Map
+     * @return an EitherMonad of type List of Map - rather list of json objects
      */
-    static EitherMonad<List<Map<String,Object>>> selectWithConnection( Connection con, String query, List<Object> args) {
+    static EitherMonad<List<Map<String,Object>>> selectWithConnection( Connection con, String query, Object args) {
         try (Statement stmt = con.createStatement() ) {
             List<Map<String,Object>> result = new ArrayList<>();
-            String q = query.formatted(args.toArray());
+            String q =  format(query,args);
             logger.info("[S] query : [{}]", q);
             ResultSet rs = stmt.executeQuery(q);
             ResultSetMetaData rsmd = rs.getMetaData();
@@ -177,12 +194,12 @@ public interface JDBCWrapper {
      * Runs Insert, Delete, Update Query using connection and args
      * @param con the Connection to use
      * @param query to be executed
-     * @param args the arguments to be passed
-     * @return a EitherMonad of type Integer returned from the connection
+     * @param args the arguments to be passed, List or Map
+     * @return an EitherMonad of type Integer returned from the connection
      */
-    static EitherMonad<Integer> updateWithConnection( Connection con, String query, List<Object> args) {
+    static EitherMonad<Integer> updateWithConnection( Connection con, String query, Object args) {
         try (Statement stmt = con.createStatement() ) {
-            String q = query.formatted(args.toArray());
+            String q = format(query,args);
             logger.info("[CUID] query : [{}]", q);
             Integer result = stmt.executeUpdate(q);
             return EitherMonad.value(result);
@@ -215,46 +232,22 @@ public interface JDBCWrapper {
      * Runs Select Query using underlying connection and args
      * Does automatic retry for stale/invalid connection
      * @param query to be executed
-     * @param args the arguments to be passed
-     * @return a EitherMonad of type List of Map - rather list of json objects
+     * @param args the arguments to be passed,  List or Map
+     * @return an EitherMonad of type List of Map - rather list of json objects
      */
-    default EitherMonad<List<Map<String,Object>>> select(String query, List<Object> args) {
+    default EitherMonad<List<Map<String,Object>>> select(String query,Object args) {
         return queryWithOnceRetry( (connection ->  selectWithConnection(connection, query, args)));
     }
 
     /**
-     * Runs Select Query using underlying connection and args
-     * Does automatic retry for stale/invalid connection
-     * @param query to be executed
-     * @param params the arguments Map to be passed to be substituted
-     * @return a EitherMonad of type List of Map - rather list of json objects
-     */
-    default EitherMonad<List<Map<String,Object>>> select(String query, Map<String,Object> params) {
-        return queryWithOnceRetry( connection -> selectWithConnection(connection,
-                Model.formatParams( query, params ), Collections.emptyList()));
-    }
-
-    /**
      * Runs Insert, Update, Delete Query using underlying connection and args
      * Does automatic retry for stale/invalid connection
      * @param query to be executed
-     * @param args the arguments to be passed
+     * @param args the arguments to be passed, List or Map
      * @return a EitherMonad of integer defining no of rows updated
      */
-    default EitherMonad<Integer> update(String query, List<Object> args) {
+    default EitherMonad<Integer> update(String query, Object args) {
         return queryWithOnceRetry( (connection ->  updateWithConnection(connection, query, args)));
-    }
-
-    /**
-     * Runs Insert, Update, Delete Query using underlying connection and args
-     * Does automatic retry for stale/invalid connection
-     * @param query to be executed
-     * @param params the arguments Map to be passed to be substituted
-     * @return a EitherMonad of integer defining no of rows updated
-     */
-    default EitherMonad<Integer> update(String query, Map<?,?> params) {
-        return queryWithOnceRetry( connection ->  updateWithConnection(connection,
-                Model.formatParams( query, params ), Collections.emptyList()));
     }
 
     /**
