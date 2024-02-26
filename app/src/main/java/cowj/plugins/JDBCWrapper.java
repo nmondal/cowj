@@ -2,6 +2,7 @@ package cowj.plugins;
 
 import cowj.DataSource;
 import cowj.EitherMonad;
+import cowj.Model;
 import cowj.Scriptable;
 import net.jodah.expiringmap.ExpirationListener;
 import net.jodah.expiringmap.ExpirationPolicy;
@@ -222,6 +223,18 @@ public interface JDBCWrapper {
     }
 
     /**
+     * Runs Select Query using underlying connection and args
+     * Does automatic retry for stale/invalid connection
+     * @param query to be executed
+     * @param params the arguments Map to be passed to be substituted
+     * @return a EitherMonad of type List of Map - rather list of json objects
+     */
+    default EitherMonad<List<Map<String,Object>>> select(String query, Map<String,Object> params) {
+        return queryWithOnceRetry( connection -> selectWithConnection(connection,
+                Model.formatParams( query, params ), Collections.emptyList()));
+    }
+
+    /**
      * Runs Insert, Update, Delete Query using underlying connection and args
      * Does automatic retry for stale/invalid connection
      * @param query to be executed
@@ -230,6 +243,18 @@ public interface JDBCWrapper {
      */
     default EitherMonad<Integer> update(String query, List<Object> args) {
         return queryWithOnceRetry( (connection ->  updateWithConnection(connection, query, args)));
+    }
+
+    /**
+     * Runs Insert, Update, Delete Query using underlying connection and args
+     * Does automatic retry for stale/invalid connection
+     * @param query to be executed
+     * @param params the arguments Map to be passed to be substituted
+     * @return a EitherMonad of integer defining no of rows updated
+     */
+    default EitherMonad<Integer> update(String query, Map<?,?> params) {
+        return queryWithOnceRetry( connection ->  updateWithConnection(connection,
+                Model.formatParams( query, params ), Collections.emptyList()));
     }
 
     /**

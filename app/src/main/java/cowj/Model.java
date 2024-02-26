@@ -9,6 +9,7 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,18 +42,49 @@ public interface Model {
      * Substitutes all ${xyz} from the context to produce string
      * @param templateString input string may containing ${xyz}
      * @param context input map whose key should be "xyz" so that we substitute
+     * @param whenNotFound a Function that would be used to gather not found in context values
      * @return a string after substitution
      */
-    default String template(String templateString, Map context){
+    static String formatParams(String templateString, Map<?,?> context, Function<String,Object> whenNotFound){
         Matcher m = TEMPLATE_PATTERN.matcher(templateString);
         String ret = templateString;
         while ( m.find() ){
             String varName =  m.group("var");
             // may be evaluated? In that case the place is in Scriptable
-            Object val = context.getOrDefault(varName, "?" + varName);
+            final Object val ;
+            if ( context.containsKey(varName) ){
+                val = context.get(varName);
+            } else{
+                val = whenNotFound.apply(varName);
+            }
             ret = ret.replace("${" + varName + "}", val.toString());
         }
         return ret;
+    }
+
+    /**
+     * Substitutes all ${xyz} from the context to produce string
+     * If A param is not found, throws IllegalArgument Exception
+     * @param templateString input string may containing ${xyz}
+     * @param context input map whose key should be "xyz" so that we substitute
+     * @return a string after substitution
+     */
+    static String formatParams(String templateString, Map<?,?> context){
+        Function<String,Object> err = (param) -> {
+            throw new IllegalArgumentException(String.format("Parameter '%s' does not exists in %s", param, context) );
+        };
+        return formatParams(templateString, context, err);
+    }
+
+    /**
+     * Substitutes all ${xyz} from the context to produce string
+     * In case a parameter is not found, replace that place holder with ?paramName
+     * @param templateString input string may containing ${xyz}
+     * @param context input map whose key should be "xyz" so that we substitute
+     * @return a string after substitution
+     */
+    default String template(String templateString, Map<?,?> context){
+        return formatParams(templateString,context, (varName)-> "?"+varName );
     }
 
     /**

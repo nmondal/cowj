@@ -36,7 +36,7 @@ public class StorageAuthenticatorTest {
         DataSource.registerType("auth-gs", StorageAuthenticator.class.getName() + "::" + "GOOGLE_STORAGE");
         jdbcWrapper = mock(JDBCWrapper.class);
         Map<String,Object> data = Map.of("user", "foo", "expiry" , System.currentTimeMillis() + 100000);
-        when(jdbcWrapper.select(any(),any())).thenReturn(EitherMonad.value(List.of(data)));
+        when(jdbcWrapper.select(any(),(List)any())).thenReturn(EitherMonad.value(List.of(data)));
         Scriptable.DATA_SOURCES.put("__jdbc", jdbcWrapper );
         mockRequest = mock(Request.class);
         when(mockRequest.body()).thenReturn("{ \"token\" : \"foo-bar\" }");
@@ -73,7 +73,7 @@ public class StorageAuthenticatorTest {
         Map<String,Object> config = Map.of( "type", "auth-jdbc", "storage" , "__jdbc", "cache", 8 );
         Throwable th = new Throwable("boom!");
         // ensure jdbc throws ...
-        when(jdbcWrapper.select(any(),any())).thenReturn(EitherMonad.error(th));
+        when(jdbcWrapper.select(any(),(List)any())).thenReturn(EitherMonad.error(th));
         Authenticator authenticator = AuthSystem.fromConfig(config, model, NULL);
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             authenticator.authenticate(mockRequest);
@@ -81,7 +81,7 @@ public class StorageAuthenticatorTest {
         Assert.assertTrue( exception instanceof HaltException );
         Assert.assertEquals( 401, ((HaltException)exception).statusCode() );
         // ensure jdbc responds empty
-        when(jdbcWrapper.select(any(),any())).thenReturn(EitherMonad.value( List.of()));
+        when(jdbcWrapper.select(any(),(List)any())).thenReturn(EitherMonad.value( List.of()));
         exception = assertThrows(RuntimeException.class, () -> {
             authenticator.authenticate(mockRequest);
         });
