@@ -37,6 +37,15 @@ public class ModelTest {
         Assert.assertEquals("Hello , World!", r);
         r = m.template("${c} , ${d}!", ctx);
         Assert.assertEquals("?c , ?d!", r);
+
+        // Happy case ...
+        r = Model.formatParams("${a} , ${b}!", ctx);
+        Assert.assertEquals("Hello , World!", r);
+        // Now need to throw Error and check if works
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            Model.formatParams( "${a} + ${xxx}", ctx);
+        });
+        Assert.assertTrue( exception.getMessage().contains("'xxx'"));
     }
 
     @Test
