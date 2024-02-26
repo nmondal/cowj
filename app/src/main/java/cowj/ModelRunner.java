@@ -113,7 +113,8 @@ public interface ModelRunner extends Runnable {
                 logger.info("DS '{}' created!", dataSource.name());
                 Scriptable.DATA_SOURCES.put(dsName, dataSource.proxy());
             }catch (Throwable t){
-                logger.error("DS '{}' failed to create! {}", dsName, t.toString());
+                final String message = String.format("DS '%s' failed to create!", dsName);
+                logger.error(message, t);
             }
         }
         // now everything is done, run cron...
