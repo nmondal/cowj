@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class MemoryBakedStorageTest {
+public class MemoryBackedStorageTest {
     static final String BUCKET_NAME = "foo";
     static MemoryBackedStorage ms = new MemoryBackedStorage();
 
