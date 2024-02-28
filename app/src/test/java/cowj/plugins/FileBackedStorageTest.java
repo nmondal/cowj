@@ -30,6 +30,7 @@ public class FileBackedStorageTest {
         Assert.assertNotNull(fs.absMountPoint);
         Assert.assertTrue( fs.createBucket(BUCKET_NAME, "", false ));
         Assert.assertFalse( fs.createBucket(BUCKET_NAME, "", false ));
+        Assert.assertFalse( FileBackedStorage.deleteRecurse( Paths.get( "/cdrom") ));
     }
 
     @AfterClass
