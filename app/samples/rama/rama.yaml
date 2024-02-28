@@ -1,0 +1,51 @@
+#############################################
+# Entity End Point for Eventing Ops
+##############################################
+
+port: 4202
+
+threading:
+  min: 4
+  max : 8
+  timeout: 30000
+
+routes:
+
+  put:
+    /event : _/rama.zm
+
+plugins:
+  cowj.plugins:
+    mem-st: MemoryBackedStorage::STORAGE
+    jvm-rama: JvmRAMA::RAMA
+
+data-sources:
+  # to run locally - comment this to run in prod
+  storage:
+    type: mem-st
+
+  # The event handling stuff
+  rama:
+    type: jvm-rama
+    storage: storage
+    uuid: "rama-42-0"
+    topics:
+      EVENT_1:
+        create: true
+        at: "0 0/1 * * * ?"
+        prefix: "yyyy/MM/dd/HH/mm"
+        offset: "PT-1M"
+        step: "PT1M"
+        page-size: 100
+        consumers:
+          - _/evt_1.zm
+      EVENT_2:
+        create: true
+        at: "0 */5 * * * ?"
+        prefix: "yyyy/MM/dd/HH/mm"
+        offset: "PT-5M"
+        step: "PT1M"
+        page-size: 100
+        consumers:
+          - _/evt_1.zm
+          - _/evt_2.zm

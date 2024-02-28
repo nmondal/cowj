@@ -1,6 +1,7 @@
 package cowj;
 
 import cowj.plugins.CurlWrapper;
+import cowj.plugins.JvmRAMA;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.*;
@@ -203,6 +204,7 @@ public interface ModelRunner extends Runnable {
         awaitStop();
         CronModel.stop();
         AsyncHandler.stop();
+        JvmRAMA.RAMAConsumerJob.stop();
     }
 
     /**

@@ -1,18 +1,23 @@
 package cowj.plugins;
 
-import cowj.DataSource;
-import cowj.EitherMonad;
-import cowj.Scriptable;
-import cowj.StorageWrapper;
+import cowj.*;
+import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import zoomba.lang.core.operations.Function;
+import zoomba.lang.core.types.ZDate;
+import zoomba.lang.core.types.ZRange;
 
 import javax.script.Bindings;
 import javax.script.SimpleBindings;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
+
+import static org.quartz.JobBuilder.newJob;
 
 /**
  * A Minimal RAMA implementation - See RAMA.md in the manual section of the Git repo
@@ -61,6 +66,7 @@ public interface JvmRAMA {
         // More than good enough to be honest... for any scale > 50 calls per msec
         String randomSuffix = suffix() ;
         String fileName = directoryPrefix(curTime) + "/" + curTime + "_" + randomSuffix ;
+        logger.info("{} - {}", topic, fileName);
         StorageWrapper<?,?,?> st = prefixedStorage();
         return EitherMonad.call( () -> {
             st.dumps( topic, fileName, data);
@@ -142,6 +148,37 @@ public interface JvmRAMA {
         }
     }
 
+    default EitherMonad<Boolean> consumePrefix(String topic, String prefix, long pageSize, BiConsumer<String, Map.Entry<String,String>> consumer){
+        long offset = 0;
+        boolean hasMoreData = true;
+        long total = 0;
+        while ( hasMoreData ){
+            EitherMonad<Response> em = get(topic, prefix, pageSize, offset);
+            if ( em.inError() ) return EitherMonad.error(em.error());
+            final Response response = em.value();
+            hasMoreData = response.hasMoreData;
+            response.data.forEach( (s) -> consumer.accept(topic,s) );
+            offset = response.readOffset ;
+            total += response.data.size();
+        }
+        logger.info("Topic '{}' , Prefix '{}', Total: {} event processed", topic, prefix, total );
+        return EitherMonad.value(true);
+    }
+
+    default EitherMonad<Boolean> consumePrefix(String topic, String prefix, long pageSize, Scriptable scriptable){
+        return consumePrefix( topic, prefix, pageSize, (eventClass, event) -> {
+            Bindings bindings = new SimpleBindings();
+            bindings.put("event", eventClass );
+            bindings.put("body", event );
+            try {
+                scriptable.exec(bindings);
+            } catch (Throwable e) {
+                final String msg = String.format("Event %s : %s Failed!", eventClass, event);
+                logger.error(msg, e );
+            }
+        } );
+    }
+
     /**
      * key for Storage data source to use
      */
@@ -153,6 +190,116 @@ public interface JvmRAMA {
      * Default is "-"
      */
     String NODE_UNIQUE_IDENTIFIER = "uuid" ;
+
+    final class RAMAConsumerJob implements Job {
+
+        private static Scheduler scheduler;
+        public static void stop(){
+            if ( scheduler == null ) return;
+            EitherMonad.call( () -> {
+                scheduler.clear();
+                scheduler.shutdown(true);
+                return 0;
+            });
+        }
+
+        private static final Map<String,RAMAConsumerJobPayload> payloadMap = new ConcurrentHashMap<>();
+
+        private static boolean attachListenerHandler(JvmRAMA rama, Map<String,Object> topicConfig, Model model) throws SchedulerException {
+            if ( topicConfig.isEmpty() ) return false;
+            logger.info("RAMA topic config found will now attach listeners!");
+            if ( scheduler == null ) {
+                EitherMonad<Scheduler> em = EitherMonad.call(CronModel.SCHEDULER_FACTORY::getScheduler);
+                if (em.inError()) throw new RuntimeException(em.error());
+                scheduler = em.value();
+            }
+            for ( Map.Entry<String,Object> entry : topicConfig.entrySet() ){
+                RAMAConsumerJobPayload jobPayload = new RAMAConsumerJobPayload( entry.getKey(), (Map<String, Object>) entry.getValue(), rama, model);
+                payloadMap.put(jobPayload.name, jobPayload);
+                if ( jobPayload.create ){ // should create bucket...
+                    logger.info("{} : Create is set to true, will create bucket!", jobPayload.topic);
+                    rama.prefixedStorage().createBucket( jobPayload.topic, "", true);
+                }
+                final JobDetail jobDetail = newJob( RAMAConsumerJob.class).withIdentity(jobPayload.name).build();
+                final Trigger trigger = TriggerBuilder.newTrigger()
+                        .withIdentity(jobPayload.name)
+                        .withSchedule(CronScheduleBuilder.cronSchedule(jobPayload.at))
+                        .forJob(jobPayload.name).build();
+                scheduler.scheduleJob( jobDetail, trigger );
+            }
+            scheduler.start();
+            return true;
+        }
+
+        final static class  RAMAConsumerJobPayload{
+            public static final String AT = "at" ;
+            public static final String CREATE = "create" ;
+
+            public static final String PREFIX = "prefix" ;
+            public static final String OFFSET = "offset" ;
+            public static final String STEP = "step" ;
+            public static final String PAGE_SIZE = "page-size" ;
+            public static final String CONSUMERS = "consumers" ;
+            final List<Scriptable> handlers;
+            final Duration offset;
+            final Duration step;
+            final SimpleDateFormat df;
+            final long pageSize ;
+            final String topic;
+            final String at;
+
+            final String name;
+
+            final JvmRAMA rama ;
+
+            final boolean create;
+
+            private RAMAConsumerJobPayload(String topic, Map<String,Object> consumerConfig, JvmRAMA rama, Model model){
+                this.topic = topic ;
+                create = (Boolean) consumerConfig.getOrDefault(CREATE,  false);
+                at = consumerConfig.getOrDefault(AT,  "0 0 5 31 2 ?").toString();
+                offset = Duration.parse( consumerConfig.getOrDefault(OFFSET, "PT-1m" ).toString());
+                step =  Duration.parse(consumerConfig.getOrDefault(STEP, "PT-1m" ).toString());
+                String prefix = consumerConfig.getOrDefault(PREFIX,  "yyyy/MM/dd/HH/mm").toString();
+                df = new SimpleDateFormat(prefix);
+                pageSize = ((Number)consumerConfig.getOrDefault(PAGE_SIZE,  100L)).longValue();
+                this.rama = rama ;
+                name = "rama:event:" + topic ;
+                final List<String> handlers = (List)consumerConfig.getOrDefault(CONSUMERS, Collections.emptyList());
+                this.handlers = handlers.stream().map( s-> {
+                    final String handler = model.interpretPath(s);
+                    logger.info("RAMA {} handler set to -> {}", topic, handler);
+                    return Scriptable.UNIVERSAL.create(name, handler);
+                }).toList();
+
+            }
+        }
+
+
+        @Override
+        public void execute(JobExecutionContext context) {
+            JobDetail jobDetail = context.getJobDetail();
+            String jobName = jobDetail.getKey().getName() ;
+            RAMAConsumerJobPayload jobPayload = payloadMap.get(jobName);
+            logger.info("Starting RAMA listener job '{}'", jobPayload.name );
+            ZDate zDate = new ZDate().at("UTC");
+            ZDate begin = (ZDate) zDate._add_( jobPayload.offset );
+            ZRange.DateRange dateRange = new ZRange.DateRange( begin, zDate, jobPayload.step );
+            while ( dateRange.hasNext() ){
+                final Date item = (Date)dateRange.next();
+                String datePrefix = jobPayload.df.format( item );
+                logger.info("consumer reading topic: '{}' with prefix '{}'", jobPayload.topic, datePrefix );
+                jobPayload.handlers.stream().parallel().forEach( handler -> {
+                   EitherMonad<Boolean> em = jobPayload.rama.consumePrefix( jobPayload.topic, datePrefix, jobPayload.pageSize, handler);
+                   if ( em.inError() ){
+                       final String err = String.format("From %s Error reading!!!", jobPayload.name);
+                       logger.error(err , em.error() );
+                   }
+                });
+            }
+            logger.info("Ending RAMA listener job '{}'", jobPayload.name );
+        }
+    }
 
     /**
      * A Creator for RAMA
@@ -180,6 +327,9 @@ public interface JvmRAMA {
                 return uuid + Thread.currentThread().getId() + "." + System.nanoTime() ;
             }
         };
+        Map<String,Object> topicConfig = (Map)config.getOrDefault( "topics", Collections.emptyMap());
+        EitherMonad<Boolean> em = EitherMonad.call( () -> RAMAConsumerJob.attachListenerHandler( jvmRAMA, topicConfig, parent) );
+        if ( em.inError() ) throw Function.runTimeException(em.error() );
         return DataSource.dataSource(name, jvmRAMA);
     };
 }

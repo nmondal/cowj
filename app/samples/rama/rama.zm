@@ -1,0 +1,3 @@
+// hard code it
+_ds.rama.put("EVENT_1", req.body() )
+jstr( { "success" : true } )

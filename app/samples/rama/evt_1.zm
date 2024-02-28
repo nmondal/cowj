@@ -1,0 +1,1 @@
+_log.info( "topic {}, key {}, value {}", event, body.key , body.value )
