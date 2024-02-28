@@ -30,6 +30,11 @@ public interface GoogleStorageWrapper extends StorageWrapper<Bucket, Blob, Blob>
      */
     Storage storage();
 
+    @Override
+    default String key(Blob input) {
+        return input.getBlobId().getName();
+    }
+
     /**
      * Dump String to Google Cloud Storage
      *

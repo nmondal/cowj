@@ -81,9 +81,9 @@ public interface JvmRAMA {
      */
     class Response{
         /**
-         * List of data Strings, each string is string rep of the data object
+         * List of pair, (key, data String) , each data string is string rep of the data object
          */
-        public final List<String> data;
+        public final List<Map.Entry<String,String>> data;
 
         /**
          * Till how much it read in the current get call
@@ -96,7 +96,7 @@ public interface JvmRAMA {
          * Does the prefix has more data to read? Then true, else false
          */
         public final boolean hasMoreData;
-        Response(List<String> data, long offset){
+        Response(List<Map.Entry<String,String>> data, long offset){
             this.data = data;
             this.readOffset = offset;
             this.hasMoreData = this.readOffset > 0;
@@ -122,10 +122,10 @@ public interface JvmRAMA {
                                       long numRecordsToRead, long offsetToReadFrom ){
         StorageWrapper<?,?,?> st = prefixedStorage();
         try {
-            Stream<String> stream = st.allContent( topic, timePrefix );
-            Iterator<String> skippedIterator = stream.skip( offsetToReadFrom ).iterator();
+            Stream<Map.Entry<String,String>> stream = st.entries( topic, timePrefix );
+            Iterator<Map.Entry<String,String>> skippedIterator = stream.skip( offsetToReadFrom ).iterator();
             long c = 0;
-            List<String> data = new ArrayList<>();
+            List<Map.Entry<String,String>> data = new ArrayList<>();
             while ( c < numRecordsToRead && skippedIterator.hasNext() ){
                 data.add(skippedIterator.next());
                 c++;
@@ -140,39 +140,6 @@ public interface JvmRAMA {
         }catch (Throwable t){
             return EitherMonad.error(t);
         }
-    }
-
-    default EitherMonad<Boolean> consumePrefix(String topic, String prefix, long pageSize, BiConsumer<String,String> consumer){
-        long offset = 0;
-        boolean hasMoreData = true;
-        while ( hasMoreData ){
-            EitherMonad<Response> em = get(topic, prefix, pageSize, offset);
-            if ( em.inError() ) return EitherMonad.error(em.error());
-            final Response response = em.value();
-            hasMoreData = response.hasMoreData;
-            response.data.forEach( (s) -> consumer.accept(topic,s) );
-            offset = response.readOffset ;
-        }
-        return EitherMonad.value(true);
-    }
-
-    default EitherMonad<Boolean> consumePrefix(String topic, String prefix, long pageSize, Scriptable scriptable){
-        return consumePrefix( topic, prefix, pageSize, (eventClass, event) -> {
-            Bindings bindings = new SimpleBindings();
-            bindings.put("event", eventClass );
-            bindings.put("body", event );
-            try {
-                scriptable.exec(bindings);
-            } catch (Throwable e) {
-                final String msg = String.format("Event %s : %s Failed!", eventClass, event);
-                logger.error(msg, e );
-            }
-        } );
-    }
-
-    default EitherMonad<Boolean> consumePrefix(String topic, String prefix, long pageSize, String handler){
-        Scriptable scriptable = Scriptable.UNIVERSAL.create( "event_handler:" + topic, handler);
-        return consumePrefix(topic, prefix, pageSize, scriptable);
     }
 
     /**

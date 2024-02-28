@@ -1,7 +1,6 @@
 package cowj.plugins;
 
 import cowj.StorageWrapper;
-import org.jetbrains.kotlin.com.intellij.util.ArrayUtil;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
@@ -21,8 +20,8 @@ import java.util.Map.Entry;
 /**
  * Abstraction for AWS S3 Cloud Storage
  */
-public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectResponse,
-        Entry<String, ResponseBytes<GetObjectResponse>>> {
+public interface S3StorageWrapper extends
+        StorageWrapper.KeyValueStorage<Boolean, PutObjectResponse, ResponseBytes<GetObjectResponse>> {
 
     /**
      * Logger for the wrapper

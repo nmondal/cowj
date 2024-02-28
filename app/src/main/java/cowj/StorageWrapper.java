@@ -116,6 +116,39 @@ public interface  StorageWrapper <B,R,I> {
     String utf8(I input);
 
     /**
+     * Gets a
+     * key as the path key
+     * Returns the key
+     * @param input blob type I
+     * @return A Key for input I
+     */
+    String key(I input);
+
+    /**
+     * Gets a Map.Entry with
+     * key as the path key
+     * Value as the UTF8 String from the blob
+     * Returns null in value if input does not exist, or null
+     * @param input blob type I
+     * @return A Key,Value pair for key and Value to the data
+     */
+    default Map.Entry<String,String> entry(I input){
+        return entry( key(input), utf8(input));
+    }
+
+    /**
+     * Gets a Map.Entry with
+     * key as the path key
+     * Value as JSON Object or UTF8 String from the blob
+     * Returns null in value if input does not exist, or null
+     * @param input blob type I
+     * @return A Key,Value pair for key and Value to the data
+     */
+    default Map.Entry<String,Object> entryObject(I input){
+        return entry( key(input), json(input));
+    }
+
+    /**
      * Utility method to get content of a Blob as JSON Object
      * If not JSON object simply returns the String
      * @param input the Blob whose content we shall read
@@ -200,6 +233,18 @@ public interface  StorageWrapper <B,R,I> {
     }
 
     /**
+     * Gets a Stream of Map.Entry of String, String from a bucket
+     * key is the key path
+     * value is the value of the data
+     * @param bucketName name of the bucket
+     * @param directoryPrefix prefix we use to get files in the directory
+     * @return a Stream of Key,Value pairs of Strings after reading each Blob as String use UTF-8 encoding
+     */
+    default Stream<Map.Entry<String,String>> entries(String bucketName, String directoryPrefix) {
+        return stream(bucketName,directoryPrefix).map( this::entry );
+    }
+
+    /**
      * Gets a Stream of Object from a bucket
      * after reading each Blob as String use UTF-8 encoding
      * In case it can parse it as JSON return that object, else return the string
@@ -209,6 +254,18 @@ public interface  StorageWrapper <B,R,I> {
      */
     default Stream<Object> allData(String bucketName, String directoryPrefix) {
         return stream(bucketName, directoryPrefix).map( this::json );
+    }
+
+    /**
+     * Gets a Stream of Map.Entry of String, Object/String from a bucket
+     * key is the key path
+     * value is the value of the data
+     * @param bucketName name of the bucket
+     * @param directoryPrefix prefix we use to get files in the directory
+     * @return a Stream of key, value pairs of String, Object after reading
+     */
+    default Stream<Map.Entry<String,Object>> entriesData(String bucketName, String directoryPrefix) {
+        return stream(bucketName,directoryPrefix).map(this::entryObject);
     }
 
     /**
@@ -239,13 +296,22 @@ public interface  StorageWrapper <B,R,I> {
     /**
      * An implementation of Entry Style Storage
      */
-    interface SimpleKeyValueStorage extends StorageWrapper<Boolean,Boolean, Map.Entry<String,String>>{
+    interface KeyValueStorage<B,R,T> extends StorageWrapper<B,R, Map.Entry<String,T>>{
+        @Override
+        default String key(Map.Entry<String, T> input) {
+            return input.getKey();
+        }
+    }
+
+    /**
+     * An implementation of Entry Style Storage with String Type as actual Data
+     */
+    interface SimpleKeyValueStorage extends KeyValueStorage<Boolean,Boolean, String>{
         @Override
         default byte[] bytes(Map.Entry<String,String> input) {
             return input == null || input.getValue() == null ? null :
                     input.getValue().getBytes(StandardCharsets.UTF_8);
         }
-
         @Override
         default String utf8(Map.Entry<String,String> input) {
             return input == null ? null : input.getValue();
