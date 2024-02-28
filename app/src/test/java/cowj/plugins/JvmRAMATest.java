@@ -126,7 +126,7 @@ public class JvmRAMATest {
     public void errorInGetTest(){
         final StorageWrapper<?,?,?> wrapper = new MemoryBackedStorage(){
             @Override
-            public Stream<String> stream(String bucketName, String directoryPrefix) {
+            public Stream<Map.Entry<String, String>> stream(String bucketName, String directoryPrefix) {
                 throw new RuntimeException("Boom!");
             }
         };
