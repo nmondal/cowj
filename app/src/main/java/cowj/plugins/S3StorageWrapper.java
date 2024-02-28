@@ -24,32 +24,6 @@ import java.util.Map.Entry;
 public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectResponse,
         Entry<String, ResponseBytes<GetObjectResponse>>> {
 
-
-    /**
-     * Creates an Entry
-     * @param k K key
-     * @param v V value
-     * @return an Entry(K,V)
-     */
-    static  <K,V> Entry<K,V>  entry(K k, V v){
-        return new Entry<>(){
-            @Override
-            public K getKey() {
-                return k;
-            }
-
-            @Override
-            public V getValue() {
-                return v;
-            }
-
-            @Override
-            public V setValue(Object value) {
-                return v;
-            }
-        };
-    }
-
     /**
      * Logger for the wrapper
      */
@@ -85,13 +59,13 @@ public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectRespo
     @Override
     default byte[] bytes(Entry<String, ResponseBytes<GetObjectResponse>> input){
         return (input == null || input.getValue() == null) ?
-                ArrayUtil.EMPTY_BYTE_ARRAY : input.getValue().asByteArray();
+               null : input.getValue().asByteArray();
     }
 
     @Override
     default String utf8(Entry<String, ResponseBytes<GetObjectResponse>> input){
         return (input == null || input.getValue() == null) ?
-                "" : input.getValue().asUtf8String();
+                null : input.getValue().asUtf8String();
     }
 
     /**
@@ -121,7 +95,7 @@ public interface S3StorageWrapper extends StorageWrapper<Boolean, PutObjectRespo
                     .bucket(bucketName)
                     .build();
             ResponseBytes<GetObjectResponse> responseBytes = s3client().getObjectAsBytes(objectRequest);
-            return entry(fileName, responseBytes);
+            return StorageWrapper.entry(fileName, responseBytes);
         }catch (Throwable th){
             logger.warn("Error loading data : " + th);
             return null;

@@ -2,6 +2,7 @@ package cowj.plugins;
 
 import cowj.DataSource;
 import cowj.Model;
+import cowj.StorageWrapper;
 import org.junit.Assert;
 import org.junit.Test;
 import software.amazon.awssdk.core.ResponseBytes;
@@ -32,7 +33,7 @@ public class S3StorageWrapperTest {
         Assert.assertTrue( ds.proxy() instanceof S3StorageWrapper );
         Assert.assertNotNull( ((S3StorageWrapper) ds.proxy()).s3client() );
         Assert.assertEquals(50, ((S3StorageWrapper)ds.proxy()).pageSize() );
-        Entry<String,String> es = S3StorageWrapper.entry("1","2");
+        Entry<String,String> es = StorageWrapper.entry("1","2");
         // check that the Entries also works out well
         Assert.assertEquals("1", es.getKey());
         Assert.assertEquals("2", es.getValue());
@@ -79,19 +80,18 @@ public class S3StorageWrapperTest {
         when(resp.asByteArray()).thenReturn(bytes );
         when(resp.asUtf8String()).thenReturn( hello);
         when(s3Client.getObjectAsBytes((GetObjectRequest) any())).thenReturn(resp);
-        final Entry<String,ResponseBytes<GetObjectResponse>> data = S3StorageWrapper.entry("b", resp);
+        final Entry<String,ResponseBytes<GetObjectResponse>> data = StorageWrapper.entry("b", resp);
 
         S3StorageWrapper s3 = () -> s3Client;
 
         Assert.assertEquals( hello, s3.utf8(data));
         Assert.assertEquals( bytes, s3.bytes(data));
 
-        Assert.assertEquals( "", s3.utf8(null));
-        Assert.assertEquals( 0, s3.bytes(null).length );
-        Entry<String,ResponseBytes<GetObjectResponse>> nullResp = S3StorageWrapper.entry("", null);
-        Assert.assertEquals( "", s3.utf8( nullResp));
-        Assert.assertEquals( 0, s3.bytes(nullResp).length );
-
+        Assert.assertNull(s3.utf8(null));
+        Assert.assertNull(s3.bytes(null));
+        Entry<String,ResponseBytes<GetObjectResponse>> nullResp = StorageWrapper.entry("", null);
+        Assert.assertNull(s3.utf8(nullResp));
+        Assert.assertNull(s3.bytes(nullResp));
 
         Assert.assertTrue( s3.delete("a","b"));
         Assert.assertTrue( s3.deleteBucket("a"));

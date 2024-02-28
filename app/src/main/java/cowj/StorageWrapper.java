@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zoomba.lang.core.types.ZTypes;
 
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -13,6 +14,31 @@ import java.util.stream.Stream;
  * @param <I> Type of item which is encountered in iteration within a bucket
  */
 public interface  StorageWrapper <B,R,I> {
+
+    /**
+     * Creates an Entry
+     * @param k K key
+     * @param v V value
+     * @return an Entry(K,V)
+     */
+    static  <K,V> Map.Entry<K,V> entry(K k, V v){
+        return new Map.Entry<>(){
+            @Override
+            public K getKey() {
+                return k;
+            }
+
+            @Override
+            public V getValue() {
+                return v;
+            }
+
+            @Override
+            public V setValue(V value) {
+                return v;
+            }
+        };
+    }
 
     /**
      * Logger for the wrapper
@@ -74,6 +100,7 @@ public interface  StorageWrapper <B,R,I> {
 
     /**
      * Gets Bytes from the blob
+     * Returns null if input does not exist, or null
      * @param input blob type I
      * @return byte array of the data
      */
@@ -81,6 +108,7 @@ public interface  StorageWrapper <B,R,I> {
 
     /**
      * Gets UTF8 String from the blob
+     * Returns null if input does not exist, or null
      * @param input blob type I
      * @return UTF8 String rep from the data
      */
