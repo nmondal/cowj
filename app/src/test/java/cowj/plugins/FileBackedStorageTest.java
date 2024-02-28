@@ -7,6 +7,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,14 +29,18 @@ public class FileBackedStorageTest {
         fs = (FileBackedStorage)ds.proxy();
         Assert.assertNotNull(fs.absMountPoint);
         Assert.assertTrue( fs.createBucket(BUCKET_NAME, "", false ));
+        Assert.assertFalse( fs.createBucket(BUCKET_NAME, "", false ));
     }
 
     @AfterClass
     public static void afterClass(){
         fs.deleteBucket(BUCKET_NAME);
+        Assert.assertFalse( fs.deleteBucket(BUCKET_NAME));
     }
 
     public void readWriteTest(String keyName){
+        Assert.assertNull( FileBackedStorage.readString( Paths.get("/xxx/xxx/")));
+        Assert.assertFalse( fs.dumps("xxxx", "xxx", "xxx"));
         final String data = "Hello!" ;
         Assert.assertTrue( fs.dumps( BUCKET_NAME, keyName, data ));
         String res = fs.data(BUCKET_NAME, keyName).getValue();
@@ -66,6 +71,9 @@ public class FileBackedStorageTest {
 
     @Test
     public void prefixedStreamTest(){
+        List<String> l = fs.allContent("xxxx", "xxx").toList();
+        Assert.assertTrue(l.isEmpty());
+
         for ( int i = 0; i < 20 ; i++ ){
             String key =  i /10 + "/" + i % 10 ;
             Assert.assertTrue( fs.dumps(BUCKET_NAME, key, String.valueOf(i)) );

@@ -38,18 +38,18 @@ public class FileBackedStorage implements StorageWrapper.SimpleKeyValueStorage {
             Files.createDirectories( f.toPath() );
             return true;
         }  );
-        return em.isSuccessful() && em.value() ;
+        return em.isSuccessful();
     }
 
     public static boolean deleteRecurse(Path path){
-        EitherMonad<Boolean> em = EitherMonad.call( () ->{
+        EitherMonad.call( () ->{
             Files.walk(path)
                     .sorted(Comparator.reverseOrder())
                     .map(Path::toFile)
                     .forEach(File::delete);
             return true;
         });
-        return em.isSuccessful() && !path.toFile().exists();
+        return  !path.toFile().exists();
     }
 
     @Override
@@ -96,7 +96,7 @@ public class FileBackedStorage implements StorageWrapper.SimpleKeyValueStorage {
             Files.write(Paths.get(path), data);
             return true;
         });
-        return em.isSuccessful() && em.value() ;
+        return em.isSuccessful() ;
     }
 
     @Override
