@@ -1,6 +1,7 @@
 package cowj.plugins;
 
 import cowj.DataSource;
+import cowj.StorageWrapper;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -59,6 +60,14 @@ public class MemoryBackedStorageTest {
     }
 
     @Test
+    public void otherFunctionsTest(){
+        Assert.assertNull(ms.bytes(null));
+        Assert.assertNull(ms.bytes(StorageWrapper.entry(null, null)));
+        Assert.assertNull(ms.utf8(null));
+        Assert.assertNull(ms.utf8(StorageWrapper.entry(null, null)));
+    }
+
+    @Test
     public void streamTest(){
         final String streamBucket = "stream" ;
         Assert.assertTrue( ms.createBucket(streamBucket, "", false));
@@ -70,5 +79,9 @@ public class MemoryBackedStorageTest {
         Set<Integer> set = ms.allData( streamBucket , "x/" )
                 .map( o -> (int)((Map)o).get("x") ).collect(Collectors.toSet());
         Assert.assertEquals( max, set.size() );
+        Set<String> setS = ms.allContent( streamBucket , "x/" ).collect(Collectors.toSet());
+        Assert.assertEquals( max, setS.size() );
+        Set<Map.Entry<?,?>> setE = ms.entriesData( streamBucket , "x/" ).collect(Collectors.toSet());
+        Assert.assertEquals( max, setE.size() );
     }
 }
