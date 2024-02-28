@@ -6,8 +6,12 @@ import cowj.Scriptable;
 import cowj.StorageWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.script.Bindings;
+import javax.script.SimpleBindings;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 /**
@@ -136,6 +140,39 @@ public interface JvmRAMA {
         }catch (Throwable t){
             return EitherMonad.error(t);
         }
+    }
+
+    default EitherMonad<Boolean> consumePrefix(String topic, String prefix, long pageSize, BiConsumer<String,String> consumer){
+        long offset = 0;
+        boolean hasMoreData = true;
+        while ( hasMoreData ){
+            EitherMonad<Response> em = get(topic, prefix, pageSize, offset);
+            if ( em.inError() ) return EitherMonad.error(em.error());
+            final Response response = em.value();
+            hasMoreData = response.hasMoreData;
+            response.data.forEach( (s) -> consumer.accept(topic,s) );
+            offset = response.readOffset ;
+        }
+        return EitherMonad.value(true);
+    }
+
+    default EitherMonad<Boolean> consumePrefix(String topic, String prefix, long pageSize, Scriptable scriptable){
+        return consumePrefix( topic, prefix, pageSize, (eventClass, event) -> {
+            Bindings bindings = new SimpleBindings();
+            bindings.put("event", eventClass );
+            bindings.put("body", event );
+            try {
+                scriptable.exec(bindings);
+            } catch (Throwable e) {
+                final String msg = String.format("Event %s : %s Failed!", eventClass, event);
+                logger.error(msg, e );
+            }
+        } );
+    }
+
+    default EitherMonad<Boolean> consumePrefix(String topic, String prefix, long pageSize, String handler){
+        Scriptable scriptable = Scriptable.UNIVERSAL.create( "event_handler:" + topic, handler);
+        return consumePrefix(topic, prefix, pageSize, scriptable);
     }
 
     /**

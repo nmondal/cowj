@@ -28,7 +28,6 @@ public class FileBackedStorageTest {
         fs = (FileBackedStorage)ds.proxy();
         Assert.assertNotNull(fs.absMountPoint);
         Assert.assertTrue( fs.createBucket(BUCKET_NAME, "", false ));
-        Assert.assertEquals("hello!",  fs.utf8("hello!"));
     }
 
     @AfterClass
@@ -39,7 +38,7 @@ public class FileBackedStorageTest {
     public void readWriteTest(String keyName){
         final String data = "Hello!" ;
         Assert.assertTrue( fs.dumps( BUCKET_NAME, keyName, data ));
-        String res = fs.data(BUCKET_NAME, keyName);
+        String res = fs.data(BUCKET_NAME, keyName).getValue();
         Assert.assertEquals( data, res);
         Assert.assertTrue( fs.fileExist( BUCKET_NAME, keyName));
         Assert.assertTrue( fs.delete( BUCKET_NAME, keyName));
@@ -72,9 +71,9 @@ public class FileBackedStorageTest {
             Assert.assertTrue( fs.dumps(BUCKET_NAME, key, String.valueOf(i)) );
         }
         // Now read say "1/"
-        Set<String> set = fs.stream(BUCKET_NAME, "1/").filter( s -> !s.isEmpty()).collect(Collectors.toSet());
+        Set<String> set = fs.stream(BUCKET_NAME, "1/").filter( s -> !s.getValue().isEmpty()).map(Map.Entry::getValue).collect(Collectors.toSet());
         Assert.assertEquals(10, set.size() );
-        set = fs.stream(BUCKET_NAME, "0/").filter( s -> !s.isEmpty()).collect(Collectors.toSet());
+        set = fs.stream(BUCKET_NAME, "0/").filter( s -> !s.getValue().isEmpty()).map(Map.Entry::getValue).collect(Collectors.toSet());
         Assert.assertEquals(10, set.size() );
     }
 }

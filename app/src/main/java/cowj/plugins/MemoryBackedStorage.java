@@ -3,7 +3,6 @@ package cowj.plugins;
 import cowj.DataSource;
 import cowj.StorageWrapper;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +13,7 @@ import java.util.stream.Stream;
  * A Memory Backed Storage Reference Implementation
  * This can be used to simulate actual S3, Google Cloud Storage implementations
  */
-public class MemoryBackedStorage implements StorageWrapper<Boolean,Boolean, Map.Entry<String,String>> {
+public class MemoryBackedStorage implements StorageWrapper.SimpleKeyValueStorage {
     @Override
     public Boolean dumpb(String bucketName, String fileName, byte[] data) {
         return dumps( bucketName, fileName, new String(data) );
@@ -37,17 +36,6 @@ public class MemoryBackedStorage implements StorageWrapper<Boolean,Boolean, Map.
     public Map.Entry<String,String> data(String bucketName, String fileName) {
         String val = dataMemory.getOrDefault( bucketName, Collections.emptyMap()).getOrDefault(fileName,null);
         return StorageWrapper.entry(bucketName,val);
-    }
-
-    @Override
-    public byte[] bytes(Map.Entry<String,String> input) {
-        return input == null || input.getValue() == null ? null :
-                input.getValue().getBytes(StandardCharsets.UTF_8);
-    }
-
-    @Override
-    public String utf8(Map.Entry<String,String> input) {
-        return input == null ? null : input.getValue();
     }
 
     @Override

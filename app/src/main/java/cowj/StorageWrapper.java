@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zoomba.lang.core.types.ZTypes;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -235,4 +236,19 @@ public interface  StorageWrapper <B,R,I> {
      */
     boolean delete(String bucketName, String path);
 
+    /**
+     * An implementation of Entry Style Storage
+     */
+    interface SimpleKeyValueStorage extends StorageWrapper<Boolean,Boolean, Map.Entry<String,String>>{
+        @Override
+        default byte[] bytes(Map.Entry<String,String> input) {
+            return input == null || input.getValue() == null ? null :
+                    input.getValue().getBytes(StandardCharsets.UTF_8);
+        }
+
+        @Override
+        default String utf8(Map.Entry<String,String> input) {
+            return input == null ? null : input.getValue();
+        }
+    }
 }

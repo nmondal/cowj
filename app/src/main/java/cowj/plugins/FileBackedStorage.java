@@ -10,15 +10,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-
 import java.nio.file.Paths;
 import java.util.Comparator;
+import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
 /**
  * A file system backed Storage for persistence
  */
-public class FileBackedStorage implements StorageWrapper<Boolean,Boolean,String>  {
+public class FileBackedStorage implements StorageWrapper.SimpleKeyValueStorage {
 
     public final String absMountPoint;
     public FileBackedStorage(String mountPoint) {
@@ -60,7 +61,7 @@ public class FileBackedStorage implements StorageWrapper<Boolean,Boolean,String>
 
     @Override
     public Boolean dumps(String bucketName, String fileName, String data) {
-        return dumpb(bucketName, fileName, bytes(data));
+        return dumpb(bucketName, fileName, data.getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
@@ -72,23 +73,13 @@ public class FileBackedStorage implements StorageWrapper<Boolean,Boolean,String>
 
     public static String readString(Path path){
         EitherMonad<String> em = EitherMonad.call( () -> Files.readString( path ));
-        return em.isSuccessful() ? em.value() : "" ;
+        return em.isSuccessful() ? em.value() : null ;
     }
 
     @Override
-    public String data(String bucketName, String fileName) {
+    public Map.Entry<String,String> data(String bucketName, String fileName) {
         File f = new File(absMountPoint + "/" + bucketName  + "/" + fileName );
-        return readString( f.toPath() );
-    }
-
-    @Override
-    public byte[] bytes(String input) {
-        return input.getBytes(StandardCharsets.UTF_8);
-    }
-
-    @Override
-    public String utf8(String input) {
-        return input;
+        return StorageWrapper.entry(fileName, readString( f.toPath() ) );
     }
 
     @Override
@@ -109,14 +100,24 @@ public class FileBackedStorage implements StorageWrapper<Boolean,Boolean,String>
     }
 
     @Override
-    public Stream<String> stream(String bucketName, String directoryPrefix) {
-        Path prefixPath = Paths.get( absMountPoint + "/" + bucketName + "/" + directoryPrefix );
-        EitherMonad<Stream<String>> em = EitherMonad.call( () -> Files.walk(prefixPath)
+    public Stream<Map.Entry<String,String>> stream(String bucketName, String directoryPrefix) {
+        final String rootPrefix = absMountPoint + "/" + bucketName + "/" ;
+        final int rootPrefixLen = rootPrefix.length();
+        Path prefixPath = Paths.get( rootPrefix + directoryPrefix );
+        Callable<Stream<Map.Entry<String,String>>> callable = () -> Files.walk(prefixPath)
                 .sorted(Comparator.reverseOrder())
                 .map(path -> {
-                    if (path.toFile().isDirectory()) return "";
-                    return readString(path);
-                }));
+                    final String nonRooted = path.toFile().getAbsolutePath().substring( rootPrefixLen );
+                    final String val;
+                    if (path.toFile().isDirectory()){
+                        val = "";
+                    } else {
+                        val = readString(path);
+                    }
+                    return StorageWrapper.entry( nonRooted, val );
+                });
+
+        EitherMonad<Stream<Map.Entry<String,String>>> em = EitherMonad.call( callable );
         return em.isSuccessful() ? em.value() : Stream.empty();
     }
 
