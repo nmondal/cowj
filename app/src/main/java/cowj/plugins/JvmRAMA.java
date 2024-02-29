@@ -148,6 +148,14 @@ public interface JvmRAMA {
         }
     }
 
+    /**
+     * Consumes an entire Prefix of a topic
+     * @param topic the topic to consume
+     * @param prefix the prefix to consume
+     * @param pageSize size of the page to read each time
+     * @param consumer a BiConsumer, which consumes, first arg is the topic itself, second is a Map.Entry of key, and value
+     * @return EitherMonad of boolean, if successful with no error
+     */
     default EitherMonad<Boolean> consumePrefix(String topic, String prefix, long pageSize, BiConsumer<String, Map.Entry<String,String>> consumer){
         long offset = 0;
         boolean hasMoreData = true;
@@ -168,6 +176,17 @@ public interface JvmRAMA {
         logger.info("Topic '{}' , Prefix '{}', Total: {} event processed", topic, prefix, total );
         return EitherMonad.value(true);
     }
+
+    /**
+     * Consumes an entire Prefix of a topic
+     * @param topic the topic to consume
+     * @param prefix the prefix to consume
+     * @param pageSize size of the page to read each time
+     * @param scriptable working as a BiConsumer, which consumes,
+     *                   'event' arg is the topic itself,
+     *                  'body' is a Map.Entry of key, and value
+     * @return EitherMonad of boolean, if successful with no error
+     */
 
     default EitherMonad<Boolean> consumePrefix(String topic, String prefix, long pageSize, Scriptable scriptable){
         return consumePrefix( topic, prefix, pageSize, (eventClass, event) -> {
@@ -198,9 +217,8 @@ public interface JvmRAMA {
 
     final class RAMAConsumerJob implements Job {
 
-        private static Scheduler scheduler;
+        private static final Scheduler scheduler = EitherMonad.runUnsafe( CronModel.SCHEDULER_FACTORY::getScheduler );
         public static void stop(){
-            if ( scheduler == null ) return;
             EitherMonad.call( () -> {
                 scheduler.clear();
                 scheduler.shutdown(true);
@@ -213,11 +231,6 @@ public interface JvmRAMA {
         private static boolean attachListenerHandler(JvmRAMA rama, Map<String,Object> topicConfig, Model model) throws SchedulerException {
             if ( topicConfig.isEmpty() ) return false;
             logger.info("RAMA topic config found will now attach listeners!");
-            if ( scheduler == null ) {
-                EitherMonad<Scheduler> em = EitherMonad.call(CronModel.SCHEDULER_FACTORY::getScheduler);
-                if (em.inError()) throw new RuntimeException(em.error());
-                scheduler = em.value();
-            }
             for ( Map.Entry<String,Object> entry : topicConfig.entrySet() ){
                 RAMAConsumerJobPayload jobPayload = new RAMAConsumerJobPayload( entry.getKey(), (Map<String, Object>) entry.getValue(), rama, model);
                 payloadMap.put(jobPayload.name, jobPayload);
@@ -333,8 +346,7 @@ public interface JvmRAMA {
             }
         };
         Map<String,Object> topicConfig = (Map)config.getOrDefault( "topics", Collections.emptyMap());
-        EitherMonad<Boolean> em = EitherMonad.call( () -> RAMAConsumerJob.attachListenerHandler( jvmRAMA, topicConfig, parent) );
-        if ( em.inError() ) throw Function.runTimeException(em.error() );
+        EitherMonad.runUnsafe( () -> RAMAConsumerJob.attachListenerHandler( jvmRAMA, topicConfig, parent) );
         return DataSource.dataSource(name, jvmRAMA);
     };
 }

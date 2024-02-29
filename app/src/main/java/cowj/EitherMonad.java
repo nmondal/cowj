@@ -77,4 +77,20 @@ public final class EitherMonad<V> {
             return error(t);
         }
     }
+
+    /**
+     * Creates an EitherMonad by running the callable code
+     * If successful, returns the result , if not throws Runtime error
+     * @param callable Callable code to be called
+     * @return Result of callable
+     * @param <V> type of the Callable
+     */
+    public static <V> V runUnsafe( Callable<V> callable){
+        try {
+            return callable.call();
+        }catch (Throwable t){
+            if ( t instanceof RuntimeException )throw  (RuntimeException)t;
+            throw new RuntimeException(t);
+        }
+    }
 }
