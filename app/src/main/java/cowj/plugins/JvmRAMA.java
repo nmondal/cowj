@@ -157,7 +157,11 @@ public interface JvmRAMA {
             if ( em.inError() ) return EitherMonad.error(em.error());
             final Response response = em.value();
             hasMoreData = response.hasMoreData;
-            response.data.forEach( (s) -> consumer.accept(topic,s) );
+            EitherMonad<Boolean> consume = EitherMonad.call( () -> {
+                response.data.forEach( (s) -> consumer.accept(topic,s) );
+                return true;
+            });
+            if ( consume.inError() ) return consume;
             offset = response.readOffset ;
             total += response.data.size();
         }
@@ -175,6 +179,7 @@ public interface JvmRAMA {
             } catch (Throwable e) {
                 final String msg = String.format("Event %s : %s Failed!", eventClass, event);
                 logger.error(msg, e );
+                throw Function.runTimeException(e);
             }
         } );
     }
