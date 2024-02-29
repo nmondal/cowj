@@ -40,7 +40,7 @@ data-sources:
           - _/evt_1.zm # this would work
           - _/../test_scripts/error_2_arg.zm # this will be perpetual error
       EVENT_2:
-        create: true
+        create: false
         at: "0 */5 * * * ?"
         prefix: "yyyy/MM/dd/HH/mm"
         offset: "PT-5M"

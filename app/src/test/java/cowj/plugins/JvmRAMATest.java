@@ -152,6 +152,10 @@ public class JvmRAMATest {
                 rama.get("whatever", "foobar", 10, 0 );
         Assert.assertTrue(mon.inError());
         Assert.assertTrue(mon.error().getMessage().contains("Boom!"));
+
+        EitherMonad<Boolean> cp = rama.consumePrefix("whatever", "foobar", 100, (ec,eb)->{});
+        Assert.assertTrue(mon.inError());
+        Assert.assertTrue(mon.error().getMessage().contains("Boom!"));
     }
 
     @Test
