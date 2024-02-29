@@ -10,8 +10,7 @@ threading:
   timeout: 30000
 
 routes:
-
-  put:
+  post:
     /event : _/rama.zm
 
 plugins:

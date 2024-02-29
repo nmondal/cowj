@@ -1,9 +1,6 @@
 package cowj.plugins;
 
-import cowj.DataSource;
-import cowj.EitherMonad;
-import cowj.Scriptable;
-import cowj.StorageWrapper;
+import cowj.*;
 import org.junit.*;
 
 import java.text.SimpleDateFormat;
@@ -16,6 +13,10 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertThrows;
 
 public class JvmRAMATest {
+
+    static final String rama = "samples/rama/rama.yaml" ;
+    private static ModelRunner mr ;
+
     static final MemoryBackedStorage storage = new MemoryBackedStorage();
     static final String MEM = "__mem__" ;
 
@@ -35,12 +36,18 @@ public class JvmRAMATest {
     public static void beforeClass(){
         storage.createBucket(TOPIC, "", false);
         Scriptable.DATA_SOURCES.put( MEM , storage);
+        mr = ModelRunnerTest.runModel( rama );
     }
 
     @AfterClass
-    public static void afterClass(){
+    public static void afterClass() throws Exception {
         storage.deleteBucket(TOPIC);
         Scriptable.DATA_SOURCES.remove(MEM);
+        if ( mr == null ) return;
+        mr.stop();
+        mr = null;
+        System.gc(); // garbage collect trigger
+        Thread.sleep(1500);
     }
 
     @Before
@@ -145,5 +152,24 @@ public class JvmRAMATest {
                 rama.get("whatever", "foobar", 10, 0 );
         Assert.assertTrue(mon.inError());
         Assert.assertTrue(mon.error().getMessage().contains("Boom!"));
+    }
+
+    @Test
+    public void ramaCronTest() throws Exception {
+        int max = 5;
+        for ( int i=0; i < max; i++ ) {
+            String body = "hey!" + i;
+            String res = ModelRunnerTest.post("http://localhost:4202", "/event", body );
+            Assert.assertNotNull(res);
+        }
+        int iter = 0;
+        boolean has = false ;
+        while ( !has && iter < 100 ) {
+            has = Scriptable.SHARED_MEMORY.containsKey("cnt");
+            iter ++;
+            Thread.sleep(1300);
+        }
+        Assert.assertTrue(has);
+        Assert.assertEquals( max, Scriptable.SHARED_MEMORY.get("cnt"));
     }
 }

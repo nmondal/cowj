@@ -31,7 +31,7 @@ public class ModelRunnerTest {
         Thread.sleep(1500);
     }
 
-    static ModelRunner runModel(String modelPath){
+    public static ModelRunner runModel(String modelPath){
         ModelRunner mr = ModelRunner.fromModel(modelPath) ;
         mr.run();
         try {
@@ -40,7 +40,7 @@ public class ModelRunnerTest {
         return mr;
     }
 
-    static boolean ping( String base, String path ){
+    public static boolean ping( String base, String path ){
         ZWeb zWeb = new ZWeb(base);
         try {
             ZWeb.ZWebCom r = zWeb.get(path, Collections.emptyMap());
@@ -49,7 +49,7 @@ public class ModelRunnerTest {
         return false;
     }
 
-    static String get( String base, String path ){
+    public static String get( String base, String path ){
         ZWeb zWeb = new ZWeb(base);
         try {
             ZWeb.ZWebCom r = zWeb.get(path, Collections.emptyMap());
@@ -58,7 +58,7 @@ public class ModelRunnerTest {
         return null;
     }
 
-    static String post( String base, String path, String body ){
+    public static String post( String base, String path, String body ){
         ZWeb zWeb = new ZWeb(base);
         try {
             ZWeb.ZWebCom r = zWeb.post(path, Collections.emptyMap(), body);

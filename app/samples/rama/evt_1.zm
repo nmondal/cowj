@@ -1,1 +1,2 @@
+_shared["cnt"] = (_shared["cnt"]  ?? 0 ) + 1
 _log.info( "topic {}, key {}, value {}", event, body.key , body.value )
