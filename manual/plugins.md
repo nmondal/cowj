@@ -704,9 +704,9 @@ having basic structure:
 ```java
 class Response {
     /**
-     * List of data Strings, each string is string rep of the data object
+     * List of data Entry, Key String, Value Strings, each value string is string rep of the data object
      */
-    public final List<String> data;
+    public final List<Map.Entry<String,String>> data;
     /**
      * Till how much it read in the current get call
      * Greater than 0 implies we have more data for same prefix
@@ -720,6 +720,77 @@ class Response {
 }
 ```
 So that we know there are more data.
+
+##### Cron Reading
+
+RAMA allows to have cron jobs to read periodically to fetch latest events.
+See the project [RAMA App](../app/samples/rama) for entire source.
+Specifically, it can be used as follows:
+
+```yaml
+  rama:
+    type: jvm-rama
+    storage: storage
+    uuid: "rama-42-0"
+    topics:
+      EVENT_1:
+        create: true
+        at: "0 0/1 * * * ?"
+        prefix: "yyyy/MM/dd/HH/mm"
+        offset: "PT-1M"
+        step: "PT1M"
+        page-size: 100
+        consumers:
+          - _/evt_1.zm # this would work
+      EVENT_2:
+        create: false
+        at: "0 */5 * * * ?"
+        prefix: "yyyy/MM/dd/HH/mm"
+        offset: "PT-5M"
+        step: "PT1M"
+        page-size: 100
+        consumers:
+          - _/evt_1.zm
+          - _/evt_2.zm
+```
+The idea is having `at` same as any cron job, that is the periodic fetch done automatically to read more events.
+This of course is a matter of convenience. RAMA does not stream in conventional sense.
+Now then - the `prefix` is used get to the `prefixKey` to read data from from bucket.
+System would get the current time in `UTC`, then apply the `prefix` format on top of it, 
+and then go to past time applying the `offset` which is `java.time.Duration` format.
+That would be the starting bucket. Now system applies `step`, again using `Duration` format, to 
+cover all buckets between past the current, excluding the current bucket.
+
+`page-size` is the size to read in each reading, till the bucket is over.
+`consumers` list down the scripts which will be passed those events.
+
+Multiple consumer script can be attached with single `topic` while, 
+same script can be used as consumer for multiple `topic` as depicted.
+
+A typical script is as follows:
+
+```scala
+_shared["cnt"] = (_shared["cnt"]  ?? 0 ) + 1
+_log.info( "topic {}, key {}, value {}", event, body.key , body.value )
+```
+Notice the `event`, which will be the topic reading from.
+`body` is `Map.Entry<String,String>` where `key` is the key of the event, while `value` is the string data.
+
+By carefully selecting the `at` and `offset` and `step` we can get event streaming delay as minimum as 1 sec.
+This would be done via this configuration:
+
+```yaml
+EVENT_1_SEC:
+    create: false
+    at: "0/1 * * * * ? *"
+    prefix: "yyyy/MM/dd/HH/mm/ss" # bucketing to 1 sec
+    offset: "PT-1S" # go back 1 sec from current time 
+    step: "PT1S" # next step is to add 1 sec to current 
+    page-size: 100 # read 100 record in one go, iterate till it all is exhausted 
+    consumers:
+      - _/super_fast.zm # consume super-fast
+
+```
 
 
 ## References
