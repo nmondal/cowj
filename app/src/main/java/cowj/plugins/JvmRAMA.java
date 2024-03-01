@@ -215,9 +215,17 @@ public interface JvmRAMA {
      */
     String NODE_UNIQUE_IDENTIFIER = "uuid" ;
 
+    /**
+     * A RAMA Cron Job to Auto consume Events
+     */
     final class RAMAConsumerJob implements Job {
 
         private static final Scheduler scheduler = EitherMonad.runUnsafe( CronModel.SCHEDULER_FACTORY::getScheduler );
+
+        /**
+         * Stops the underlying Job Scheduler,
+         * Waits for all jobs to terminate/end first
+         */
         public static void stop(){
             EitherMonad.call( () -> {
                 scheduler.clear();

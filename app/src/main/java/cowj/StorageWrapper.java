@@ -18,7 +18,9 @@ public interface  StorageWrapper <B,R,I> {
 
     /**
      * Creates an Entry
+     * @param <K> type parameter for key
      * @param k K key
+     * @param <V> type parameter for Value
      * @param v V value
      * @return an Entry(K,V)
      */
@@ -295,6 +297,9 @@ public interface  StorageWrapper <B,R,I> {
 
     /**
      * An implementation of Entry Style Storage
+     * @param <B> Type of response of bucket creation
+     * @param <R> Type of response of writing to a key/file
+     * @param <T> Type of the actual data to be stored
      */
     interface KeyValueStorage<B,R,T> extends StorageWrapper<B,R, Map.Entry<String,T>>{
         @Override

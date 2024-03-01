@@ -21,7 +21,17 @@ import java.util.stream.Stream;
  */
 public class FileBackedStorage implements StorageWrapper.SimpleKeyValueStorage {
 
+    /**
+     * Actual file storage mount point for the system
+     * From here, all buckets will be immediate subdirectory
+     *
+     */
     public final String absMountPoint;
+
+    /**
+     * From here, all buckets will be immediate subdirectory
+     * @param mountPoint actual mount point
+     */
     public FileBackedStorage(String mountPoint) {
         try {
             absMountPoint = new File(mountPoint).getAbsoluteFile().getCanonicalPath();
@@ -41,6 +51,11 @@ public class FileBackedStorage implements StorageWrapper.SimpleKeyValueStorage {
         return em.isSuccessful();
     }
 
+    /**
+     * Recursively deletes a directory
+     * @param path starting path of the directory
+     * @return true if it could delete the path, false otherwise
+     */
     public static boolean deleteRecurse(Path path){
         EitherMonad.call( () ->{
             Files.walk(path)
@@ -70,7 +85,11 @@ public class FileBackedStorage implements StorageWrapper.SimpleKeyValueStorage {
         return f.exists();
     }
 
-
+    /**
+     * Reads entire file as String
+     * @param path from this path
+     * @return String if successful, null if any error happened or no file found
+     */
     public static String readString(Path path){
         EitherMonad<String> em = EitherMonad.call( () -> Files.readString( path ));
         return em.isSuccessful() ? em.value() : null ;
@@ -128,6 +147,9 @@ public class FileBackedStorage implements StorageWrapper.SimpleKeyValueStorage {
         return deleteRecurse(f.toPath());
     }
 
+    /**
+     * Key for configuration mount point to be passed to the creator
+     */
     public static final String MOUNT_POINT = "mount-point" ;
 
     /**

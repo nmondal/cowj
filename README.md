@@ -102,16 +102,37 @@ As you can see, code is configuration and configuration is code in Cowj.
 With this note, we shall dive into the world of BED - back end development.
 
 ## COWJ Setup
-1. Install java 17 or newer
-2. Install gradle
+1. Install java 17 or newer : https://adoptium.net/temurin/releases/?version=17 
+
+2. Install gradle `8.5` or above :  https://gradle.org/install/ 
+
 3. Clone https://github.com/nmondal/cowj
-4. Run `gradle build -x test`
+
+   ```shell
+   git clone https://github.com/nmondal/cowj # clone repo 
+   cd cowj # go to cowj directory 
+   ```
+
+   
+
+4. Run `gradle build -x test` - in the `cowj` directory
+
 5. `cd app/build/libs`
+
 6. Ensure `ls` returns `java -jar cowj-0.1-SNAPSHOT.jar` as well as a
-`deps/` folder. If those two don’t exist, run `gradle clean` and 
-`gradle build -x test`
+  `deps/` folder. If those two don’t exist, run `gradle clean` and 
+  `gradle build -x test`
+
 7. `java -jar cowj-0.1-SNAPSHOT.jar ../../samples/hello/hello.yaml`
-8. Open localhost:5003/hello/z in browser or curl. This should return hello world
+
+8. Open `localhost:5003/hello/z` in browser or curl. 
+
+   ```she
+   curl localhost:5003/hello/z
+   # produces hello world
+   ```
+
+This should return `hello world`.
 
 
 ## Back End Development
