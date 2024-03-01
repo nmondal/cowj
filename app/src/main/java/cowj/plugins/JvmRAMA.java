@@ -2,6 +2,7 @@ package cowj.plugins;
 
 import cowj.*;
 import org.quartz.*;
+import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zoomba.lang.core.operations.Function;
@@ -66,7 +67,7 @@ public interface JvmRAMA {
         // More than good enough to be honest... for any scale > 50 calls per msec
         String randomSuffix = suffix() ;
         String fileName = directoryPrefix(curTime) + "/" + curTime + "_" + randomSuffix ;
-        logger.info("{} - {}", topic, fileName);
+        logger.debug("{} - {}", topic, fileName);
         StorageWrapper<?,?,?> st = prefixedStorage();
         return EitherMonad.call( () -> {
             st.dumps( topic, fileName, data);
@@ -220,7 +221,9 @@ public interface JvmRAMA {
      */
     final class RAMAConsumerJob implements Job {
 
-        private static final Scheduler scheduler = EitherMonad.runUnsafe( CronModel.SCHEDULER_FACTORY::getScheduler );
+        private static final Scheduler scheduler = EitherMonad.runUnsafe( () ->
+            new StdSchedulerFactory().getScheduler()
+         );
 
         /**
          * Stops the underlying Job Scheduler,

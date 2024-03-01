@@ -168,7 +168,7 @@ public class JvmRAMATest {
         }
         int iter = 0;
         boolean has = false ;
-        while ( !has && iter < 100 ) {
+        while ( !has && iter < 10 ) {
             has = Scriptable.SHARED_MEMORY.containsKey("cnt");
             iter ++;
             Thread.sleep(1300);

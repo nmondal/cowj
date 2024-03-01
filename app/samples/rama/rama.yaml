@@ -29,16 +29,17 @@ data-sources:
     storage: storage
     uuid: "rama-42-0"
     topics:
+
       EVENT_1:
         create: true
-        at: "0 0/1 * * * ?"
-        prefix: "yyyy/MM/dd/HH/mm"
-        offset: "PT-1M"
-        step: "PT1M"
-        page-size: 100
+        at: "0/10 * * * * ? *"
+        prefix: "yyyy/MM/dd/HH/mm/ss" # bucketing to 1 sec
+        offset: "PT-10S" # go back 10 sec from current time
+        step: "PT1S" # next step is to add 1 sec to current
+        page-size: 100 # read 100 record in one go, iterate till it all is exhausted
         consumers:
-          - _/evt_1.zm # this would work
-          - _/../test_scripts/error_2_arg.zm # this will be perpetual error
+            - _/evt_1.zm # this would work
+            - _/../test_scripts/error_2_arg.zm # this will be perpetual error
       EVENT_2:
         create: false
         at: "0 */5 * * * ?"
