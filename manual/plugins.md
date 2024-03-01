@@ -698,7 +698,7 @@ em = _ds.event_bus.get("topic_name", "2024/02/13/20/05", 100, 0)
 ```
 
 The `em` will be an `EitherMonad` of type `JvmRAMA.Response` object 
-which is defined here : https://github.com/nmondal/cowj/app/src/main/java/cowj/plugins/JvmRAMA.java#L76
+which is defined here : https://github.com/nmondal/cowj/tree/app/src/main/java/cowj/plugins/JvmRAMA.java#L76
 having basic structure:
 
 ```java
@@ -719,11 +719,38 @@ class Response {
     public final boolean hasMoreData;
 }
 ```
-So that we know there are more data.
+So that we know there are more data. Because it is not known beforehand, how many entries will be there
+in a single prefix, pagination is implemented, think it like reading bytes from a stream 
+till the stream is exhausted.
+
+This is obviously implemented in here :
+
+https://github.com/nmondal/cowj/blob/main/app/src/main/java/cowj/plugins/JvmRAMA.java#L159 :
+
+```java
+ /**
+ * Consumes an entire Prefix of a topic
+ * @param topic the topic to consume
+ * @param prefix the prefix to consume
+ * @param pageSize size of the page to read each time
+ * @param consumer a BiConsumer, which consumes, first arg is the topic itself, second is a Map.Entry of key, and value
+ * @return EitherMonad of boolean, if successful with no error
+ */
+ EitherMonad<Boolean> consumePrefix(String topic, 
+                                    String prefix, 
+                                    long pageSize, 
+                                    BiConsumer<String, Map.Entry<String,String>> consumer);
+```
+It is sometime better to just consume entirely one directoryPrefix in a straight go.
+This consumes an entire prefix in a paginated manner, automatically.
 
 ##### Cron Reading
 
-RAMA allows to have cron jobs to read periodically to fetch latest events.
+Now then what about consuming more than one prefixes?
+
+RAMA allows to have cron jobs to read periodically to fetch latest events 
+which may consume multiple prefixes automatically. It would consume at least one prefix for sure.
+
 See the project [RAMA App](../app/samples/rama) for entire source.
 Specifically, it can be used as follows:
 
