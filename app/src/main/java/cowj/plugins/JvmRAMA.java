@@ -221,9 +221,7 @@ public interface JvmRAMA {
      */
     final class RAMAConsumerJob implements Job {
 
-        private static final Scheduler scheduler = EitherMonad.runUnsafe( () ->
-            new StdSchedulerFactory().getScheduler()
-         );
+        private static Scheduler scheduler;
 
         /**
          * Stops the underlying Job Scheduler,
@@ -242,6 +240,8 @@ public interface JvmRAMA {
         private static boolean attachListenerHandler(JvmRAMA rama, Map<String,Object> topicConfig, Model model) throws SchedulerException {
             if ( topicConfig.isEmpty() ) return false;
             logger.info("RAMA topic config found will now attach listeners!");
+            // each topic gets one thread for sure
+            scheduler = CronModel.schedulerByName( JvmRAMA.RAMAConsumerJob.class.getName() + ".cron", topicConfig.size());
             for ( Map.Entry<String,Object> entry : topicConfig.entrySet() ){
                 RAMAConsumerJobPayload jobPayload = new RAMAConsumerJobPayload( entry.getKey(), (Map<String, Object>) entry.getValue(), rama, model);
                 payloadMap.put(jobPayload.name, jobPayload);

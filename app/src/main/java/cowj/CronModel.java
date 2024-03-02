@@ -211,7 +211,7 @@ public interface CronModel {
                 "org.quartz.scheduler.rmi.export", false,
                 "org.quartz.scheduler.rmi.proxy",  false,
                 "org.quartz.threadPool.class", "org.quartz.simpl.SimpleThreadPool",
-                "org.quartz.threadPool.threadCount", String.valueOf(Math.max(numThreads, 10)),
+                "org.quartz.threadPool.threadCount", String.valueOf(Math.max(numThreads, 5)),
                 "org.quartz.context.key.QuartzTopic", "QuartzProperties"
         );
         Properties p =  new Properties();
