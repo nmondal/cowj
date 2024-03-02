@@ -11,6 +11,7 @@ import cowj.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.paginators.ListObjectVersionsIterable;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 import zoomba.lang.core.types.ZNumber;
 
@@ -21,7 +22,8 @@ import java.util.Map.Entry;
  * Abstraction for AWS S3 Cloud Storage
  */
 public interface S3StorageWrapper extends
-        StorageWrapper.KeyValueStorage<Boolean, PutObjectResponse, ResponseBytes<GetObjectResponse>> {
+        StorageWrapper.KeyValueStorage<Boolean, PutObjectResponse, ResponseBytes<GetObjectResponse>>,
+        StorageWrapper.VersionedStorage<ResponseBytes<GetObjectResponse>> {
 
     /**
      * Logger for the wrapper
@@ -175,6 +177,30 @@ public interface S3StorageWrapper extends
     default boolean delete(String bucketName, String path) {
         return safeBoolean( () ->
                 s3client().deleteObject( DeleteObjectRequest.builder().bucket(bucketName).key(path).build()));
+    }
+
+    @Override
+    default Stream<String> versions(String bucketName, String fileName){
+        ListObjectVersionsRequest listRequest =  ListObjectVersionsRequest.builder()
+                .bucket(bucketName).prefix(fileName).build();
+        ListObjectVersionsIterable responses = s3client().listObjectVersionsPaginator(listRequest);
+        // map only exact ones, not random prefixes
+        return  responses.versions().stream().filter( v -> v.key().equals(fileName)).map(ObjectVersion::versionId);
+    }
+
+    @Override
+    default ResponseBytes<GetObjectResponse> dataAtVersion(String bucketName, String fileName, String versionId){
+        try {
+            GetObjectRequest objectRequest = GetObjectRequest
+                    .builder()
+                    .key(fileName).versionId(versionId)
+                    .bucket(bucketName)
+                    .build();
+            return s3client().getObjectAsBytes(objectRequest);
+        }catch (Throwable th){
+            logger.warn("Error reading versioned data : " + th);
+            return null;
+        }
     }
 
     /**

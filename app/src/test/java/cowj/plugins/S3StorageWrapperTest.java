@@ -6,9 +6,11 @@ import cowj.StorageWrapper;
 import org.junit.Assert;
 import org.junit.Test;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.paginators.ListObjectVersionsIterable;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 import software.amazon.awssdk.services.s3.waiters.S3Waiter;
 
@@ -17,6 +19,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Stream;
 
 
 import static org.mockito.ArgumentMatchers.any;
@@ -99,6 +102,9 @@ public class S3StorageWrapperTest {
         Assert.assertTrue( s3.fileExist("a","b"));
         Assert.assertEquals( data.getValue(), s3.data("a","b" ).getValue());
 
+        // versioned response
+        Assert.assertEquals( data.getValue(),
+                s3.dataAtVersion("a","b" , "whatever"));
     }
 
     @Test
@@ -109,6 +115,26 @@ public class S3StorageWrapperTest {
 
         S3StorageWrapper s3 = () -> s3Client;
         Assert.assertNull( s3.data("a","b" ));
+        Assert.assertNull( s3.dataAtVersion("a","b" , ""));
+    }
+
+    @Test
+    public void versionStreamTest(){
+        S3Client s3Client = mock(S3Client.class);
+        ListObjectVersionsIterable iter = mock(ListObjectVersionsIterable.class);
+        SdkIterable<ObjectVersion> iterable = mock(SdkIterable.class);
+        ObjectVersion objectVersion = mock(ObjectVersion.class);
+        when(objectVersion.key()).thenReturn("foo-bar");
+        when(objectVersion.versionId()).thenReturn("42");
+        when(iterable.stream()).thenReturn(Stream.of( objectVersion ) );
+        when(iter.versions()).thenReturn( iterable );
+        when(s3Client.listObjectVersionsPaginator((ListObjectVersionsRequest)any())).thenReturn(iter);
+
+        // Now the test
+        S3StorageWrapper s3 = () -> s3Client;
+        List<String> l = s3.versions( "foo", "foo-bar").toList();
+        Assert.assertEquals(1, l.size());
+        Assert.assertEquals("42", l.get(0));
     }
 
     @Test

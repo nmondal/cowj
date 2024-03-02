@@ -296,6 +296,30 @@ public interface  StorageWrapper <B,R,I> {
     boolean delete(String bucketName, String path);
 
     /**
+     * A Versioned Storage
+     * @param <I> Data Type returned by the storage
+     */
+    interface VersionedStorage <I> {
+
+        /**
+         * Gets all versions id for the file, in the bucket
+         * @param bucketName name of the bucket
+         * @param fileName name of the file whose versions we need to find
+         * @return a Stream of String version Ids
+         */
+        Stream<String> versions(String bucketName, String fileName);
+
+        /**
+         * Get the data at a particular version Id
+         * @param bucketName name of the bucket
+         * @param fileName name of the file whose version data we need to get
+         * @param versionId version id for which we need to get the data
+         * @return data of type I
+         */
+        I dataAtVersion(String bucketName, String fileName, String versionId);
+    }
+
+    /**
      * An implementation of Entry Style Storage
      * @param <B> Type of response of bucket creation
      * @param <R> Type of response of writing to a key/file
