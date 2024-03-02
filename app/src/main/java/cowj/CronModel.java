@@ -11,6 +11,7 @@ import javax.script.SimpleBindings;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.quartz.JobBuilder.newJob;
 
@@ -202,11 +203,21 @@ public interface CronModel {
      */
     String SCHEDULER = "_sched";
 
-    /**
-     * Global SchedulerFactory
-     * @see <a href="https://www.quartz-scheduler.org/api/2.3.0/org/quartz/SchedulerFactory.html">SchedulerFactory</a>
-     */
-    SchedulerFactory SCHEDULER_FACTORY = new StdSchedulerFactory();
+
+    static Scheduler schedulerByName(String schedulerName, int numThreads ){
+        Map<String,Object> data = Map.of(
+                "org.quartz.scheduler.instanceName", schedulerName,
+                "org.quartz.scheduler.instanceId", schedulerName.hashCode(),
+                "org.quartz.scheduler.rmi.export", false,
+                "org.quartz.scheduler.rmi.proxy",  false,
+                "org.quartz.threadPool.class", "org.quartz.simpl.SimpleThreadPool",
+                "org.quartz.threadPool.threadCount", String.valueOf(Math.max(numThreads, 10)),
+                "org.quartz.context.key.QuartzTopic", "QuartzProperties"
+        );
+        Properties p =  new Properties();
+        p.putAll(data);
+        return EitherMonad.runUnsafe( () -> new StdSchedulerFactory( p ).getScheduler());
+    }
 
     /**
      * Creates a CronModel
@@ -219,16 +230,19 @@ public interface CronModel {
         config.forEach((name, conf) -> {
             tasks.put(name, Task.fromConfig(model, name, (Map) conf));
         });
-        return () -> tasks;
-    }
+        final String schedulerName =  CronModel.class.getName() + ".cron" ;
+        final int numThreads = tasks.size();
+        return new CronModel() {
+            @Override
+            public Map<String, Task> tasks() {
+                return tasks;
+            }
 
-    /**
-     * The Default Factory for Scheduler
-     * @see <a href="https://www.quartz-scheduler.org/api/2.3.0/org/quartz/SchedulerFactory.html">SchedulerFactory</a>
-     * @return whatever factory one may wants to use
-     */
-    default SchedulerFactory factory(){
-        return SCHEDULER_FACTORY ;
+            @Override
+            public Scheduler scheduler() {
+                return EitherMonad.runUnsafe( () -> schedulerByName( schedulerName, numThreads ));
+            }
+        };
     }
 
     /**
@@ -238,10 +252,8 @@ public interface CronModel {
     static void schedule(CronModel cronModel) {
         // do not bother if empty
         if (cronModel.tasks().isEmpty()) return;
-        // only loaded, then...
-        SchedulerFactory schedulerFactory = cronModel.factory();
         try {
-            final Scheduler scheduler = schedulerFactory.getScheduler();
+            final Scheduler scheduler = cronModel.scheduler();
             // now the rest of the problem...
             logger.info("Cron Jobs are...");
             cronModel.tasks().forEach((name, task) -> {
@@ -280,16 +292,14 @@ public interface CronModel {
      * @see <a href="https://www.javadoc.io/doc/org.quartz-scheduler/quartz/2.3.0/org/quartz/Scheduler.html">Scheduler</a>
      * @return Underlying Scheduler
      */
-    static Scheduler scheduler(){
-        return (Scheduler)Scriptable.DATA_SOURCES.get(SCHEDULER);
-    }
+    Scheduler scheduler();
 
     /**
      * Stops the Cron Jobs
      */
     static void stop(){
         try {
-            Scheduler scheduler = scheduler();
+            Scheduler scheduler = (Scheduler)Scriptable.DATA_SOURCES.get(SCHEDULER);
             if ( scheduler == null ) return;
             scheduler.clear();
             scheduler.shutdown(true);

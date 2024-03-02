@@ -59,7 +59,7 @@ public class CronTest {
         Map<String,Map<String,Object>> cron = Map.of("bar", cronJob);
         CronModel cronModel = CronModel.fromConfig( model, cron);
         CronModel.schedule(cronModel);
-        CronModel.scheduler().getListenerManager().addJobListener(jobListener);
+        cronModel.scheduler().getListenerManager().addJobListener(jobListener);
         Thread.sleep(15000);
         CronModel.stop();
         Assert.assertFalse( results.isEmpty() );
@@ -78,7 +78,7 @@ public class CronTest {
         Map<String,Map<String,Object>> cron = Map.of("bar", cronJob);
         CronModel cronModel = CronModel.fromConfig( model, cron);
         CronModel.schedule(cronModel);
-        CronModel.scheduler().getListenerManager().addJobListener(jobListener);
+        cronModel.scheduler().getListenerManager().addJobListener(jobListener);
         Thread.sleep(15000);
         CronModel.stop();
         Assert.assertFalse( results.isEmpty() );
@@ -151,36 +151,6 @@ public class CronTest {
         Assert.assertEquals(1, Dummy.counter );
     }
 
-
-    @Test
-    public void getSchedulerErrorTest() throws SchedulerException {
-        Map<String,Object> cronJob = Map.of(
-                CronModel.Task.EXEC, "samples/test_scripts/error_1_arg.zm",
-                CronModel.Task.BOOT, false,
-                CronModel.Task.SCHEDULE, "0/8 * * * * ? *"
-        );
-        Model model = () -> "." ;
-        Map<String,Map<String,Object>> cron = Map.of("bar", cronJob);
-        final CronModel cronModel = CronModel.fromConfig( model, cron);
-        final SchedulerFactory schedulerFactory = mock(SchedulerFactory.class);
-        when( schedulerFactory.getScheduler()).thenThrow( new SchedulerException("bar") );
-        final CronModel wrapped = new CronModel() {
-            @Override
-            public SchedulerFactory factory() {
-                return schedulerFactory;
-            }
-            @Override
-            public Map<String, Task> tasks() {
-                return cronModel.tasks();
-            }
-        };
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            CronModel.schedule(wrapped);
-        });
-        Assert.assertNotNull(exception);
-        Assert.assertTrue(exception.getCause() instanceof SchedulerException );
-    }
-
     @Test
     public void setScheduleErrorTest() throws SchedulerException {
         Map<String,Object> cronJob = Map.of(
@@ -191,14 +161,12 @@ public class CronTest {
         Model model = () -> "." ;
         Map<String,Map<String,Object>> cron = Map.of("bar", cronJob);
         final CronModel cronModel = CronModel.fromConfig( model, cron);
-        final SchedulerFactory schedulerFactory = mock(SchedulerFactory.class);
         final Scheduler scheduler = mock(Scheduler.class);
-        when(scheduler.scheduleJob(any(), any())).thenThrow( new SchedulerException("bar") );
-        when(schedulerFactory.getScheduler()).thenReturn(scheduler);
+        when( scheduler.scheduleJob(any(), any())).thenThrow( new SchedulerException("bar") );
         final CronModel wrapped = new CronModel() {
             @Override
-            public SchedulerFactory factory() {
-                return schedulerFactory;
+            public Scheduler scheduler() {
+                return scheduler;
             }
             @Override
             public Map<String, Task> tasks() {

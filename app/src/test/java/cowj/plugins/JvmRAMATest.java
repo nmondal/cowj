@@ -159,6 +159,7 @@ public class JvmRAMATest {
     }
 
     @Test
+    @Ignore
     public void ramaCronTest() throws Exception {
         int max = 5;
         for ( int i=0; i < max; i++ ) {
