@@ -60,6 +60,9 @@ public class GoogleStorageWrapperTest {
     public void dumpWhenDoesExistTest(){
         Storage storage = mock( Storage.class);
         Blob b = mock(Blob.class);
+        BlobId bid = mock(BlobId.class);
+        when(bid.getName()).thenReturn("bar");
+        when(b.getBlobId()).thenReturn(bid);
         WriteChannel channel = mock(WriteChannel.class);
         when(b.getStorage()).thenReturn(storage);
         when(b.writer()).thenReturn(channel);
@@ -67,6 +70,7 @@ public class GoogleStorageWrapperTest {
         GoogleStorageWrapper gsw = () -> storage;
         Blob r = gsw.dump( "foo", "bar", Map.of("x",  42 ));
         Assert.assertEquals(b, r );
+        Assert.assertEquals("bar", gsw.key(b));
     }
 
     @Test
