@@ -124,15 +124,11 @@ public class FileBackedStorage implements StorageWrapper.SimpleKeyValueStorage {
         final int rootPrefixLen = rootPrefix.length();
         Path prefixPath = Paths.get( rootPrefix + directoryPrefix );
         Callable<Stream<Map.Entry<String,String>>> callable = () -> Files.walk(prefixPath)
-                .sorted(Comparator.reverseOrder())
+                .sorted()
+                .filter( path -> path.toFile().isFile())
                 .map(path -> {
                     final String nonRooted = path.toFile().getAbsolutePath().substring( rootPrefixLen );
-                    final String val;
-                    if (path.toFile().isDirectory()){
-                        val = "";
-                    } else {
-                        val = readString(path);
-                    }
+                    final String val = readString(path);
                     return StorageWrapper.entry( nonRooted, val );
                 });
 

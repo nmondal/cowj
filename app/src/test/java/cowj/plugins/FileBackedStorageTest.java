@@ -80,9 +80,9 @@ public class FileBackedStorageTest {
             Assert.assertTrue( fs.dumps(BUCKET_NAME, key, String.valueOf(i)) );
         }
         // Now read say "1/"
-        Set<String> set = fs.stream(BUCKET_NAME, "1/").filter( s -> !s.getValue().isEmpty()).map(Map.Entry::getValue).collect(Collectors.toSet());
+        Set<String> set = fs.stream(BUCKET_NAME, "1/").map(Map.Entry::getValue).collect(Collectors.toSet());
         Assert.assertEquals(10, set.size() );
-        set = fs.stream(BUCKET_NAME, "0/").filter( s -> !s.getValue().isEmpty()).map(Map.Entry::getValue).collect(Collectors.toSet());
+        set = fs.stream(BUCKET_NAME, "0/").map(Map.Entry::getValue).collect(Collectors.toSet());
         Assert.assertEquals(10, set.size() );
     }
 }

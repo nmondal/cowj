@@ -62,6 +62,17 @@ public class VersionedStorageTest {
     }
 
     @Test
+    public void specialKeyLoadingTest(){
+        final String[] data = new String[] { "Crazy!1" , "Crazy!2" } ;
+        Assert.assertTrue( fs.dumps( BUCKET_NAME, "a/__latest__/b/1", data[0] ));
+        Assert.assertTrue( fs.dumps( BUCKET_NAME, "a/__latest__/b/2", data[1] ));
+        List<String> allData = fs.stream( BUCKET_NAME, "a/__latest__/b" ).map(Map.Entry::getValue).toList();
+        Assert.assertEquals(2, allData.size() );
+        Assert.assertEquals( data[0], allData.get(0));
+        Assert.assertEquals( data[1], allData.get(1));
+    }
+
+    @Test
     public void versionedTest(){
         final String keyName = "ver_path" ;
         IntStream.range(0,10).parallel().forEach( (i) ->{
@@ -82,9 +93,9 @@ public class VersionedStorageTest {
             Assert.assertTrue( fs.dumps(BUCKET_NAME, key, String.valueOf(i)) );
         }
         // Now read say "1/"
-        Set<String> set = fs.stream(BUCKET_NAME, "1/").filter( s -> !s.getValue().isEmpty()).map(Map.Entry::getValue).collect(Collectors.toSet());
+        Set<String> set = fs.stream(BUCKET_NAME, "1/").map(Map.Entry::getValue).collect(Collectors.toSet());
         Assert.assertEquals(10, set.size() );
-        set = fs.stream(BUCKET_NAME, "0/").filter( s -> !s.getValue().isEmpty()).map(Map.Entry::getValue).collect(Collectors.toSet());
+        set = fs.stream(BUCKET_NAME, "0/").map(Map.Entry::getValue).collect(Collectors.toSet());
         Assert.assertEquals(10, set.size() );
     }
 }

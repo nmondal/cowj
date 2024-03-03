@@ -94,15 +94,11 @@ public class VersionedFileStorage extends FileBackedStorage
         final int rootPrefixLen = rootPrefix.length();
         Path prefixPath = Paths.get( rootPrefix + directoryPrefix );
         Callable<Stream<Map.Entry<String,String>>> callable = () -> Files.walk(prefixPath)
-                .sorted(Comparator.reverseOrder())
+                .sorted()
+                .filter( path -> path.endsWith( LATEST ) && path.toFile().isFile() )
                 .map(path -> {
                     final String nonRooted = path.toFile().getAbsolutePath().substring( rootPrefixLen );
-                    final String val;
-                    if (path.endsWith(LATEST) && path.toFile().isFile() ){
-                        val = readString(path);;
-                    } else {
-                        val = "";
-                    }
+                    final String val = readString(path);
                     final String fileKey = nonRooted.replace(LATEST, "");
                     return StorageWrapper.entry( fileKey, val );
                 });
