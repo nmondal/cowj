@@ -79,7 +79,7 @@ public final class EitherMonad<V> {
     }
 
     /**
-     * Creates an EitherMonad by running the callable code
+     * Runs the callable code
      * If successful, returns the result , if not throws Runtime error
      * @param callable Callable code to be called
      * @return Result of callable
@@ -92,5 +92,32 @@ public final class EitherMonad<V> {
             if ( t instanceof RuntimeException )throw  (RuntimeException)t;
             throw new RuntimeException(t);
         }
+    }
+
+    /**
+     * Runs the callable code
+     * If successful, returns the result , if not returns null
+     * @param callable Callable code to be called
+     * @param whenError when error, return this value
+     * @return Result of callable
+     * @param <V> type of the Callable
+     */
+    public static <V> V orElse( Callable<V> callable, V whenError){
+        try {
+            return callable.call();
+        }catch (Throwable t){
+            return whenError;
+        }
+    }
+
+    /**
+     * Runs the callable code
+     * If successful, returns the result , if not returns null
+     * @param callable Callable code to be called
+     * @return Result of callable
+     * @param <V> type of the Callable
+     */
+    public static <V> V orNull( Callable<V> callable){
+        return orElse(callable, null);
     }
 }
