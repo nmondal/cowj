@@ -64,12 +64,27 @@ public class VersionedStorageTest {
     @Test
     public void specialKeyLoadingTest(){
         final String[] data = new String[] { "Crazy!1" , "Crazy!2" } ;
+        // first time
         Assert.assertTrue( fs.dumps( BUCKET_NAME, "a/__latest__/b/1", data[0] ));
         Assert.assertTrue( fs.dumps( BUCKET_NAME, "a/__latest__/b/2", data[1] ));
-        List<String> allData = fs.stream( BUCKET_NAME, "a/__latest__/b" ).map(Map.Entry::getValue).toList();
+
+        // Now check
+        List<String> allData = fs.stream( BUCKET_NAME, "a" ).map(Map.Entry::getValue).toList();
         Assert.assertEquals(2, allData.size() );
         Assert.assertEquals( data[0], allData.get(0));
         Assert.assertEquals( data[1], allData.get(1));
+
+        final String[] data_v2 = new String[] { "Crazy!12" , "Crazy!22" } ;
+
+        // then again
+        Assert.assertTrue( fs.dumps( BUCKET_NAME, "a/__latest__/b/1", data_v2[0] ));
+        Assert.assertTrue( fs.dumps( BUCKET_NAME, "a/__latest__/b/2", data_v2[1] ));
+        // test again
+
+        allData = fs.stream( BUCKET_NAME, "a" ).map(Map.Entry::getValue).toList();
+        Assert.assertEquals(2, allData.size() );
+        Assert.assertEquals( data_v2[0], allData.get(0));
+        Assert.assertEquals( data_v2[1], allData.get(1));
     }
 
     @Test
