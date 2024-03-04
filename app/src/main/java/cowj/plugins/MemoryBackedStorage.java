@@ -25,7 +25,7 @@ public interface MemoryBackedStorage extends StorageWrapper.SimpleKeyValueStorag
 
     default Supplier<Map<String,String>> bucketMemory(){
         // ensure that keys are sorted within a bucket
-        return TreeMap::new;
+        return () -> Collections.synchronizedMap( new TreeMap<>());
     }
 
     @Override
@@ -60,7 +60,7 @@ public interface MemoryBackedStorage extends StorageWrapper.SimpleKeyValueStorag
     @Override
     default Boolean createBucket(String bucketName, String location, boolean preventdefaultAccess) {
         if ( dataMemory().containsKey(bucketName )) return false;
-        dataMemory().put(bucketName, Collections.synchronizedMap(bucketMemory().get()));
+        dataMemory().put(bucketName, bucketMemory().get());
         return true;
     }
 
@@ -90,15 +90,26 @@ public interface MemoryBackedStorage extends StorageWrapper.SimpleKeyValueStorag
             return () -> VersionedMap.versionedMap( new TreeMap<>() );
         }
 
+        /**
+         * Gets the underlying VersionedMap for the bucket
+         * @param bucketName name of the bucket
+         * @return a VersionedMap of entry type String, String
+         */
+        default VersionedMap<String,String> versionedMap(String bucketName){
+            return (VersionedMap<String,String>)dataMemory()
+                    .getOrDefault( bucketName , VersionedMap.versionedMap(Collections.emptyMap())) ;
+        }
 
         @Override
         default Stream<String> versions(String bucketName, String fileName) {
-            return null;
+            VersionedMap<String,String> vm = versionedMap(bucketName) ;
+            return vm.versions(fileName);
         }
 
         @Override
         default String dataAtVersion(String bucketName, String fileName, String versionId) {
-            return null;
+            VersionedMap<String,String> vm = versionedMap(bucketName) ;
+            return vm.dataAtVersion(fileName, versionId);
         }
     }
 
