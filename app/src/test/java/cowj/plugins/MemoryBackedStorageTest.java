@@ -8,13 +8,17 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class MemoryBackedStorageTest {
     static final String BUCKET_NAME = "foo";
-    static MemoryBackedStorage ms = new MemoryBackedStorage();
+
+    static final Map<String,Map<String,String>> dataMemory = new HashMap<>();
+
+    static MemoryBackedStorage ms = () -> dataMemory; // crazy, is not it? Hmm...
 
     @BeforeClass
     public static void beforeClass() {
@@ -27,7 +31,7 @@ public class MemoryBackedStorageTest {
     public static void afterClass() {
         Assert.assertTrue(ms.deleteBucket(BUCKET_NAME));
         Assert.assertFalse(ms.deleteBucket(BUCKET_NAME));
-        ms.dataMemory.clear();
+        dataMemory.clear();
     }
 
     @Test

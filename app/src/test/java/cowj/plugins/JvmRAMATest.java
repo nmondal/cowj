@@ -5,6 +5,7 @@ import org.junit.*;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.stream.IntStream;
@@ -17,7 +18,8 @@ public class JvmRAMATest {
     static final String rama = "samples/rama/rama.yaml" ;
     private static ModelRunner mr ;
 
-    static final MemoryBackedStorage storage = new MemoryBackedStorage();
+    static final Map<String,Map<String,String>> dataMemory = new HashMap<>();
+    static final MemoryBackedStorage storage = () -> dataMemory;
     static final String MEM = "__mem__" ;
 
     static final String TOPIC = "__foo__" ;
@@ -52,7 +54,7 @@ public class JvmRAMATest {
 
     @Before
     public void cleanTopic(){
-        storage.dataMemory.get( TOPIC).clear();
+        storage.dataMemory().get( TOPIC).clear();
     }
 
     long appendEvent(JvmRAMA rama )  {
@@ -62,7 +64,7 @@ public class JvmRAMATest {
             rama.put( TOPIC, String.valueOf(t));
         });
 
-        Assert.assertEquals( TOT_EVENTS, storage.dataMemory.get(TOPIC).size());
+        Assert.assertEquals( TOT_EVENTS, storage.dataMemory().get(TOPIC).size());
         return ts;
     }
 
@@ -132,6 +134,11 @@ public class JvmRAMATest {
     @Test
     public void errorInGetTest(){
         final StorageWrapper<?,?,?> wrapper = new MemoryBackedStorage(){
+            final Map<String, Map<String,String>> m = new HashMap<>();
+            @Override
+            public Map<String, Map<String, String>> dataMemory() {
+                return m;
+            }
             @Override
             public Stream<Map.Entry<String, String>> stream(String bucketName, String directoryPrefix) {
                 throw new RuntimeException("Boom!");
