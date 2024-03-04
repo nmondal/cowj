@@ -80,4 +80,19 @@ public class VersionedMapTest {
             Assert.assertEquals(maxVerSize, allData.size());
         });
     }
+
+    @Test
+    public void putAllTest(){
+        VersionedMap<Integer,Integer> vMap = VersionedMap.versionedMap();
+        Map<Integer,Integer> v1 = Map.of(1,2,3,4) ;
+        vMap.putAll(v1);
+        Assert.assertEquals(2, (int)vMap.get(1) ) ;
+        Assert.assertEquals(4, (int)vMap.get(3) ) ;
+
+        Map<Integer,Integer> v2 = Map.of(1,4,3,6) ;
+        vMap.putAll(v2);
+        Assert.assertEquals(4, (int)vMap.get(1) ) ;
+        Assert.assertEquals(6, (int)vMap.get(3) ) ;
+        
+    }
 }
