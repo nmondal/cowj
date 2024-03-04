@@ -39,6 +39,7 @@ public class MemoryBackedStorageTest {
         DataSource ds = MemoryBackedStorage.STORAGE.create("bar", Map.of(), () -> "");
         Assert.assertNotNull(ds);
         Assert.assertTrue(ds.proxy() instanceof MemoryBackedStorage);
+        Assert.assertFalse(ds.proxy() instanceof MemoryBackedStorage.VersionedMemoryStorage);
     }
 
     @Test

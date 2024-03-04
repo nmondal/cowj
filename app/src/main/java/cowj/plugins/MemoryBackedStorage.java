@@ -125,7 +125,12 @@ public interface MemoryBackedStorage extends StorageWrapper.SimpleKeyValueStorag
         final boolean versioned = ZTypes.bool(config.getOrDefault( VERSIONED, false),false);
         logger.info("MemoryBackedStorage [{}]  versioned : {}", name, versioned);
         final Map<String,Map<String,String>> memory = new HashMap<>();
-        final  MemoryBackedStorage ms = versioned ? (VersionedMemoryStorage) ( () -> memory) : ( () -> memory) ;
+        final  MemoryBackedStorage ms ;
+        if ( versioned ){
+            ms = (VersionedMemoryStorage) ( () -> memory); // a version backed store
+        } else {
+            ms = ( () -> memory); // regular one
+        }
         return DataSource.dataSource(name, ms);
     };
 }
