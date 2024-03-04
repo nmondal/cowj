@@ -8,10 +8,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -105,6 +102,12 @@ public class VersionedMemoryStorageTest {
             Assert.assertEquals(10, versions.size() );
             Set<String> values = versions.stream().map( ver -> ms.dataAtVersion(BUCKET_NAME, keyName, ver)).collect(Collectors.toSet());
             Assert.assertEquals(10, values.size() );
+            Assert.assertEquals( String.valueOf(0), ms.latestVersion(BUCKET_NAME, keyName));
+            List<String> vl = ms.listVersions(BUCKET_NAME, keyName, 0, 3);
+            Assert.assertEquals( List.of("0","1","2"), vl);
         } );
+        // test something that would not have anything
+        Assert.assertEquals(Collections.emptyList(), ms.listVersions( BUCKET_NAME, "shooh!", 0, 1000) );
+        Assert.assertNull(ms.latestVersion( BUCKET_NAME, "shooh!"));
     }
 }

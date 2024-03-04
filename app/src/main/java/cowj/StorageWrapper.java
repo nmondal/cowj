@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory;
 import zoomba.lang.core.types.ZTypes;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -303,11 +305,34 @@ public interface  StorageWrapper <B,R,I> {
 
         /**
          * Gets all versions id for the file, in the bucket
+         * latest being served first, older come later LIFO order
          * @param bucketName name of the bucket
          * @param fileName name of the file whose versions we need to find
-         * @return a Stream of String version Ids
+         * @return a Stream of String version Ids,
          */
         Stream<String> versions(String bucketName, String fileName);
+
+        /**
+         * Does range query for Versions id for the file, in the bucket
+         * @param bucketName name of the bucket
+         * @param fileName name of the file whose versions we need to find
+         * @param from the version no from which to start getting versions, 0 is latest
+         * @param pageSize how many versions to get
+         * @return a List of String version Ids starting with from and not in size excluding pageSize
+         */
+        default List<String> listVersions(String bucketName, String fileName, long from, int pageSize){
+            return versions(bucketName,fileName).skip(from).limit(pageSize).toList();
+        }
+
+        /**
+         * Gets latest versions id for the file, in the bucket
+         * @param bucketName name of the bucket
+         * @param fileName name of the file whose versions we need to find
+         * @return a String version which is the latest of the data
+         */
+        default String latestVersion(String bucketName, String fileName){
+            return EitherMonad.orElse( () -> versions(bucketName,fileName).iterator().next(), null);
+        }
 
         /**
          * Get the data at a particular version Id
