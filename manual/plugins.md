@@ -370,7 +370,9 @@ We try to avoid all database, because they are the architectural bottleneck, in 
 We do directly support cloud storage.
 
 #### Universal Implementation 
-This is the universal implementaion
+Here is the universal implementation:
+https://github.com/nmondal/cowj/blob/main/app/src/main/java/cowj/StorageWrapper.java
+
 
 ```java
     /**
@@ -523,6 +525,18 @@ public interface S3StorageWrapper {
 
 #### Google Storage
 
+```java
+public interface GoogleStorageWrapper extends StorageWrapper<Bucket, Blob, Blob> {
+    
+    /**
+     * Underlying Storage
+     *
+     * @return Storage
+     */
+    Storage storage();
+}
+```
+
 Usage is as follows:
 
 ```yaml
@@ -564,6 +578,86 @@ public interface GoogleStorageWrapper {
     
 }
 ```
+
+#### In Memory Storage 
+
+Here is how to use it:
+
+```yaml
+plugins:
+  cowj.plugins:
+    mem-st: MemoryBackedStorage::STORAGE
+
+data-sources:
+  storage:
+    type: mem-st
+```
+This is not persistent, and store all data in memory, and will vanish once the system stops.
+
+
+#### File Based Storage
+
+Here is how to use it:
+
+```yaml
+plugins:
+  cowj.plugins:
+    file-st: FileBackedStorage::STORAGE
+
+data-sources:
+  storage:
+    type: file-st
+    mount-point: _/../data-location
+
+```
+This is  persistent, and store all data starting from `mount-point` which will be `mounted`
+as the root of the file system. 
+
+### Versioned Storages 
+
+Some of the storages are versioned, that is they keep history of the update calls.
+The basic interface can be found here: https://github.com/nmondal/cowj/blob/main/app/src/main/java/cowj/StorageWrapper.java#L302
+
+```java
+interface VersionedStorage <I> {
+    /**
+     * Gets all versions id for the file, in the bucket
+     * @param bucketName name of the bucket
+     * @param fileName name of the file whose versions we need to find
+     * @return a Stream of String version Ids
+     */
+    Stream<String> versions(String bucketName, String fileName);
+
+    /**
+     * Get the data at a particular version Id
+     * @param bucketName name of the bucket
+     * @param fileName name of the file whose version data we need to get
+     * @param versionId version id for which we need to get the data
+     * @return data of type I
+     */
+    I dataAtVersion(String bucketName, String fileName, String versionId);
+}
+```
+`S3Storage` is a versioned storage. 
+
+#### File Backed Version Storage 
+
+The usage is as follows:
+
+```yaml
+plugins:
+  cowj.plugins:
+    versioned-file-st: VersionedFileStorage::STORAGE
+
+data-sources:
+  storage:
+    type: versioned-file-st
+    mount-point: _/../data/journaled
+```
+
+The different versions are maintained in the `__ver__` directory inside `key` folder, while the `symbolic link` 
+`__latest__` points to the last modified ( most recent, latest ) file inside that folder.
+
 
 ### Authenticators 
 
