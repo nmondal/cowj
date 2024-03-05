@@ -23,6 +23,11 @@ public interface MemoryBackedStorage extends StorageWrapper.SimpleKeyValueStorag
      */
     Map<String, Map<String,String>> dataMemory();
 
+    /**
+     * The underlying storage for each bucket
+     * It must provide one fresh, new instance of a Map of type String, String
+     * @return a Supplier capable of creating one instance of an empty map, per get() call
+     */
     default Supplier<Map<String,String>> bucketMemory(){
         // ensure that keys are sorted within a bucket
         return () -> Collections.synchronizedMap( new TreeMap<>());

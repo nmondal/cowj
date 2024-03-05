@@ -204,6 +204,16 @@ public interface CronModel {
     String SCHEDULER = "_sched";
 
 
+    /**
+     * This is how one can run multiple scheduler in a single JVM
+     * Creates  new Scheduler based on the name and the no of threads
+     * One can get the scheduler any time post creation via
+     * new StdSchedulerFactory().getScheduler(String)
+     * @param schedulerName name of the scheduler to be created
+     * @param numThreads no of threads it should have,
+     *                   if less than 5 threads are given it would clamp it to 5
+     * @return a Quartz Scheduler
+     */
     static Scheduler schedulerByName(String schedulerName, int numThreads ){
         Map<String,Object> data = Map.of(
                 "org.quartz.scheduler.instanceName", schedulerName,

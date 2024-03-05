@@ -133,9 +133,23 @@ public interface VersionedMap<K,V>  extends Map<K,V> {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Creates a versioned map using underlying map
+     * @param map underlying map
+     * @return a VersionedMap
+     * @param <K> type of the key
+     * @param <V> type of the value
+     */
     static <K,V> VersionedMap<K,V> versionedMap(Map<K,List<V>> map){
         return () -> map;
     }
+
+    /**
+     * Creates a versioned map using underlying HashMap
+     * @return a VersionedMap
+     * @param <K> type of the key
+     * @param <V> type of the value
+     */
     static <K,V> VersionedMap<K,V> versionedMap(){
         return versionedMap(new HashMap<>());
     }
