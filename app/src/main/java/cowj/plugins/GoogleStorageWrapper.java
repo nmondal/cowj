@@ -9,14 +9,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.util.Comparator;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Abstraction for Google Cloud Storage
  */
-public interface GoogleStorageWrapper extends StorageWrapper<Bucket, Blob, Blob>  {
+public interface GoogleStorageWrapper extends StorageWrapper<Bucket, Blob, Blob>,
+        StorageWrapper.VersionedStorage<Blob> {
 
     /**
      * Logger for the wrapper
@@ -29,6 +32,41 @@ public interface GoogleStorageWrapper extends StorageWrapper<Bucket, Blob, Blob>
      * @return Storage
      */
     Storage storage();
+
+    /**
+     * <a href="https://cloud.google.com/storage/docs/metadata#generation-number">...</a>
+     * Creates a unique increasing sorted ID for Blobs
+     * @param b a Blob in Google Storage
+     * @return a unique increasing sorted ID for Blob b
+     */
+    static String blobVersion(Blob b){
+        return  b.getMetageneration() + "#" + b.getGeneration();
+    }
+
+    @Override
+    default Stream<String> versions(String bucketName, String fileName) {
+        Bucket bucket = storage().get(bucketName);
+        Page<Blob> blobs = bucket.list(Storage.BlobListOption.versions(true));
+        return StreamSupport.stream( blobs.iterateAll().spliterator(), true)
+                .filter( b ->  key(b).equals(fileName)) // bad design
+                .map(GoogleStorageWrapper::blobVersion) // this is the way
+                .sorted( Comparator.reverseOrder()); // latest should be first
+    }
+
+    @Override
+    default Blob dataAtVersion(String bucketName, String fileName, String versionId) {
+        Bucket bucket = storage().get(bucketName);
+        String[] arr = versionId.split("#");
+        long metaGen = Long.parseLong(arr[0]);
+        long gen = Long.parseLong(arr[0]);
+        return bucket.get( fileName, Storage.BlobGetOption.metagenerationMatch( metaGen),
+                Storage.BlobGetOption.generationMatch( gen) );
+    }
+
+    @Override
+    default String string(Blob input) {
+        return utf8(input);
+    }
 
     @Override
     default String key(Blob input) {
