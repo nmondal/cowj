@@ -203,6 +203,11 @@ public interface S3StorageWrapper extends
         }
     }
 
+    @Override
+    default String string(ResponseBytes<GetObjectResponse> input){
+        return input == null? null : input.asUtf8String();
+    }
+
     /**
      * The key to be used to identify the storage id for the instance
      * In the configuration map

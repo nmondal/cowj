@@ -105,6 +105,10 @@ public class S3StorageWrapperTest {
         // versioned response
         Assert.assertEquals( data.getValue(),
                 s3.dataAtVersion("a","b" , "whatever"));
+
+        Assert.assertEquals(hello,
+                s3.stringAtVersion("a","b" , "whatever"));
+
     }
 
     @Test

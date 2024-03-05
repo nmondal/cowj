@@ -109,5 +109,7 @@ public class VersionedMemoryStorageTest {
         // test something that would not have anything
         Assert.assertEquals(Collections.emptyList(), ms.listVersions( BUCKET_NAME, "shooh!", 0, 1000) );
         Assert.assertNull(ms.latestVersion( BUCKET_NAME, "shooh!"));
+        final String s = ms.stringAtVersion( BUCKET_NAME, "0", "0");
+        Assert.assertNotNull(s);
     }
 }

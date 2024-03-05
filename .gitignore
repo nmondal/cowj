@@ -36,4 +36,6 @@ build/
 
 # Jython cache stuff
 .jython_cache/
+app/samples/jython/lib/
+
 

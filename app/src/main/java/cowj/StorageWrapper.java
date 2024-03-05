@@ -1,7 +1,11 @@
 package cowj;
 
+import org.python.modules.itertools.repeat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.googlecode.aviator.runtime.type.seq.CharSeqSequence;
+
 import zoomba.lang.core.types.ZTypes;
 
 import java.nio.charset.StandardCharsets;
@@ -342,6 +346,28 @@ public interface  StorageWrapper <B,R,I> {
          * @return data of type I
          */
         I dataAtVersion(String bucketName, String fileName, String versionId);
+
+        /**
+         * Converts the data type I to string for humans
+         * Aiding function to be used conjunction to dataAtVersion()
+         * @param input the actual input of type I
+         * @return a String representation of input I
+         */
+        default String string(I input){
+            return input == null? null : input.toString();
+        }
+
+        /**
+         * Get the data at a particular version Id
+         * @param bucketName name of the bucket
+         * @param fileName name of the file whose version data we need to get
+         * @param versionId version id for which we need to get the data
+         * @return data of type I
+         */
+        default String stringAtVersion(String bucketName, String fileName, String versionId){
+            I input = dataAtVersion(bucketName, fileName, versionId);
+            return string(input);
+        }
     }
 
     /**
