@@ -37,7 +37,7 @@ public interface GoogleStorageWrapper extends StorageWrapper<Bucket, Blob, Blob>
      * <a href="https://cloud.google.com/storage/docs/metadata#generation-number">...</a>
      * Creates a unique increasing sorted ID for Blobs
      * @param b a Blob in Google Storage
-     * @return a unique increasing sorted ID for Blob b
+     * @return a unique increasing sorted ID for Blob b of the format : metaGenNo#GenNo
      */
     static String blobVersion(Blob b){
         return  b.getMetageneration() + "#" + b.getGeneration();
@@ -47,7 +47,7 @@ public interface GoogleStorageWrapper extends StorageWrapper<Bucket, Blob, Blob>
     default Stream<String> versions(String bucketName, String fileName) {
         Bucket bucket = storage().get(bucketName);
         Page<Blob> blobs = bucket.list(Storage.BlobListOption.versions(true));
-        return StreamSupport.stream( blobs.iterateAll().spliterator(), true)
+        return blobs.streamAll()
                 .filter( b ->  key(b).equals(fileName)) // bad design
                 .map(GoogleStorageWrapper::blobVersion) // this is the way
                 .sorted( Comparator.reverseOrder()); // latest should be first

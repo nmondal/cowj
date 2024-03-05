@@ -15,8 +15,10 @@ import zoomba.lang.core.types.ZTypes;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertThrows;
@@ -308,5 +310,62 @@ public class GoogleStorageWrapperTest {
 
         when(storage.delete(ArgumentMatchers.eq(blob))).thenReturn(false);
         Assert.assertFalse(gsw.delete(bucket, path));
+    }
+
+    @Test
+    public void versionsTest(){
+        Storage storage = mock( Storage.class);
+        Map<String,Object> data = Map.of("x",  42 );
+        String dataString = ZTypes.jsonString(data);
+        Blob b = mock(Blob.class);
+        Bucket bucket = mock(Bucket.class);
+        when(bucket.get((String) any(), (Storage.BlobGetOption)any(), (Storage.BlobGetOption)any())).thenReturn(b);
+        when(storage.get((String) any())).thenReturn(bucket);
+
+        when(b.getStorage()).thenReturn(storage);
+        when(b.getContent()).thenReturn( dataString.getBytes( StandardCharsets.UTF_8 ));
+        when(b.getMetageneration()).thenReturn(4L);
+        when(b.getGeneration()).thenReturn(2L);
+
+        when(storage.get(anyString(), anyString())).thenReturn(b);
+        GoogleStorageWrapper gsw = () -> storage;
+        // string
+        Assert.assertEquals( dataString, gsw.string(b));
+        // static version
+        Assert.assertEquals( "4#2", GoogleStorageWrapper.blobVersion(b));
+        Assert.assertEquals( b, gsw.dataAtVersion( "foo", "bar", "4#2"));
+
+    }
+
+    @Test
+    public void versionStreamTest(){
+        Storage storage = mock( Storage.class);
+
+        Stream<Blob> blobStream = IntStream.range( 0, 10).mapToObj( i -> {
+            Blob b = mock(Blob.class);
+            BlobId id = mock(BlobId.class);
+            when(id.getName()).thenReturn( String.valueOf( i % 2 ));
+            when(b.getBlobId()).thenReturn(id);
+            when(b.getGeneration()).thenReturn((long)i);
+            when(b.getMetageneration()).thenReturn((long)i);
+            return b;
+        });
+
+        Bucket bucket = mock(Bucket.class);
+        Page<Blob> page = mock(Page.class);
+
+        when(page.streamAll()).thenReturn(blobStream);
+        when(bucket.list( any())).thenReturn(page);
+        when(storage.get((String) any())).thenReturn(bucket);
+
+        GoogleStorageWrapper gsw = () -> storage;
+        List<String> vers = gsw.versions( "foo", "0").toList();
+        Assert.assertFalse(vers.isEmpty());
+        // check sorted by larger strings
+        IntStream.range(1, vers.size() ).forEach( i -> {
+            String pv = vers.get(i-1);
+            String cv = vers.get(i);
+            Assert.assertTrue( pv.compareTo( cv) > 0 );
+        });
     }
 }
