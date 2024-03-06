@@ -350,6 +350,11 @@ public interface TypeSystem {
         return false;
     }
 
+    /**
+     * Tries to progressively cast a string into a primitive type ( bool, numeric, string )
+     * @param s the input string
+     * @return a primitive type object - like bool, or numeric or same string if it can not convert
+     */
     static Object autoCast(String s) {
         Boolean b = ZTypes.bool(s);
         if ( b != null ) return b;
@@ -358,6 +363,13 @@ public interface TypeSystem {
         return s;
     }
 
+    /**
+     * Converts a query map into a real map with underlying objects
+     * Use autoCast to cast them
+     * If a value has more than one element treat as list
+     * @param map input map
+     * @return a flattened out map having objects as values
+     */
     static Map<String,Object> toRealMap( Map<String,String[]> map){
         final Map<String,Object> json = new HashMap<>();
         map.forEach( (k,v) -> {
@@ -372,6 +384,12 @@ public interface TypeSystem {
         return json;
     }
 
+    /**
+     * Process query parameters , halts if schema did not match
+     * @param request for this request
+     * @param paramSchema based on this schema path
+     * @param startTime when the parent intercept method was called, time in ms
+     */
     default void handleParameters(Request request, String paramSchema, long startTime){
         if ( paramSchema.isEmpty() ) return;
         Map<String,String[]> map = request.queryMap().toMap();
