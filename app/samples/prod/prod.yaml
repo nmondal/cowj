@@ -23,6 +23,7 @@ routes:
 proxies:
   get:
     /users: json_place/users
+    /u2: json_place/users
 
 filters:
   finally:

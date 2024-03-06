@@ -380,7 +380,7 @@ public interface TypeSystem {
         EitherMonad<Object> em = json( paramSchema, jsonString);
         try {
             if ( em.inError() ){
-                final String message = "Parameter Schema Validation failed : " + em.error();
+                final String message = "Query Parameter Schema Validation failed : " + em.error();
                 Spark.halt(409, message);
             }
             request.attribute(PARSED_PARAMS, em.value());

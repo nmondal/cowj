@@ -33,7 +33,7 @@ public class SchemaTest {
     public void loadSchemaTest(){
         TypeSystem typeSystem = TypeSystem.fromFile( "samples/prod/static/types/schema.yaml");
         Assert.assertFalse( typeSystem.routes().isEmpty() );
-        Assert.assertEquals( 4, typeSystem.routes().size());
+        Assert.assertEquals( 5, typeSystem.routes().size());
     }
 
     @Test
@@ -122,6 +122,19 @@ public class SchemaTest {
         r = ModelRunnerTest.post( "http://localhost:5042", "/person",  "foo bar!" );
         Assert.assertNotNull(r);
         Assert.assertTrue( r.contains("Validation") );
+    }
+
+    @Test
+    public void requestParamSchemaTest(){
+        // valid schema
+        String r = ModelRunnerTest.get( "http://localhost:5042", "/u2?id=1");
+        Assert.assertNotNull(r);
+        List<?> l = (List<?>)ZTypes.json(r);
+        Assert.assertEquals(1, l.size());
+        // invalid schema
+        r = ModelRunnerTest.get( "http://localhost:5042", "/u2?x=false&b=boom&b=xxx");
+        Assert.assertNotNull(r);
+        Assert.assertTrue( r.contains("Query Parameter"));
     }
 
     @Test

@@ -16,6 +16,11 @@ routes:
       params: params.json # this defines parameters
       ok: output.json
 
+  /u2:
+    get:
+      params: params.json # this defines parameters
+      ok: output.json
+
   /person:
       post:
         in: Person.json

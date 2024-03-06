@@ -118,9 +118,23 @@ routes:
 
    /person/*:
      get:
+       params: params.json  # query parameter schema 
        ok: Person.json
        err: RetVal.json
 ```
+
+Note that the query parameter schema automatically converts
+query parameters to objects following the algorithm:
+
+1. If a parameter has multiple occurrence treat it as list
+2. try converting the item into
+
+   2.1 Boolean 
+
+   2.2 Numeric 
+   
+   2.3 Failing, string 
+3. Create an object and then return the string rep of the object to match against schema.
 
 ### Labels
 
