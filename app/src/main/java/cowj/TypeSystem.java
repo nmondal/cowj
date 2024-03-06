@@ -14,6 +14,7 @@ import spark.Filter;
 import spark.Request;
 import spark.Response;
 import spark.Spark;
+import zoomba.lang.core.types.ZNumber;
 import zoomba.lang.core.types.ZTypes;
 
 import java.io.File;
@@ -43,6 +44,21 @@ public interface TypeSystem {
          * @return a map of labels against schema for it
          */
         Map<String,String> schemas();
+
+
+
+        /**
+         * Special constant to define input schema
+         */
+        String PARAMETERS = "params" ;
+
+        /**
+         * Gets the input json schema file
+         * @return input json schema file
+         */
+        default String parameterSchema(){
+            return schemas().getOrDefault( PARAMETERS, "");
+        }
 
         /**
          * Special constant to define input schema
@@ -282,6 +298,11 @@ public interface TypeSystem {
     String PARSED_BODY = "_body" ;
 
     /**
+     * Key of the parsed input param body accessible from Scriptable
+     */
+    String PARSED_PARAMS = "_params" ;
+
+    /**
      * Key for checking if input schema validation failed or not
      * If this is not set, then the input is not verified by the input schema validator
      */
@@ -329,6 +350,46 @@ public interface TypeSystem {
         return false;
     }
 
+    static Object autoCast(String s) {
+        Boolean b = ZTypes.bool(s);
+        if ( b != null ) return b;
+        Number n = ZNumber.number(s);
+        if ( n != null ) return n;
+        return s;
+    }
+
+    static Map<String,Object> toRealMap( Map<String,String[]> map){
+        final Map<String,Object> json = new HashMap<>();
+        map.forEach( (k,v) -> {
+            if ( v.length > 1 ){
+                List<Object> l = new ArrayList<>(v.length);
+                Arrays.stream(v).forEach( s -> l.add( autoCast(s)) );
+                json.put(k,l);
+            }else{
+                json.put(k,autoCast(v[0]));
+            }
+        });
+        return json;
+    }
+
+    default void handleParameters(Request request, String paramSchema, long startTime){
+        if ( paramSchema.isEmpty() ) return;
+        Map<String,String[]> map = request.queryMap().toMap();
+        Map<String,Object> json = toRealMap(map);
+        final String jsonString =  EitherMonad.orElse( () -> OBJECT_MAPPER.writeValueAsString(json), "{}");
+        EitherMonad<Object> em = json( paramSchema, jsonString);
+        try {
+            if ( em.inError() ){
+                final String message = "Parameter Schema Validation failed : " + em.error();
+                Spark.halt(409, message);
+            }
+            request.attribute(PARSED_PARAMS, em.value());
+        }finally {
+            final long endTime = System.currentTimeMillis();
+            logger.info("?? Parameter Verification [success: {}] took {} ms", em.isSuccessful(), endTime - startTime);
+        }
+    }
+
     /**
      * Creates a spark.Filter before filter from JSON Schema path to verify input schema
      * @param path to the JSON Schema file
@@ -339,9 +400,13 @@ public interface TypeSystem {
         return  (request, response) -> {
             final long startTime = System.currentTimeMillis();
             final String verb = request.requestMethod().toLowerCase(Locale.ROOT);
-            if ( verb.equals("get") ){ return; }
             Signature signature = routes().get(path).get(verb);
             if ( signature == null ){ return; }
+            // handle params
+            handleParameters( request, signature.parameterSchema(),startTime);
+            // now the rest...
+            if ( verb.equals("get") ){ return; }
+
             final String schemaPath = signature.inputSchema();
             if ( schemaPath.isEmpty() ) { return; }
 

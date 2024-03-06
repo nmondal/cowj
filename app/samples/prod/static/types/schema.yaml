@@ -13,6 +13,7 @@ verify:
 routes:
   /users:
     get:
+      params: params.json # this defines parameters
       ok: output.json
 
   /person:
