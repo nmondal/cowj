@@ -63,6 +63,11 @@ public class FileBackedStorageTest {
     }
 
     @Test
+    public void nonExistentRead(){
+        // nonexistent read ???
+        Assert.assertNull( fs.load( BUCKET_NAME, "asaadadada") );
+    }
+    @Test
     public void invalidMountPointTest(){
         Exception exception = assertThrows(Exception.class, () -> {
             new FileBackedStorage(null);

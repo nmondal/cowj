@@ -179,7 +179,7 @@ public class GoogleStorageWrapperTest {
         when(page.streamAll()).thenReturn(Stream.of(b1, b2));
         GoogleStorageWrapper gsw = () -> storage;
         // check the data part
-        Assert.assertEquals("", gsw.utf8(null));
+        Assert.assertNull( gsw.utf8(null));
 
         // ensure stream has some stuff
         Stream<String> as = gsw.allContent("foo", "", false);

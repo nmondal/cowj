@@ -62,6 +62,12 @@ public class VersionedStorageTest {
     }
 
     @Test
+    public void nonExistentRead(){
+        // nonexistent read ???
+        Assert.assertNull( fs.load( BUCKET_NAME, "asaadadada") );
+    }
+
+    @Test
     public void specialKeyLoadingTest(){
         final String[] data = new String[] { "Crazy!1" , "Crazy!2" } ;
         // first time

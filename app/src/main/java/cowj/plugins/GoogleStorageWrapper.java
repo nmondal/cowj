@@ -156,7 +156,7 @@ public interface GoogleStorageWrapper extends StorageWrapper<Bucket, Blob, Blob>
         try {
             return new String( bytes(input), UTF_8);
         }catch (Throwable t){
-            return "";
+            return null;
         }
     }
 

@@ -1,17 +1,12 @@
 package cowj;
 
-import org.python.modules.itertools.repeat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.googlecode.aviator.runtime.type.seq.CharSeqSequence;
-
 import zoomba.lang.core.types.ZTypes;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -194,7 +189,7 @@ public interface  StorageWrapper <B,R,I> {
 
     /**
      * Load data from Google Storage as String - encoding is UTF-8
-     *
+     * In case file does not exist, should return null
      * @param bucketName from this bucket name
      * @param fileName   from this file
      * @return data string - content of the file
@@ -212,7 +207,6 @@ public interface  StorageWrapper <B,R,I> {
      */
     default Object load(String bucketName, String fileName) {
         String data = loads(bucketName, fileName);
-        if (data.isEmpty()) return null;
         try {
             return ZTypes.json(data);
         } catch (Throwable t) {
