@@ -63,12 +63,12 @@ public interface VersionedMap<K,V>  extends Map<K,V> {
 
     @Override
     default boolean containsValue(Object value) {
-        return underlying().values().stream().anyMatch(list -> list.getFirst().equals(value) );
+        return underlying().values().stream().anyMatch(list -> list.get(0).equals(value) );
     }
 
     @Override
     default V get(Object key) {
-        return EitherMonad.orNull( () -> underlying().getOrDefault( key , Collections.emptyList()).getFirst());
+        return EitherMonad.orNull( () -> underlying().getOrDefault( key , Collections.emptyList()).get(0));
     }
 
     @Nullable
@@ -122,14 +122,14 @@ public interface VersionedMap<K,V>  extends Map<K,V> {
     @NotNull
     @Override
     default Collection<V> values() {
-        return underlying().values().stream().map(List::getFirst).toList();
+        return underlying().values().stream().map(l -> l.get(0)).toList();
     }
 
     @NotNull
     @Override
     default Set<Entry<K, V>> entrySet() {
         return underlying().entrySet().stream()
-                .map( e -> StorageWrapper.entry( e.getKey(), e.getValue().getFirst()))
+                .map( e -> StorageWrapper.entry( e.getKey(), e.getValue().get(0)))
                 .collect(Collectors.toSet());
     }
 

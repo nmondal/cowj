@@ -117,7 +117,7 @@ public final class ScriptableSocket {
                         .filter(EitherMonad::inError).map(EitherMonad::error)
                         .toList();
         if ( errors.isEmpty() ) return EitherMonad.value(true);
-        return EitherMonad.error(errors.getLast());
+        return EitherMonad.error(errors.get( errors.size()-1));
     }
 
     /**
