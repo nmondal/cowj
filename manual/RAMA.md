@@ -133,12 +133,12 @@ A prefixed value data store should be the underlying storage. This ensures, that
 3. Let $A \odot B$ means `A/B` a string separated by suitable seperator 
 
 4. The key for the message would be as follows :
-   $$
-   K = C \odot B_kr \odot (t_{kr} \; mod \;  T) \odot H(P_k,n)
-   $$
+
+   $ K = C \odot B_kr \odot (t_{kr} \; mod \;  T) \odot H(P_k,n) $
    
-4. Value would be the message body as a whole
-5. Put this $K$ key with value $V$ into the Data Store $D$
+5. Value would be the message body as a whole
+
+6. Put this $K$ key with value $V$ into the Data Store $D$
 
 
 
@@ -149,25 +149,19 @@ A prefixed value data store should be the underlying storage. This ensures, that
 1. A Key,  Prefixed Value Data Store : $D$ 
 
 2. An offset Tuple for each Consumer of the form 
-   $$
-   <c_{k} : <B_r,I>>
-   $$
-
-3. 
+   
+   $<c_{k} : <B_r,I>>$
 
 where   $I \in t_{kr} \; mod \;  T $ , defines the smaller buckets inside the larger $B_r$ buckets.
 
 #### Algorithm 
 
 1. Given a client $c_k$ just read back all data in the prefix 
-   $$
-   C \odot B_kr \odot I
-   $$
+   $ C \odot B_kr \odot I $
 
 2. Increment the value of $I$ and store back in the Tuple 
 
 3. Return the data
-
 
 
 ### Example 
