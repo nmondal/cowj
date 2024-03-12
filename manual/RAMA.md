@@ -23,19 +23,18 @@ Pub-Sub is over indulged in the industry with varieties of choice to the point o
 1. Swiss Knife of Pub/Sub ( everything, every use cases, just not real time streaming or query )
    1. Pub/Sub
    2. Queuing 
-   3.  Ordered Message passing
+   3.  Temporally Ordered Message passing
    4. Event Bus 
 2. Cost and maintainability ( 1 million request/sec throughput gets done at cost of 100$ a month or less )
-   1. Low cost setup 
-   2. Easy to Maintain 
-   3. Low cost of maintenance 
+   1. Extremely Low cost setup 
+   2. Easy to Maintain - Zero Maintenance   
 3. Reasonably Low latency L
    1. Maximum of ~ 3 secs to reach to subscriber
    2. Can be taken to sub millisecond 
-4. Well Ordering with coarse timing 
+4. Well Ordering with coarse timing which is configurable 
    1. Within a limit a message B sent before will be received before a message A sent after it
    2. Can configure the precision up-to which the messages will be FIFO
-   3. Can be customised to guarantee FIFO with a bit more latency of order of ms.
+   3. Can be customized to guarantee FIFO with a bit more latency of order of ms.
 5. Data Durability 
    1. Data never gets written off 
    2. Unless configured 
@@ -73,7 +72,7 @@ Each message has a mandatory time stamp in UTC, to be cross checked against serv
 
 ### Storage & Durability 
 
-Any key value store suffices, which gives guarantee on durability.
+Any key value store with ability to prefix search on key suffices, which gives guarantee on durability as well as fast retrieval.
 
 ### Client Identity 
 
@@ -102,12 +101,18 @@ curl -XPUT localhost:8080/<topic_name> -H "client_key : <client-key>" -d '{ "x" 
 #### Read Message   
 
 ```
-curl -XGET localhost:8080/<topic_name>/<time_stamp>[?n=num_of_reccord] -H "client_key : <client-key>"
+curl -XGET localhost:8080/<topic_name>/<time_stamp>[?o=offset&n=num_of_reccord] -H "client_key : <client-key>"
 ```
 
+### In the Wild 
 
+A typical RAMA endpoint is depicted in the `42` COWJ project as here :  https://github.com/nmondal/42/blob/main/events/events.yaml 
+
+One can naturally add schema - hence - https://github.com/nmondal/42/blob/main/events/static/types/Event.json for the typed write.
 
 ## Detailing  
+
+A prefixed value data store should be the underlying storage. This ensures, that the data retrieval for a prefix can be done in sun linear time. AWS provides S3 for the same, same goes with Google Storage, and even Azure supports prefix in keys.
 
 ### Publishing
 
@@ -145,7 +150,7 @@ curl -XGET localhost:8080/<topic_name>/<time_stamp>[?n=num_of_reccord] -H "clien
 
 2. An offset Tuple for each Consumer of the form 
    $$
-   <c_{k} : <B_r,I>
+   <c_{k} : <B_r,I>>
    $$
 
 3. 
@@ -174,9 +179,21 @@ Let's scale to 1 million ( $1000000 = 10^6$ ) request a second.  It is a breeze 
 3. Timestamp gets received in  `ms` precision which immediately puts into the bucket at `micro` level. 
 4. Readers start reading at ms level of precision guaranteeing ordering  at above micro-sec level 
 
+A typical implementation may ease out the entire reading via clever use of batch processing  - see this:
+
+https://github.com/nmondal/42/blob/main/events/events.yaml#L41 
+
+
+
  ## References 
 
-1. https://commons.apache.org/proper/commons-collections/apidocs/org/apache/commons/collections4/trie/PatriciaTrie.html 
-2. https://github.com/indeedeng/lsmtree 
-3. https://stackoverflow.com/questions/52443839/s3-what-exactly-is-a-prefix-and-what-ratelimits-apply 
-4. https://cloud.google.com/storage/docs/samples/storage-list-files-with-prefix#storage_list_files_with_prefix-java 
+1. Prefix Storage - Default Cloud 
+   1. https://cloud.google.com/storage/docs/samples/storage-list-files-with-prefix 
+   2. https://stackoverflow.com/questions/52443839/s3-what-exactly-is-a-prefix-and-what-ratelimits-apply 
+   3. https://learn.microsoft.com/en-us/python/api/azure-storage-blob/azure.storage.blob.blobprefix?view=azure-python 
+2. Custom Prefixed Storage - Trees
+   1. https://commons.apache.org/proper/commons-collections/apidocs/org/apache/commons/collections4/trie/PatriciaTrie.html 
+   2. https://github.com/indeedeng/lsmtree 
+   3. https://ozone.apache.org/docs/current/feature/prefixfso.html 
+3. Local File System Implementation - https://github.com/nmondal/cowj/blob/main/app/src/main/java/cowj/plugins/FileBackedStorage.java#L122 
+4. A (primitive) RAMA Implementation - https://github.com/nmondal/cowj/blob/main/app/src/main/java/cowj/plugins/JvmRAMA.java 
