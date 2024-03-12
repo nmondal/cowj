@@ -175,7 +175,7 @@ public interface JDBCWrapper {
             while (rs.next()) {
                 Map<String,Object> m = new LinkedHashMap<>(); // because of... order preserving
                 for (int index = 1; index <= count; index++) {
-                    String column = rsmd.getColumnName(index);
+                    String column = rsmd.getColumnLabel(index); // so that ALIAS gets supported
                     Object value = rs.getObject(column);
                     Object transformedValue = getObject(value);
                     m.put(column, transformedValue);

@@ -87,6 +87,17 @@ public class JDBCWrapperTest {
            Object age = m.get("AGE");
            Assert.assertTrue( age instanceof Integer );
        });
+
+       // add alias and check?
+        resp = derby.select("select NAME as N, AGE as A from Data" , Collections.emptyList());
+        Assert.assertTrue(resp.isSuccessful());
+        rows = resp.value();
+        rows.forEach( m -> {
+            Object name = m.get("N");
+            Assert.assertTrue( name instanceof String );
+            Object age = m.get("A");
+            Assert.assertTrue( age instanceof Integer );
+        });
     }
 
     @Test
