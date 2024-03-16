@@ -130,12 +130,10 @@ A prefixed value data store should be the underlying storage. This ensures, that
 
 2. Let the time up to precision $T$ for $t_{kr}$ be $B_{kr} = \tau(t_{kr},T)$
 
-3. Let $A \odot B$ means `A/B` a string separated by suitable seperator 
+3. Let $A \odot B$ means `A/B` a string separated by suitable separator 
 
-4. The key for the message would be as follows :
+4. The key for the message would be as follows:     $ K = C \odot B_kr \odot (t_{kr} \; mod \;  T) \odot H(P_k,n) $
 
-   $ K = C \odot B_kr \odot (t_{kr} \; mod \;  T) \odot H(P_k,n) $
-   
 5. Value would be the message body as a whole
 
 6. Put this $K$ key with value $V$ into the Data Store $D$
