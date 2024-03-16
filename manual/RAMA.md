@@ -126,7 +126,7 @@ A prefixed value data store should be the underlying storage. This ensures, that
 
 #### Algorithm 
 
-1. Receive the $r$ th Messages sent by $k$ Publisher : $_km_r$  with timestamp $t_{kr}$ 
+1. Receive the $r$ th Messages sent by $k$ Publisher : $m_{kr}$  with timestamp $t_{kr}$ 
 
 2. Let the time up to precision $T$ for $t_{kr}$ be $B_{kr} = \tau(t_{kr},T)$
 
@@ -155,7 +155,8 @@ where   $I \in t_{kr} \; mod \;  T$ , defines the smaller buckets inside the lar
 #### Algorithm 
 
 1. Given a client $c_k$ just read back all data in the prefix 
-   $ C \odot B_kr \odot I $
+   
+$C \odot B_{kr} \odot I$
 
 2. Increment the value of $I$ and store back in the Tuple 
 
