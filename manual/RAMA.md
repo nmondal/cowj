@@ -148,11 +148,9 @@ A prefixed value data store should be the underlying storage. This ensures, that
 
 1. A Key,  Prefixed Value Data Store : $D$ 
 
-2. An offset Tuple for each Consumer of the form 
-   
-   $<c_{k} : <B_r,I>>$
+2. An offset Tuple for each Consumer of the form  $(c_k : (B_r,I))$
 
-where   $I \in t_{kr} \; mod \;  T $ , defines the smaller buckets inside the larger $B_r$ buckets.
+where   $I \in t_{kr} \; mod \;  T$ , defines the smaller buckets inside the larger $B_r$ buckets.
 
 #### Algorithm 
 
