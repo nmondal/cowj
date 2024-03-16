@@ -134,7 +134,7 @@ A prefixed value data store should be the underlying storage. This ensures, that
 
 4. The key for the message would be as follows:    
 
-    $ K = C \odot B_{kr} \odot (t_{kr} \; mod \;  T) \odot H(P_k,n) $
+    $K = C \odot B_{kr} \odot (t_{kr} \; mod \;  T) \odot H(P_k,n)$
 
 5. Value would be the message body as a whole
 
