@@ -132,7 +132,9 @@ A prefixed value data store should be the underlying storage. This ensures, that
 
 3. Let $A \odot B$ means `A/B` a string separated by suitable separator 
 
-4. The key for the message would be as follows:     $ K = C \odot B_kr \odot (t_{kr} \; mod \;  T) \odot H(P_k,n) $
+4. The key for the message would be as follows:    
+
+    $ K = C \odot B_{kr} \odot (t_{kr} \; mod \;  T) \odot H(P_k,n) $
 
 5. Value would be the message body as a whole
 
