@@ -293,10 +293,13 @@ In this way it is very similar to PHP doctrine, as well as DJango or Play.
 
 Is Polyglot.  We support JSR-223 languages - in built support is provided right now for:
 
-1. JavaScript 
-2. Python via Jython 
-3. Groovy 
-4. ZoomBA  
+1. Groovy ( Optionally Typed )
+2. JavaScript ( via Rhino Engine )
+3. Kotlin Scripting ( Fully Typed )
+4. Python 2.7 ( Jython ) 
+5. ZoomBA  ( Duck Typed )
+
+And obviously any pre-existing class files just work!
 
 Underlying we are using the specially cloned and jetty 11 migrated spark-java fork:
 
@@ -346,7 +349,8 @@ See the document  "A Guide to COWJ Scripting" found here - [Scripting](manual/sc
 
 ### Threading 
 
-We can specify the `min` , `max`, and `timeout` for the underlying jetty threadpool. In case we specify `virtual` which can take either `true` or `false` - under JRE 21 it would spawn green threads - or virtual threads.
+We can specify the `min` , `max`, and `timeout` for the underlying jetty threadpool. 
+In case we specify `virtual` which can take either `true` or `false` - under JRE 21 it would spawn green threads - or virtual threads.
 
 
 ### Routes
@@ -398,6 +402,7 @@ def validate_token(){ /* verification here */ }
 token = req.headers("auth")
 assert("Invalid Request", 403) as { validate_token(token) } 
 ```
+You really do not need to do that, we have fully functional auth support, but that was just for demo.
 
 #### Finally
 
@@ -442,7 +447,10 @@ while:
 
 A cron boot failure can hang the system, hence a proper `retry` makes sense.
 
-Cron threadpool is not Java 21 green thread aware ( yet ) but there is a PR (https://github.com/quartz-scheduler/quartz/pull/1093) submitted which if and when incorporated will be used immediately to spawn green threads for the jobs. The guarantee is needed from the core Quartz team that the system works with green threads.  
+Cron threadpool is not Java 21 green thread aware ( yet ) 
+but there is a PR (https://github.com/quartz-scheduler/quartz/pull/1093) submitted 
+which if and when incorporated will be used immediately to spawn green threads for the jobs. 
+The guarantee is needed from the core Quartz team that the system works with green threads.  
 
 ### Retries 
 They can be applied on `async` routes as well as cron jobs which will be

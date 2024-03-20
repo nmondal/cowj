@@ -243,13 +243,18 @@ This comes from `types/Person.json` :
 
 ### On Successful
 
-Once we turn on the schema validation, then, the system automatically validates the schema and parsed JSON Object gets added to the `Request` as an attribute `_body` , which then  the route script can use as follows:
+Once we turn on the schema validation, then, the system automatically validates the schema 
+and parsed JSON Object gets added to the `Request` as an attribute `_body`, 
+where as the query params gets added as `_params` which is a dictionary, 
+which then  the route script can use as follows:
 
 ```scala
 // ZoomBA 
 assert( "_body" @ req.attributes() , "How come req.body failed to verify and come here?" , 409 )
-payload = req.attribute("_body") // this should already have the parsed data
+params = req.attribute("_params") // this should already have the parsed query params data
+my_body = req.attribute("_body") // this should already have the parsed body data
 ```
+
 This is added so that developers do not need to again re-parse the already parsed JSON body - done during the validation phase.
 
 ### On Validation Error
