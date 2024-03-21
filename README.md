@@ -21,14 +21,18 @@ It should be very clear from the naming that:
 
 > objective is to optimize back-end development and replacing it with configurations.
 
+This is immediately helpful in rapid development of prototypes, and in many cases, 
+rapidly developing and deploying solutions to customers side of things.
+This aims to de facto replace Mule software for almost all practical purposes. 
 
-Cowj let's you build back-end systems :
 
-1. APIs
+Cowj let's you build back-end systems blazing fast and has the following features:
 
-2. Batch processing with Cron 
+1. You can write APIs
 
-3. Event Processing 
+2. Can do Batch processing with Cron 
+
+3. Event Processing capabilities ( with RAMA & Other Plugins) 
 
 4. Data Processing 
 
@@ -36,7 +40,7 @@ via configurations and scripts. It's backbone is written using `spark-11`,  `jet
 
 ### Very Fast `Hello World`
 
-1. Download the appropriate binary - or build to that you have the `cowj-jar`  ready with `./deps`  pointing to dependencies.
+1. Build so that you have the `cowj-jar`  ready with `./deps`  pointing to dependencies.
 
 2. Create a directory `hello` 
 
@@ -64,7 +68,6 @@ That is it. That is  all it takes to setup a `Cowj` server.
 What about actual service endpoints?
 
 Just type down these into the `hello.yaml` :
-
 
 
 ```yaml
@@ -95,13 +98,14 @@ And the `hello.js` :
 "Hello, World!"
 ```
 
-Now, restart cowj, run the same curl command - and voila, you would have `Hello, World` again.
+Now, restart cowj, run the same curl command - and voilà, you would have `Hello, World` again.
 
 As you can see, code is configuration and configuration is code in Cowj.
 
 With this note, we shall dive into the world of BED - back end development.
 
 ## COWJ Setup
+
 1. Install java 17 or newer : https://adoptium.net/temurin/releases/?version=17 
 
 2. Install gradle `8.5` or above :  https://gradle.org/install/ 
@@ -112,8 +116,6 @@ With this note, we shall dive into the world of BED - back end development.
    git clone https://github.com/nmondal/cowj # clone repo 
    cd cowj # go to cowj directory 
    ```
-
-   
 
 4. Run `gradle build -x test` - in the `cowj` directory
 
