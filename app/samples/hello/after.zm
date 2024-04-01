@@ -1,2 +1,2 @@
 // this is the after filter...
-println( 'after... ' + req.uri )
+_log.info( 'after {} => status {}',  req.uri, resp.status )

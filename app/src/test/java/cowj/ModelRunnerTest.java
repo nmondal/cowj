@@ -98,6 +98,9 @@ public class ModelRunnerTest {
         Assert.assertEquals( expected, get("http://localhost:5003", "/hello/j"));
         // post routes
         Assert.assertEquals( expected, post("http://localhost:5003", "/hello", ""));
+
+        // routes returning null
+        Assert.assertEquals( "", get("http://localhost:5003", "/null"));
     }
 
     @Test

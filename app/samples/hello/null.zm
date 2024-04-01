@@ -1,2 +1,2 @@
-_log.info(" I am being called!")
+_log.info("I would return null now!")
 null // return null

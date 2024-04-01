@@ -71,7 +71,13 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         sb.put(REQUEST, request);
         sb.put(RESPONSE, response);
         try {
-            return exec(sb);
+            final Object ret = exec(sb);
+            if ( ret == null ){
+                // Patch for issues/92
+                logger.error("{} @ {} produced null, returning empty string", request.requestMethod(), request.pathInfo());
+                return "" ;
+            }
+            return ret;
         } catch (Throwable t) {
             if (sb.containsKey(HALT_ERROR)) {
                 TestAsserter.HaltException he = (TestAsserter.HaltException) sb.get(HALT_ERROR);

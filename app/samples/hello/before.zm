@@ -1,2 +1,2 @@
 // this is the before filter...
-println( 'before... ' + req.uri )
+_log.info( 'before {}',  req.uri )
