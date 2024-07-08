@@ -1,4 +1,6 @@
 // print to console...
 _log.info("{} : I am cron!!! {} ", @SCRIPT.location , time())
+// create a bucket - no worries, trying to create a bucket multiple time in memory has no issue
+println( "Bucket created : " + _ds["in-mem-storage"].createBucket("Persons", "", false ) )
 // check if type system is loaded or not
 panic( empty( _ds["ds:types"] ) , "could not load type system!" )
