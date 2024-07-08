@@ -192,6 +192,8 @@ public interface ModelRunner extends Runnable {
         FileWatcher.startWatchDog( baseDir );
         // Attach TypeSystem output schema verification after any after filter
         typeSystem.attachOutput();
+        // now if type system has typed storage, replace all storages via typed storage mechanism
+        TypedStorage.attach(typeSystem);
         awaitInitialization();
         logger.info("Cowj is initialized!");
     }

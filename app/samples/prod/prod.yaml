@@ -32,11 +32,15 @@ filters:
 plugins:
   cowj.plugins:
     curl: CurlWrapper::CURL
+    mem-st: MemoryBackedStorage::STORAGE
 
 data-sources:
   json_place:
     type: curl
     url: https://jsonplaceholder.typicode.com
+
+  in-mem-storage:
+    type: mem-st
 
 
 cron:

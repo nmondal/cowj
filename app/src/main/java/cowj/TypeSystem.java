@@ -90,6 +90,12 @@ public interface TypeSystem {
     Map<String,Map<String,Signature>> routes();
 
     /**
+     * Storage access patterns mapping against schema
+     * @return storage mapping
+     */
+    Map<String,Map<String,Object>> storages();
+
+    /**
      * Absolute Location of the types directory where all schema files live
      * @return absolute location of the types directory
      */
@@ -109,6 +115,12 @@ public interface TypeSystem {
      * Key name for the verification configuration
      */
     String VERIFICATION = "verify" ;
+
+
+    /**
+     * Key name for the storage access schema configuration
+     */
+    String STORAGES = "storages" ;
 
     /**
      * Abstraction for verification scheme
@@ -200,11 +212,17 @@ public interface TypeSystem {
         Map<String,Object> verificationConfig = (Map)config.getOrDefault( VERIFICATION, Collections.emptyMap());
         final Verification verification = () -> verificationConfig;
         Map<String,String> statusLabels = (Map)config.getOrDefault( LABELS, Collections.emptyMap());
+        final Map<String,Map<String,Object>> storageConfig = (Map)config.getOrDefault( STORAGES, Collections.emptyMap());
 
         return new TypeSystem() {
             @Override
             public Map<String, Map<String,Signature>> routes() {
                 return routes;
+            }
+
+            @Override
+            public Map<String, Map<String, Object>> storages() {
+                return storageConfig;
             }
 
             @Override
@@ -230,6 +248,12 @@ public interface TypeSystem {
     TypeSystem NULL = fromConfig( Map.of( VERIFICATION,
             Map.of( Verification.INPUT, false), Verification.OUTPUT, false) ,"");
 
+
+    /**
+     * Key to find the loaded type system
+     */
+    String DS_TYPE = "ds:types" ;
+
     /**
      * Creates a TypeSystem from a yaml file
      * @param filePath path of the yaml file
@@ -240,8 +264,8 @@ public interface TypeSystem {
             File f = new File(filePath).getAbsoluteFile().getCanonicalFile();
             Map<String,Object> config = (Map)ZTypes.yaml(f.getPath(),true);
             TypeSystem ts =  fromConfig( config, f.getParent());
-            logger.info("Schema is found in the system. Attaching...: " + filePath );
-            Scriptable.DATA_SOURCES.put("ds:types", ts); // load the data source type system
+            logger.info("Schema is found in the system. Attaching...: {}", filePath);
+            DataSource.registerDataSource(DS_TYPE, ts); // load the data source type system
             return ts;
         }catch (Throwable ignore){
             logger.error("No Valid Schema is attached to the system - returning NULL Type Checker!");

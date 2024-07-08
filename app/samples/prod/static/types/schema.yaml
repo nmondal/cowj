@@ -36,3 +36,11 @@ routes:
     get:
       ok: Person.json
       err: RetVal.json
+
+storages:
+  in-mem-storage:
+    read: false
+    sep: "/"
+    paths:
+      ".*" : Person.json
+

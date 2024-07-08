@@ -109,4 +109,11 @@ public interface DataSource {
         if (creator == null) throw new IllegalArgumentException("Unknown type of datasource -> value: " + type);
         return creator.create(name, config, parent);
     };
+
+    static <T> T dataSource(String dsName){
+        return (T)Scriptable.DATA_SOURCES.get(dsName);
+    }
+    static <T> void registerDataSource(String dsName, T dataSource){
+        Scriptable.DATA_SOURCES.put(dsName, dataSource);
+    }
 }
