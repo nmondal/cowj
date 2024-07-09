@@ -44,6 +44,7 @@ data-sources:
   postman_echo:
     type: curl
     url: https://postman-echo.com
+    timeout: 10000 # if not responding within 10 sec, error out
 
   google:
     type: curl

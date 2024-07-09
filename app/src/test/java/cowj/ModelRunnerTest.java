@@ -3,6 +3,7 @@ package cowj;
 import cowj.plugins.CurlWrapper;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import zoomba.lang.core.io.ZWeb;
 import zoomba.lang.core.operations.ZJVMAccess;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 
 public class ModelRunnerTest {
 
@@ -204,6 +206,9 @@ public class ModelRunnerTest {
         // proxy route
         String resp = post("http://localhost:5004", "/echo", "");
         Assert.assertNotNull(resp);
+        Assume.assumeFalse( "We are in a troubling network, or postman-echo got a problem!",
+                resp.contains("timed out")); // this can happen with bad network
+        // if it does happen, it should skip
         Object r = ZTypes.json(resp);
         Assert.assertTrue( r instanceof Map);
         Object h = ((Map) r).get("headers");

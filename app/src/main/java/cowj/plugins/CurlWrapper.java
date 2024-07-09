@@ -11,6 +11,7 @@ import spark.Response;
 import spark.Route;
 import spark.Spark;
 import zoomba.lang.core.io.ZWeb;
+import zoomba.lang.core.types.ZNumber;
 
 import javax.script.Bindings;
 import javax.script.SimpleBindings;
@@ -83,6 +84,11 @@ public interface CurlWrapper {
      * it is  <a href="http://localhost:8080">...</a>
      */
     String DESTINATION_URL = "url";
+
+    /**
+     * Key for the timeout url for the CurlWrapper
+     */
+    String TIMEOUT = "timeout";
 
     /**
      * Key for the proxy payload to be added on the spark.Request.attribute()
@@ -190,10 +196,14 @@ public interface CurlWrapper {
         logger.info("{} : base url key [{}]", name, baseUrlKey );
         String baseUrl = parent.envTemplate( baseUrlKey );
         logger.info("{} : base url [{}]", name, baseUrl );
+        final int timeout = ZNumber.integer(config.getOrDefault(TIMEOUT, 42000L),42000).intValue() ;
+        logger.info("{} : connection timeout [{}]", name, timeout );
 
         final CurlWrapper curlWrapper = (verb, path, headers, params, body) -> {
             try {
                 ZWeb zWeb = new ZWeb(baseUrl); // every call gets its own con
+                zWeb.conTO = timeout; // connection timeout
+                zWeb.readTO = timeout; // read timeout
                 zWeb.headers.putAll(headers);
                 final ZWeb.ZWebCom com = zWeb.send(verb, path, params, body);
                 if ( com.status >= 400 ){
