@@ -5,5 +5,9 @@ personId = req.params("personId") ?? ""
 personsCache = _shared["persons"] ?? dict()
 assert( personId @ personsCache , jstr( { "error" : str("id '%s' not found!", personId) })  )
 person = personsCache[personId]
+// load this into in memory storage too
+ps = _ds["in-mem-storage"].loads("Persons", personId)
+p2 = json(ps)
+assert( p2 == person, "storage and shared pref does not match!" )
 jstr( person ) // return
 

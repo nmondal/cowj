@@ -39,8 +39,8 @@ routes:
 
 storages:
   in-mem-storage:
-    read: false
-    sep: "/"
+    read: true # just for the heck of it
+    sep: "/" # default sep is also same
     paths:
-      ".*" : Person.json
+      ".*" : Person.json # all storage path matches to this schema
 

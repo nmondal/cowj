@@ -1,5 +1,7 @@
 package cowj;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zoomba.lang.core.types.ZTypes;
 
 import java.util.Collections;
@@ -17,6 +19,12 @@ import java.util.stream.Stream;
  * @param <I> Type of item which is encountered in iteration within a bucket
  */
 public interface  TypedStorage<B,R,I> extends StorageWrapper<B,R,I> {
+
+    /**
+     * Logger for the Cowj TypedStorage
+     */
+    Logger logger = LoggerFactory.getLogger(TypedStorage.class);
+
 
     interface SchemaRegistry{
 
@@ -36,6 +44,7 @@ public interface  TypedStorage<B,R,I> extends StorageWrapper<B,R,I> {
             schemaMapping.forEach((key, value) -> {
                 Pattern p = Pattern.compile(key);
                 patternStringMap.put(p,value);
+                logger.info("pattern: '{}' <-> {} schema", key, value);
             });
             return new SchemaRegistry() {
                 @Override
@@ -48,6 +57,12 @@ public interface  TypedStorage<B,R,I> extends StorageWrapper<B,R,I> {
                     return pathSeperator;
                 }
             };
+        }
+    }
+
+    class InvalidSchemaError extends RuntimeException{
+        public InvalidSchemaError(Throwable cause){
+            super(cause);
         }
     }
 
@@ -69,7 +84,9 @@ public interface  TypedStorage<B,R,I> extends StorageWrapper<B,R,I> {
         final String schemaPath = registry().schema(bucketName,fileName);
         if ( schemaPath != null ) {
             EitherMonad<Object> parsed = typeSystem().json(schemaPath, data);
-            if (parsed.inError()) throw new RuntimeException(parsed.error());
+            if (parsed.inError()) throw new InvalidSchemaError(parsed.error());
+        } else {
+            logger.warn("[write] No schema attached with access pattern : {}{}{}",  bucketName, registry().pathSeperator() , fileName);
         }
         return storage().dumps( bucketName, fileName, data);
     }
@@ -87,7 +104,9 @@ public interface  TypedStorage<B,R,I> extends StorageWrapper<B,R,I> {
             if  ( schemaPath != null ){
                 final String dataBody = storage().utf8(data);
                 EitherMonad<Object> parsed = typeSystem().json( schemaPath, dataBody);
-                if ( parsed.inError() ) throw new RuntimeException( parsed.error() );
+                if ( parsed.inError() ) throw new InvalidSchemaError( parsed.error() );
+            }else {
+                logger.warn("[read] No schema attached with access pattern : {}{}{}",  bucketName, registry().pathSeperator() , fileName);
             }
         }
         return data;
@@ -135,35 +154,42 @@ public interface  TypedStorage<B,R,I> extends StorageWrapper<B,R,I> {
 
     String VALIDATE_READING = "read" ;
 
+    static <B,R,I> TypedStorage<B,R,I> typedStorage(TypeSystem typeSystem, SchemaRegistry schemaRegistry,
+                                                    StorageWrapper<B,R,I> storageWrapper,  boolean  validateReading){
+        return new TypedStorage<>() {
+            @Override
+            public SchemaRegistry registry() {
+                return schemaRegistry;
+            }
+
+            @Override
+            public StorageWrapper<B,R,I> storage() {
+                return storageWrapper;
+            }
+
+            @Override
+            public TypeSystem typeSystem() {
+                return typeSystem;
+            }
+
+            @Override
+            public boolean verifyRead() {
+                return validateReading;
+            }
+        };
+    }
+
     static void attach(TypeSystem typeSystem){
         typeSystem.storages().forEach( (storageName, stringObjectMap) -> {
+            logger.info("start : storage '{}' is being converted", storageName);
             final String pathSep = stringObjectMap.getOrDefault( PATH_SEPERATOR, "/").toString();
             final boolean validateReading = ZTypes.bool(stringObjectMap.getOrDefault( VALIDATE_READING, false), false);
             final Map<String,String> patterns = (Map)stringObjectMap.getOrDefault( PATH_PATTERNS, Collections.emptyMap());
-            final StorageWrapper storageWrapper = DataSource.dataSource(storageName);
+            final StorageWrapper<?,?,?> storageWrapper = DataSource.dataSource(storageName);
             final SchemaRegistry schemaRegistry = SchemaRegistry.fromConfig( patterns, pathSep);
-            final TypedStorage<?,?,?> typedStorage = new TypedStorage<>() {
-                @Override
-                public SchemaRegistry registry() {
-                    return schemaRegistry;
-                }
-
-                @Override
-                public StorageWrapper storage() {
-                    return storageWrapper;
-                }
-
-                @Override
-                public TypeSystem typeSystem() {
-                    return typeSystem;
-                }
-
-                @Override
-                public boolean verifyRead() {
-                    return validateReading;
-                }
-            };
+            final TypedStorage<?,?,?> typedStorage = typedStorage(typeSystem, schemaRegistry, storageWrapper, validateReading);
             DataSource.registerDataSource(storageName, typedStorage);
+            logger.info("end : storage '{}' was converted with read validation: {}, path seperator '{}'", storageName, validateReading, pathSep);
         });
     }
 }
