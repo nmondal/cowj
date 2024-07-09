@@ -36,3 +36,11 @@ routes:
     get:
       ok: Person.json
       err: RetVal.json
+
+storages:
+  in-mem-storage:
+    read: true # just for the heck of it
+    sep: "/" # default sep is also same
+    paths:
+      ".*" : Person.json # all storage path matches to this schema
+
