@@ -116,4 +116,8 @@ public interface DataSource {
     static <T> void registerDataSource(String dsName, T dataSource){
         Scriptable.DATA_SOURCES.put(dsName, dataSource);
     }
+
+    static <T> T unregisterDataSource(String dsName){
+        return (T) Scriptable.DATA_SOURCES.remove(dsName);
+    }
 }
