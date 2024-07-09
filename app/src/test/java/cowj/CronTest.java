@@ -182,7 +182,7 @@ public class CronTest {
 
     @Test
     public void noErrorRaiseOnStopTest(){
-        Scriptable.DATA_SOURCES.remove(SCHEDULER);
+        DataSource.unregisterDataSource(SCHEDULER);
         CronModel.stop();
     }
 }

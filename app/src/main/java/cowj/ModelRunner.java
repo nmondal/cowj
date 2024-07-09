@@ -112,7 +112,7 @@ public interface ModelRunner extends Runnable {
             try{
                 DataSource dataSource = dsCreator.create(dsName, dsConfig, model());
                 logger.info("DS '{}' created!", dataSource.name());
-                Scriptable.DATA_SOURCES.put(dsName, dataSource.proxy());
+                DataSource.registerDataSource(dsName, dataSource.proxy());
             }catch (Throwable t){
                 final String message = String.format("DS '%s' failed to create!", dsName);
                 logger.error(message, t);
@@ -154,7 +154,7 @@ public interface ModelRunner extends Runnable {
                 String proxyPath = r.getValue();
                 String[] arr = proxyPath.split("/");
                 String curlKey = arr[0];
-                Object o = Scriptable.DATA_SOURCES.get(curlKey);
+                Object o = DataSource.dataSource(curlKey);
                 if (!(o instanceof CurlWrapper cw)){
                     logger.error("route does not have any base curl data source : {}->{}", r.getKey(), r.getValue());
                     continue;

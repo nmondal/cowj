@@ -41,7 +41,7 @@ public class JDBCWrapperTest {
 
     @BeforeClass
     public static void boot() {
-        Scriptable.DATA_SOURCES.put(TEST_SECRET_MGR_NAME, SM );
+        DataSource.registerDataSource(TEST_SECRET_MGR_NAME, SM );
         final String driverClassName = org.apache.derby.iapi.jdbc.AutoloadedDriver.class.getName();
         // in memory stuff...
         Map<String,Object> config = Map.of("connection", "jdbc:derby:memory:cowjdb;create=true" ,
@@ -71,7 +71,7 @@ public class JDBCWrapperTest {
         if ( derby != null ) {
             derby.connection().value().close();
         }
-        Scriptable.DATA_SOURCES.remove(TEST_SECRET_MGR_NAME);
+        DataSource.unregisterDataSource(TEST_SECRET_MGR_NAME);
     }
 
     @Test
@@ -203,7 +203,7 @@ public class JDBCWrapperTest {
         SecretManager sm = () -> Map.of("bar", "jdbc:derby", "baz", "memory:cowjdb");
 
         try {
-            Scriptable.DATA_SOURCES.put(TEST_SM, sm);
+            DataSource.registerDataSource(TEST_SM, sm);
             JDBCWrapper derbyClient = (JDBCWrapper) JDBCWrapper.JDBC.create("foo", config, model).proxy();
             EitherMonad<List<Map<String,Object>>> resp = derbyClient.select("select count(*) as count from Data", Collections.emptyList());
             assertTrue(resp.isSuccessful());
@@ -212,9 +212,10 @@ public class JDBCWrapperTest {
             List<Map<String,Object>> rows = resp.value();
             assertEquals(rows.get(0).get("COUNT"), UPTO);
         } finally {
-            Scriptable.DATA_SOURCES.remove(TEST_SM);
+            DataSource.unregisterDataSource(TEST_SM);
         }
     }
+
     @Test
     public void testPooling(){
         EitherMonad<Connection> db1 = derby.connection();

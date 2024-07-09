@@ -45,7 +45,7 @@ public class JWTAuthenticatorTest {
 
     @After
     public void after(){
-        Scriptable.DATA_SOURCES.remove ("custom-secret");
+        DataSource.unregisterDataSource ("custom-secret");
     }
 
     public void testSuccess(Map<String,Object> config){
@@ -85,7 +85,7 @@ public class JWTAuthenticatorTest {
 
         Map<String,String> smMap = Map.of("secret-key", "42", "jwt-issuer", "test");
         SecretManager sm = () -> smMap; // create custom secret manager
-        Scriptable.DATA_SOURCES.put ("custom-secret", sm );
+        DataSource.registerDataSource ("custom-secret", sm );
 
         Map<String,Object> config = Map.of( "type", "auth-jwt",
                 "secrets", "custom-secret",

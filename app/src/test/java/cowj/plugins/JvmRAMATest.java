@@ -37,14 +37,14 @@ public class JvmRAMATest {
     @BeforeClass
     public static void beforeClass(){
         storage.createBucket(TOPIC, "", false);
-        Scriptable.DATA_SOURCES.put( MEM , storage);
+        DataSource.registerDataSource( MEM , storage);
         mr = ModelRunnerTest.runModel( rama );
     }
 
     @AfterClass
     public static void afterClass() throws Exception {
         storage.deleteBucket(TOPIC);
-        Scriptable.DATA_SOURCES.remove(MEM);
+        DataSource.unregisterDataSource(MEM);
         if ( mr == null ) return;
         mr.stop();
         mr = null;

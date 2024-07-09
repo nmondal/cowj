@@ -112,7 +112,7 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
         expColumnName = config.getOrDefault(EXPIRY_COLUMN,"expiry").toString();
         storageWrapperKey = config.getOrDefault( STORAGE, "auth-jdbc").toString();
         userQuery = config.getOrDefault( USER_QUERY, "query").toString();
-        storage = Scriptable.DATA_SOURCES.get(storageWrapperKey);
+        storage = DataSource.dataSource(storageWrapperKey);
         risks = Set.<String>copyOf((List) config.getOrDefault(RISKS, Collections.emptyList()));
         maxCapacity = ZNumber.integer(config.getOrDefault(CACHE_SIZE, maxCapacity),maxCapacity).intValue();
     }

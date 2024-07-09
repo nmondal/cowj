@@ -38,7 +38,7 @@ public interface AsyncHandler {
      * @return AsyncHandler instance
      */
     static AsyncHandler instance(){
-        return (AsyncHandler) Scriptable.DATA_SOURCES.get(ASYNC_HANDLER);
+        return DataSource.dataSource(ASYNC_HANDLER);
     }
 
     /**
@@ -378,7 +378,7 @@ public interface AsyncHandler {
                 return retries;
             }
         };
-        Scriptable.DATA_SOURCES.put(ASYNC_HANDLER, asyncHandler);
+        DataSource.registerDataSource(ASYNC_HANDLER, asyncHandler);
         return asyncHandler;
     }
 

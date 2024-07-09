@@ -60,7 +60,7 @@ public class SchemaTest {
         Assert.assertTrue( r.contains(id) );
         // check json with match
         m = (Map)ZTypes.json(r);
-        Object ds = Scriptable.DATA_SOURCES.get("ds:types");
+        Object ds = DataSource.dataSource(TypeSystem.DS_TYPE);
         Assert.assertTrue( ds instanceof  TypeSystem );
         TypeSystem ts = (TypeSystem) ds;
         // these are all should be ok

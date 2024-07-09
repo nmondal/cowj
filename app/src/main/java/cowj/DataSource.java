@@ -111,13 +111,33 @@ public interface DataSource {
     };
 
     /**
+     * Various data sources store as map
+     * key - name of the DataSource
+     * Value - the proxy() of the DataSource
+     * Inside a Scriptable script this is accessible via _ds
+     */
+    Map<String, Object> DATA_SOURCES = new HashMap<>();
+
+
+    /**
      * Gets the data source by name
      * @param dsName name of the data source
      * @return the data source associated with the name
      * @param <T> type of the object instance stored as a data source
      */
     static <T> T dataSource(String dsName){
-        return (T)Scriptable.DATA_SOURCES.get(dsName);
+        return (T)DATA_SOURCES.get(dsName);
+    }
+
+    /**
+     * Gets the data source by name
+     * @param dsName name of the data source
+     * @param otherwise  in case the name is not found, returns this instance
+     * @return the data source associated with the name
+     * @param <T> type of the object instance stored as a data source
+     */
+    static <T> T dataSourceOrElse(String dsName, T otherwise){
+        return (T)DATA_SOURCES.getOrDefault(dsName, otherwise );
     }
 
     /**
@@ -127,7 +147,7 @@ public interface DataSource {
      * @param <T> type of the object instance to be stored as a data source
      */
     static <T> void registerDataSource(String dsName, T dataSource){
-        Scriptable.DATA_SOURCES.put(dsName, dataSource);
+        DATA_SOURCES.put(dsName, dataSource);
     }
 
     /**
@@ -137,6 +157,6 @@ public interface DataSource {
      * @param <T> type of the object instance
      */
     static <T> T unregisterDataSource(String dsName){
-        return (T) Scriptable.DATA_SOURCES.remove(dsName);
+        return (T) DATA_SOURCES.remove(dsName);
     }
 }

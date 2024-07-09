@@ -291,7 +291,7 @@ public interface CronModel {
                 }
             });
             scheduler.start();
-            Scriptable.DATA_SOURCES.put(SCHEDULER, scheduler);
+            DataSource.registerDataSource(SCHEDULER, scheduler);
         } catch (Throwable t) {
             throw new RuntimeException(t);
         }
@@ -309,7 +309,7 @@ public interface CronModel {
      */
     static void stop(){
         try {
-            Scheduler scheduler = (Scheduler)Scriptable.DATA_SOURCES.get(SCHEDULER);
+            Scheduler scheduler = DataSource.dataSource(SCHEDULER);
             if ( scheduler == null ) return;
             scheduler.clear();
             scheduler.shutdown(true);

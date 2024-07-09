@@ -30,7 +30,7 @@ public class RedisWrapperTest {
         redisServer = new RedisServer(4242);
         Map<String, Object> config = Map.of("urls", urls, "secrets", "__bar");
         SecretManager sm = () -> Map.of("redis-urls", "[ \"localhost:4242\" ]");
-        Scriptable.DATA_SOURCES.put("__bar", sm );
+        DataSource.registerDataSource("__bar", sm );
         DataSource ds = RedisWrapper.REDIS.create("foo", config, model);
         Assert.assertNotNull(ds);
         Assert.assertEquals("foo", ds.name());
@@ -42,7 +42,7 @@ public class RedisWrapperTest {
     public void shutdownRedis(){
         if ( redisServer == null ) return;
         redisServer.stop();
-        Scriptable.DATA_SOURCES.remove("__bar");
+        DataSource.unregisterDataSource("__bar");
     }
 
     @Test
@@ -106,7 +106,7 @@ public class RedisWrapperTest {
         SecretManager mockSecretManager = Collections::emptyMap;
 
         try {
-            Scriptable.DATA_SOURCES.put(RedisWrapper.SECRET_MANAGER, mockSecretManager);
+            DataSource.registerDataSource(RedisWrapper.SECRET_MANAGER, mockSecretManager);
             /// we are setting urls to string but the secret manager
             /// does not contain the key. Also, default implementation
             /// uses environment variable which is not defined either.
@@ -116,7 +116,7 @@ public class RedisWrapperTest {
                 RedisWrapper.REDIS.create("foo", config, model);
             });
         } finally {
-            Scriptable.DATA_SOURCES.remove(RedisWrapper.SECRET_MANAGER, mockSecretManager);
+            DataSource.unregisterDataSource(RedisWrapper.SECRET_MANAGER);
         }
     }
 }

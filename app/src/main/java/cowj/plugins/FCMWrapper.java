@@ -151,7 +151,7 @@ public interface FCMWrapper {
             } else {
                 String secretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
                 logger.info("FCMWrapper {} secret-manager name is [{}]", name, secretManagerName );
-                SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.getOrDefault(secretManagerName, SecretManager.DEFAULT);
+                SecretManager sm = DataSource.dataSourceOrElse(secretManagerName, SecretManager.DEFAULT);
                 logger.info("FCMWrapper {} secret-manager is [{}]", name, sm.getClass() );
                 String credentials = sm.getOrDefault(key, "");
                 logger.debug("FCMWrapper {} credentials is [{}]", name, credentials );

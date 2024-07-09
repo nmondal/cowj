@@ -304,13 +304,6 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
             "kts", "kotlin",
             "kt", "kotlin");
 
-    /**
-     * Various data sources store as map
-     * key - name of the DataSource
-     * Value - the proxy() of the DataSource
-     * Inside a Scriptable script this is accessible via _ds
-     */
-    Map<String, Object> DATA_SOURCES = new HashMap<>();
 
     /**
      * Shared Memory
@@ -528,7 +521,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      * @param scriptPath full path of the script
      */
     static void prepareBinding(Bindings bindings, String scriptPath ) {
-        bindings.put(DATA_SOURCE, DATA_SOURCES);
+        bindings.put(DATA_SOURCE, DataSource.DATA_SOURCES);
         bindings.put(TestAsserter.ASSERTER, (TestAsserter) () -> bindings);
         bindings.put(ENVIRON, System.getenv());
         bindings.put(SHARED, SHARED_MEMORY);

@@ -323,7 +323,7 @@ public interface JDBCWrapper {
                 String driverName = config.getOrDefault(DRIVER, "").toString();
                 String conString = config.getOrDefault(CONNECTION_STRING, "").toString();
                 String secretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
-                SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.getOrDefault(secretManagerName, SecretManager.DEFAULT);
+                SecretManager sm =  DataSource.dataSourceOrElse(secretManagerName, SecretManager.DEFAULT);
 
                 String substitutedConString = parent.template(conString, sm.env());
 

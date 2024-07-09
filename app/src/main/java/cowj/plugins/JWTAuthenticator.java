@@ -400,7 +400,7 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
         final String secretManagerName = config.getOrDefault( SECRET_MANAGER, "").toString();
         logger.info("{} : secret manager is : [{}]", name, secretManagerName);
 
-        final SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.getOrDefault(secretManagerName, SecretManager.DEFAULT);
+        final SecretManager sm = DataSource.dataSourceOrElse(secretManagerName, SecretManager.DEFAULT);
         logger.info("{} : loaded secret manager is : [{}]", name, sm.getClass());
 
         final String secretKey = parent.template( keyForSecretKey, sm.env());

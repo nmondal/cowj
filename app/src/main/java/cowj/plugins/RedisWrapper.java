@@ -47,7 +47,7 @@ public interface RedisWrapper {
             urls = (List<String>) urlObject;
         } else if (urlObject instanceof String) {
             final String mySecretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
-            SecretManager sm = (SecretManager) Scriptable.DATA_SOURCES.getOrDefault(mySecretManagerName, SecretManager.DEFAULT);
+            SecretManager sm =  DataSource.dataSourceOrElse(mySecretManagerName, SecretManager.DEFAULT);
             String urlJson = parent.template(urlObject.toString(), sm.env());
             try {
                 urls = (List<String>) ZTypes.json(urlJson);

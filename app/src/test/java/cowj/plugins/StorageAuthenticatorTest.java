@@ -37,25 +37,25 @@ public class StorageAuthenticatorTest {
         jdbcWrapper = mock(JDBCWrapper.class);
         Map<String,Object> data = Map.of("user", "foo", "expiry" , System.currentTimeMillis() + 100000);
         when(jdbcWrapper.select(any(),(List)any())).thenReturn(EitherMonad.value(List.of(data)));
-        Scriptable.DATA_SOURCES.put("__jdbc", jdbcWrapper );
+        DataSource.registerDataSource("__jdbc", jdbcWrapper );
         mockRequest = mock(Request.class);
         when(mockRequest.body()).thenReturn("{ \"token\" : \"foo-bar\" }");
         // redis...
         unifiedJedis = mock(UnifiedJedis.class);
-        Scriptable.DATA_SOURCES.put("__redis", unifiedJedis );
+        DataSource.registerDataSource("__redis", unifiedJedis );
         when(unifiedJedis.hgetAll((String) any())).thenReturn(
                 Map.of("user", "foo", "expiry" , String.valueOf(System.currentTimeMillis() + 100000)));
         // Google Storage
         googleStorageWrapper = mock(GoogleStorageWrapper.class);
-        Scriptable.DATA_SOURCES.put("__gs", googleStorageWrapper );
+        DataSource.registerDataSource("__gs", googleStorageWrapper );
         when(googleStorageWrapper.load(any(), any())).thenReturn(data);
     }
 
     @After
     public void after(){
-        Scriptable.DATA_SOURCES.remove("__jdbc");
-        Scriptable.DATA_SOURCES.remove("__redis");
-        Scriptable.DATA_SOURCES.remove("__gs");
+        DataSource.unregisterDataSource("__jdbc");
+        DataSource.unregisterDataSource("__redis");
+        DataSource.unregisterDataSource("__gs");
     }
 
     @Test

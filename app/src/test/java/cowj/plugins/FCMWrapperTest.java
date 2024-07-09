@@ -110,7 +110,7 @@ public class FCMWrapperTest {
     @Test
     public void initializeTest(){
         final SecretManager sm = () -> Map.of("my-secret-key","my-secret-value");
-        Scriptable.DATA_SOURCES.put("_fcm", sm);
+        DataSource.registerDataSource("_fcm", sm);
         final Map<String,Object> config = Map.of( "secrets", "_fcm", "key", "my-secret-key");
         MockedStatic<FirebaseApp> msfa = mockStatic(FirebaseApp.class);
         FirebaseApp firebaseApp = mock(FirebaseApp.class);
