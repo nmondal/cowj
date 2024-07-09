@@ -110,13 +110,32 @@ public interface DataSource {
         return creator.create(name, config, parent);
     };
 
+    /**
+     * Gets the data source by name
+     * @param dsName name of the data source
+     * @return the data source associated with the name
+     * @param <T> type of the object instance stored as a data source
+     */
     static <T> T dataSource(String dsName){
         return (T)Scriptable.DATA_SOURCES.get(dsName);
     }
+
+    /**
+     * Registers the data source by name
+     * @param dsName name of the data source
+     * @param dataSource the data source to be associated with the name
+     * @param <T> type of the object instance to be stored as a data source
+     */
     static <T> void registerDataSource(String dsName, T dataSource){
         Scriptable.DATA_SOURCES.put(dsName, dataSource);
     }
 
+    /**
+     * Removes the data source from instance registry
+     * @param dsName name of the data source
+     * @return the data source which was associated with the name
+     * @param <T> type of the object instance
+     */
     static <T> T unregisterDataSource(String dsName){
         return (T) Scriptable.DATA_SOURCES.remove(dsName);
     }
