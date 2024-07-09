@@ -54,17 +54,17 @@ dependencies {
     // end of local libraries
     implementation 'org.slf4j:slf4j-jdk14:2.1.0-alpha1'
     // Scripting Engines JSR-223
-    implementation 'org.mozilla:rhino-engine:1.7.14' //js
+    implementation 'org.mozilla:rhino-engine:1.7.15' //js
     implementation 'com.github.a-langer:jsr223-commonjs-modules:1.0.1'
 
     // groovy
-    implementation 'org.apache.groovy:groovy:5.0.0-alpha-5'
-    implementation 'org.apache.groovy:groovy-jsr223:5.0.0-alpha-5'
+    implementation 'org.apache.groovy:groovy:5.0.0-alpha-9'
+    implementation 'org.apache.groovy:groovy-jsr223:5.0.0-alpha-9'
     // jython ???
-    implementation 'org.python:jython-standalone:2.7.3'
+    implementation 'org.python:jython-standalone:2.7.4b2'
     // Kotlin - hold all libs to same version, as long as it works
-    implementation 'org.jetbrains.kotlin:kotlin-compiler-embeddable:1.9.22'
-    implementation 'org.jetbrains.kotlin:kotlin-scripting-jsr223:1.9.22'
+    implementation 'org.jetbrains.kotlin:kotlin-compiler-embeddable:2.0.0'
+    implementation 'org.jetbrains.kotlin:kotlin-scripting-jsr223:2.0.0'
 
     // Cron
     // https://mvnrepository.com/artifact/org.quartz-scheduler/quartz
@@ -72,10 +72,10 @@ dependencies {
 
     // schema handler
     implementation 'org.zoomba-lang:medeia-validator-jackson:1.5'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
 
     // Auth
-    implementation 'org.casbin:jcasbin:1.46.0'
+    implementation 'org.casbin:jcasbin:1.55.0'
 
     // File Watching ....
     implementation 'io.methvin:directory-watcher:0.18.0'
@@ -86,20 +86,20 @@ dependencies {
     ////////// Plugin Stuff //////////////
 
     // Storage...
-    implementation 'redis.clients:jedis:5.2.0-alpha2'
-    implementation 'com.google.cloud:google-cloud-storage:2.33.0'
-    implementation 'software.amazon.awssdk:s3:2.23.21'
-    implementation 'software.amazon.awssdk:apache-client:2.23.21'
+    implementation 'redis.clients:jedis:5.2.0-beta4'
+    implementation 'com.google.cloud:google-cloud-storage:2.40.1'
+    implementation 'software.amazon.awssdk:s3:2.26.17'
+    implementation 'software.amazon.awssdk:apache-client:2.26.17'
 
     // fcm
-    implementation 'com.google.firebase:firebase-admin:9.2.0'
+    implementation 'com.google.firebase:firebase-admin:9.3.0'
 
-    // mysql connector
-    implementation 'com.mysql:mysql-connector-j:8.3.0'
+    // mysql connector ( DO NOT MIGRATE To 9.*, protobuf upgrade destroyed peoples happiness )
+    implementation 'com.mysql:mysql-connector-j:8.4.0'
 
     /// secret manager
-    implementation 'com.google.cloud:google-cloud-secretmanager:2.34.0'
-    implementation 'software.amazon.awssdk:secretsmanager:2.20.26'
+    implementation 'com.google.cloud:google-cloud-secretmanager:2.46.0'
+    implementation 'software.amazon.awssdk:secretsmanager:2.26.17'
 
     ///// test stuff
     testImplementation 'junit:junit:4.13.2'
@@ -108,9 +108,9 @@ dependencies {
     // REDIS
     testImplementation 'it.ozimov:embedded-redis:0.7.3'
     // WebSocket
-    testImplementation 'org.java-websocket:Java-WebSocket:1.5.6'
+    testImplementation 'org.java-websocket:Java-WebSocket:1.5.7'
     // Mockito ...
-    testImplementation 'org.mockito:mockito-core:5.10.0'
+    testImplementation 'org.mockito:mockito-core:5.12.0'
 }
 
 /**
