@@ -121,6 +121,14 @@ routes:
        params: params.json  # query parameter schema 
        ok: Person.json
        err: RetVal.json
+
+storages:
+   in-mem-storage:
+      read: true # just for the heck of it
+      sep: "/" # default sep is also same
+      paths:
+         ".*" : Person.json # all storage path matches to this schema
+
 ```
 
 Note that the query parameter schema automatically converts
@@ -276,6 +284,59 @@ to see the schema mapping, along with other files:
 `<host>:<port>/types/RetVal.json`
 
 This makes the schema publicly exposed.
+
+## Typed Storage 
+One interesting way to apply type on top of a `key,value` storage is via data access pattern.
+This feature is being done as follows. 
+Take a storage like in memory storage, for example as defined in [prod](../app/samples/prod/prod.yaml)  : 
+
+```yaml
+plugins:
+  cowj.plugins:
+    curl: CurlWrapper::CURL
+    mem-st: MemoryBackedStorage::STORAGE
+
+data-sources:
+  json_place:
+    type: curl
+    url: https://jsonplaceholder.typicode.com
+
+  in-mem-storage:
+    type: mem-st
+```
+We want to ensure that every access is `typed`. To do so
+we change the `schema.yaml` file in the same project 
+as [prod schema](../app/samples/prod/static/types/schema.yaml) :
+
+```yaml
+storages:
+  in-mem-storage:
+    read: true # just for the heck of it
+    sep: "/" # default sep is also same
+    paths:
+      ".*" : Person.json # all storage path matches to this schema
+
+```
+This automatically wraps around the underlying storage with nice typing, based on data access patterns.
+To apply this, one needs to create a `key` which is the name of the storage data source as shown above.
+
+The configuration has the following keys.
+
+### read 
+When `true` forces data schema verification on every read. Please do not use it.
+Every write is default verified, that can not be turned off.
+
+### sep 
+
+This is the path seperator to be applied between the `bucketName` and `fileName` to apply the data access pattern.
+For example, if the `sep` is `-` then the final access pattern is `bucketName-fileName` 
+Remember, it is a regex match, so use `\.` to specify a `.` seperator.
+
+### paths
+
+These are the data access paths, `regex-pattern : schema file name` form.
+The pattern must match globally for the data access pattern.
+
 
 ## References
 

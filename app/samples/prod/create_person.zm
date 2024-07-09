@@ -9,6 +9,7 @@ personsCache = _shared["persons"] ?? dict()
 
 personsCache[personId] = payload
 _shared["persons"] = personsCache
-
+// load this into in memory storage too
+_ds["in-mem-storage"].dump("Persons", personId, payload )
 ret = { "personId" : personId }
 jstr( ret )
