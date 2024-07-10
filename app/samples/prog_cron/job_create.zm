@@ -1,4 +1,6 @@
-payload = json( req.body )
-//cron = _ds["my-prog-cron"]
-//cron.create( payload )
-jstr( { "message" : "ok!" } )
+payload = req.attribute("_body")
+println( payload )
+cron = _ds["my-prog-cron"]
+em = cron.create( payload )
+panic( em.inError, jstr( { "message" : em.error().message ?? "" } )  )
+jstr( { "message" : "ok!" , "id" : em.value } )

@@ -7,7 +7,9 @@
     "storage" : { "type": "string" },
     "bucket" : { "type": "string" },
     "path" : { "type": "string" },
-    "cron" : { "type": "string" }
+    "cron" : { "type": "string" },
+    "id" : { "type": "string"},
+    "exec" : { "type": "string" }
   },
-  "required": [ "storage", "bucket", "path" ]
+  "required": [ "storage", "bucket", "path" , "cron" ]
 }
