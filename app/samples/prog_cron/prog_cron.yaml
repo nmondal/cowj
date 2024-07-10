@@ -16,9 +16,6 @@ routes:
   put:
     /job: _/job_create.zm
 
-  delete:
-    /job/:id:  _/job_delete.zm
-
   get:
     /job: _/job_list.zm
     /job/:id : _/job_list.zm

@@ -1,3 +1,4 @@
 payload = json( req.body )
-cron = _ds["my-prog-cron"]
-cron.create( payload )
+//cron = _ds["my-prog-cron"]
+//cron.create( payload )
+jstr( { "message" : "ok!" } )

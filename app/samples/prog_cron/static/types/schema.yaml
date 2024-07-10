@@ -17,4 +17,8 @@ routes:
       ok: RetVal.json
       err: RetVal.json
     get:
-      ok: RetVal.json
+      ok: JobList.json
+
+  /job/*:
+    get:
+      ok: Job.json

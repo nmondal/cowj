@@ -1,0 +1,2 @@
+my_job = {  "storage" : "foo-bar", "bucket" : "foo", "path" : "bar", "cron" : " *  * * " }
+jstr( [ my_job ] )
