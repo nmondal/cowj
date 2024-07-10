@@ -1,0 +1,39 @@
+#########################
+# Programmatic Cron
+#########################
+
+port: 5050
+
+# threading related stuff
+threading:
+  min: 4
+  max : 8
+  timeout: 30000
+
+# path mapping
+routes:
+
+  put:
+    /job: _/job_create.zm
+
+  delete:
+    /job/:id:  _/job_delete.zm
+
+  get:
+    /job: _/job_list.zm
+    /job/:id : _/job_list.zm
+
+plugins:
+  cowj.plugins:
+    file-st: FileBackedStorage::STORAGE
+    prog-cron: CronWrapper::CRON
+
+data-sources:
+
+  local-storage:
+    type: file-st
+    mount-point: _/data
+
+  my-prog-cron:
+    type: prog-cron
+

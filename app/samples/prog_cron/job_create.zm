@@ -1,0 +1,3 @@
+payload = json( req.body )
+cron = _ds["my-prog-cron"]
+cron.create( payload )

@@ -122,4 +122,14 @@ public class TypedStorageTest {
         Assert.assertFalse( typedStorage.dumpb("foo","bar", new byte[]{} ));
         Assert.assertTrue( typedStorage.fileExist("foo","b" ));
     }
+
+    @Test
+    public void referencedSchemaTest(){
+        Map<?,?> a = Map.of("street_address", "sa", "city", "hyd" ,"state" , "ts" );
+        Map<?,?> c = Map.of("first_name", "fn", "last_name", "ln" ,"shipping_address" , a, "billing_address", a );
+        Assert.assertTrue( typeSystem.match( "address.json", a) );
+        Assert.assertTrue( typeSystem.match( "customer.json", c) );
+        Assert.assertFalse( typeSystem.match( "address.json", c) );
+        Assert.assertFalse( typeSystem.match( "customer.json", a) );
+    }
 }
