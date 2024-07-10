@@ -131,5 +131,6 @@ public class TypedStorageTest {
         Assert.assertTrue( typeSystem.match( "customer.json", c) );
         Assert.assertFalse( typeSystem.match( "address.json", c) );
         Assert.assertFalse( typeSystem.match( "customer.json", a) );
+        Assert.assertNotNull( TypeSystem.reloadForFileWatcher( typeSystem.definitionsDir() + "/" + "Person.json") );
     }
 }

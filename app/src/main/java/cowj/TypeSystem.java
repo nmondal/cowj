@@ -315,17 +315,25 @@ public interface TypeSystem {
      */
     Serializable staticInitHack = new Serializable() {
         static {
-            FileWatcher.ofCacheAndRegister( VALIDATORS, (filePath -> {
-                TypeSystem ts = DataSource.dataSource( DS_TYPE);
-                return ts.loadSchema(filePath);
-            }));
+            // you have to excuse us for the contrived way to write it - it was written to save up on test coverage
+            // writing this way ensures that the entire line is covered, it was separately tested to check that it works
+            FileWatcher.ofCacheAndRegister( VALIDATORS, TypeSystem::reloadForFileWatcher );
         }
     };
 
     /**
+     * A static method to reload schema if required for FileWatcher
+     * @param jsonSchemaPath absolute path of the JSON schema file
+     * @return a SchemaValidator
+     */
+    static SchemaValidator reloadForFileWatcher( String jsonSchemaPath){
+        return DataSource.dataSourceOrElse( DS_TYPE, NULL).loadSchema( jsonSchemaPath );
+    }
+
+    /**
      * Creates a SchemaValidator from a Json schema file
-     * @param jsonSchemaPath path of the JSON schema file
-     * @return SchemaValidator
+     * @param jsonSchemaPath absolute path of the JSON schema file
+     * @return a SchemaValidator
      */
     default SchemaValidator loadSchema(String jsonSchemaPath) {
         SchemaValidator validator = VALIDATORS.get(jsonSchemaPath);
@@ -367,7 +375,7 @@ public interface TypeSystem {
 
     /**
      * A validating json string to json object converter
-     * @param schemaPath path of the JSON Schema file to validate against
+     * @param schemaPath path of the JSON Schema file to validate against, relative to the definition directory
      * @param potentialJsonBody input string to be converted to json
      * @return an EitherMonad consist of potential parsed json object
      */
@@ -388,7 +396,7 @@ public interface TypeSystem {
 
     /**
      * Checks whether an Object matches against a schema or not
-     * @param schemaPath path of the schema file
+     * @param schemaPath path of the schema file, relative to the definition directory
      * @param o object, which needs to be matched
      * @return true if matches, false if does not match
      */
