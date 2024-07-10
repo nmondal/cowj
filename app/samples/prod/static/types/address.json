@@ -1,0 +1,12 @@
+{
+  "$id": "cowj/samples/prod/address",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "street_address": { "type": "string" },
+    "city": { "type": "string" },
+    "state": { "type": "string" }
+  },
+  "required": ["street_address", "city", "state"],
+  "additionalProperties": false
+}

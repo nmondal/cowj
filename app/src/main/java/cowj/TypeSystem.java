@@ -7,7 +7,6 @@ import com.worldturner.medeia.api.PathSchemaSource;
 import com.worldturner.medeia.api.SchemaSource;
 import com.worldturner.medeia.api.jackson.MedeiaJacksonApi;
 import com.worldturner.medeia.schema.validation.SchemaValidator;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.Filter;
@@ -22,6 +21,7 @@ import java.io.Serializable;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Underlying JSON Schema based Type system
@@ -214,6 +214,21 @@ public interface TypeSystem {
         Map<String,String> statusLabels = (Map)config.getOrDefault( LABELS, Collections.emptyMap());
         final Map<String,Map<String,Object>> storageConfig = (Map)config.getOrDefault( STORAGES, Collections.emptyMap());
 
+        // load all schema files...
+        File[] files = new File( baseDir ).listFiles((dir, name) -> name.toLowerCase().endsWith(".json") );
+        logger.info("loading type system from dir: '{}'", baseDir );
+        final List<SchemaSource> schemas;
+        if ( files == null ) {
+            schemas = Collections.emptyList();
+        } else {
+            final JsonSchemaVersion jsonSchemaVersion = JsonSchemaVersion.DRAFT07;
+            schemas = Arrays.stream(files).map(file -> {
+                Path p = file.getAbsoluteFile().toPath();
+                logger.info("loading schema file : {}", p );
+                return (SchemaSource) new PathSchemaSource(p, jsonSchemaVersion);
+            }).toList();
+        }
+
         return new TypeSystem() {
             @Override
             public Map<String, Map<String,Signature>> routes() {
@@ -238,6 +253,11 @@ public interface TypeSystem {
             @Override
             public Map<String, String> statusLabels() {
                 return statusLabels;
+            }
+
+            @Override
+            public List<SchemaSource> schemas() {
+                return schemas;
             }
         };
     }
@@ -295,23 +315,37 @@ public interface TypeSystem {
      */
     Serializable staticInitHack = new Serializable() {
         static {
-            FileWatcher.ofCacheAndRegister( VALIDATORS, TypeSystem::loadSchema);
+            // you have to excuse us for the contrived way to write it - it was written to save up on test coverage
+            // writing this way ensures that the entire line is covered, it was separately tested to check that it works
+            FileWatcher.ofCacheAndRegister( VALIDATORS, TypeSystem::reloadForFileWatcher );
         }
     };
 
     /**
-     * Creates a SchemaValidator from a Json schema file
-     * @param jsonSchemaPath path of the JSON schema file
-     * @return SchemaValidator
+     * A static method to reload schema if required for FileWatcher
+     * @param jsonSchemaPath absolute path of the JSON schema file
+     * @return a SchemaValidator
      */
-    @NotNull
-    static SchemaValidator loadSchema(String jsonSchemaPath) {
+    static SchemaValidator reloadForFileWatcher( String jsonSchemaPath){
+        return DataSource.dataSourceOrElse( DS_TYPE, NULL).loadSchema( jsonSchemaPath );
+    }
+
+    /**
+     * Creates a SchemaValidator from a Json schema file
+     * @param jsonSchemaPath absolute path of the JSON schema file
+     * @return a SchemaValidator
+     */
+    default SchemaValidator loadSchema(String jsonSchemaPath) {
         SchemaValidator validator = VALIDATORS.get(jsonSchemaPath);
         if ( validator != null ) return validator;
         Path p = Paths.get(jsonSchemaPath);
+        List<SchemaSource> repo = schemas().stream()
+                .filter( ss -> !Objects.equals(ss.getInput().getName(), jsonSchemaPath))
+                .collect(Collectors.toList());
         JsonSchemaVersion jsonSchemaVersion = JsonSchemaVersion.DRAFT07;
         SchemaSource source = new PathSchemaSource(p,jsonSchemaVersion);
-        validator = API.loadSchema(source);
+        repo.add(0, source);
+        validator = API.loadSchemas(repo);
         VALIDATORS.put(jsonSchemaPath,validator);
         return validator;
     }
@@ -333,8 +367,15 @@ public interface TypeSystem {
     String INPUT_SCHEMA_VALIDATION_FAILED = "_is_failed" ;
 
     /**
+     * A bunch of schemas defined in the type system
+     * This is important for interconnected schemas who depend on each other
+     * @return schemas defined in the type system
+     */
+    List<SchemaSource> schemas();
+
+    /**
      * A validating json string to json object converter
-     * @param schemaPath path of the JSON Schema file to validate against
+     * @param schemaPath path of the JSON Schema file to validate against, relative to the definition directory
      * @param potentialJsonBody input string to be converted to json
      * @return an EitherMonad consist of potential parsed json object
      */
@@ -355,7 +396,7 @@ public interface TypeSystem {
 
     /**
      * Checks whether an Object matches against a schema or not
-     * @param schemaPath path of the schema file
+     * @param schemaPath path of the schema file, relative to the definition directory
      * @param o object, which needs to be matched
      * @return true if matches, false if does not match
      */

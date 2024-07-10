@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cowj/samples/prod/customer",
+  "type": "object",
+  "properties": {
+    "first_name": { "type": "string" },
+    "last_name": { "type": "string" },
+    "shipping_address": { "$ref": "cowj/samples/prod/address" },
+    "billing_address": { "$ref": "cowj/samples/prod/address" }
+  },
+  "required": ["first_name", "last_name", "shipping_address", "billing_address"],
+  "additionalProperties": false
+}
