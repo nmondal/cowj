@@ -1,0 +1,4 @@
+cron = _ds["my-prog-cron"]
+em = cron.list()
+panic( em.inError, jstr( { "message" : em.error().message ?? "" } )  )
+jstr( em.value )

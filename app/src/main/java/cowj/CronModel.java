@@ -242,6 +242,7 @@ public interface CronModel {
         });
         final String schedulerName =  CronModel.class.getName() + ".cron" ;
         final int numThreads = tasks.size();
+        final Scheduler scheduler = schedulerByName( schedulerName, numThreads );
         return new CronModel() {
             @Override
             public Map<String, Task> tasks() {
@@ -250,7 +251,7 @@ public interface CronModel {
 
             @Override
             public Scheduler scheduler() {
-                return EitherMonad.runUnsafe( () -> schedulerByName( schedulerName, numThreads ));
+                return scheduler;
             }
         };
     }

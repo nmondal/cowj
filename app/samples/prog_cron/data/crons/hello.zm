@@ -1,0 +1,3 @@
+println("I am a prog cron - hello!")
+_shared["prog_cron"] = int(time()) // load the current ms
+
