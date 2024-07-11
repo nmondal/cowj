@@ -965,6 +965,21 @@ The following API are exposed:
      */
     Scheduler scheduler();
 ```
+Note that in the example shared the cron job is stored in the `data source` of `local-storage`
+which is a `FileBackedStorage` mounted in `data` folder, with `bucket` having name `crons`,
+and the `path` is `hello.zm` as found [here](../app/samples/prog_cron/data/crons/hello.zm).
+
+Hence the payload to `schedule` the job `hello.zm` would be as follows:
+
+```json
+{ 
+  "storage" : "local-storage", 
+  "bucket" : "crons" , 
+  "path" : "hello.zm", 
+  "cron" : "0/30 * * * * ? *"
+}
+```
+
 Typically one can use it as follows:
 
 ```scala 
