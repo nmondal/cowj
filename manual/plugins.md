@@ -969,7 +969,7 @@ Note that in the example shared the cron job is stored in the `data source` of `
 which is a `FileBackedStorage` mounted in `data` folder, with `bucket` having name `crons`,
 and the `path` is `hello.zm` as found [here](../app/samples/prog_cron/data/crons/hello.zm).
 
-Hence the payload to `schedule` the job `hello.zm` would be as follows:
+Hence the payload to `schedule` the job `hello.zm` by using the `create()` method would be as follows:
 
 ```json
 { 
