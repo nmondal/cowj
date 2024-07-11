@@ -936,7 +936,8 @@ data-sources:
     threads: 6
 
 ```
-As one can see `threads` defines no of threads to be used in the custom cron schedular.
+
+As one can see `threads` defines number of threads to be used in the programmable cron scheduler.
 This can then be accessed with `_ds["my-prog-cron"]` .
 
 The implementation can be found [here](../app/src/main/java/cowj/plugins/CronWrapper.java)
