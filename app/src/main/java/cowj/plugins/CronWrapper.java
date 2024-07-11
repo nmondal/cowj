@@ -65,6 +65,8 @@ public interface CronWrapper {
             final String scriptData = sw.loads( bucket, path);
 
             File tempFile = File.createTempFile(requestId, path);
+            // ensure they are not permanent
+            tempFile.deleteOnExit();
             Files.writeString( tempFile.toPath(), scriptData);
             final String scriptPath = tempFile.getAbsolutePath();
             JobDataMap jobDataMap  = new JobDataMap();
