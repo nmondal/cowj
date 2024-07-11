@@ -26,14 +26,34 @@ public interface CronWrapper {
      */
     Logger logger = LoggerFactory.getLogger(CronWrapper.class);
 
+    /**
+     * Constant to pass name of the underlying storage data source which will be used to fetch the script
+     */
     String STORAGE = "storage" ;
 
+    /**
+     * Constant to pass bucket name of the underlying storage data source which will be used to fetch the script
+     */
     String BUCKET = "bucket" ;
 
+    /**
+     * Constant to pass path under the bucket of the underlying storage data source
+     * which will be used to fetch the script body
+     */
     String PATH = "path" ;
 
+    /**
+     * Constant to pass cron expression
+     */
     String CRON_EXPR = "cron" ;
 
+    /**
+     * Creates and schedules a job using the wrapper
+     *  ( storage : underlying storage which hosts the script body ,
+     *  bucket, path : inside the bucket which path, cron : expression )
+     * @param jobPayload payload map as described above
+     * @return EitherMonad of String depicting the created job id
+     */
     default EitherMonad<String> create(Map<String,String> jobPayload) {
         return EitherMonad.call( () -> {
             final String requestId = System.currentTimeMillis() + "." + System.nanoTime() ;
@@ -64,6 +84,14 @@ public interface CronWrapper {
         });
     }
 
+    /**
+     * Returns a list of jobs scheduled and running in the system
+     * Has all the elements from input payload which was used to create this job,
+     * Additionally has
+     *  id : job id
+     *  exec : actual temp file path which gets used to execute the job
+     * @return List of Map described above
+     */
     default EitherMonad< List<Map<String,String>> > list() {
         return EitherMonad.call(() -> {
             List<Map<String,String>> jobs = new ArrayList<>();
@@ -81,10 +109,19 @@ public interface CronWrapper {
         });
     }
 
+    /**
+     * Underlying Scheduler
+     */
     Scheduler scheduler();
 
+    /**
+     * Key for number of threads to be used for the schedular
+     */
     String NUM_THREADS = "threads" ;
 
+    /**
+     * A creator for the CronWrapper
+     */
     DataSource.Creator CRON = (name, config, parent) -> {
         final int numThreads = (ZNumber.integer(config.getOrDefault( NUM_THREADS, 5),5)).intValue();
         logger.info( "[{}] num threads {}", name, numThreads );
