@@ -913,6 +913,68 @@ EVENT_1_SEC:
 
 ```
 
+### Cron Wrapper
+The project [Cron Wrapper Sample](../app/samples/prog_cron) demonstrates it well.
+In essence, the idea is to have scripts remotely loaded from distributed key,value storage.
+
+Essentially :
+
+```yaml
+plugins:
+  cowj.plugins:
+    file-st: FileBackedStorage::STORAGE
+    prog-cron: CronWrapper::CRON
+
+data-sources:
+
+  local-storage:
+    type: file-st
+    mount-point: _/data
+
+  my-prog-cron:
+    type: prog-cron
+    threads: 6
+
+```
+As one can see `threads` defines no of threads to be used in the custom cron schedular.
+This can then be accessed with `_ds["my-prog-cron"]` .
+
+The implementation can be found [here](../app/src/main/java/cowj/plugins/CronWrapper.java)
+The following API are exposed:
+
+```java
+    /**
+     * Creates and schedules a job using the wrapper
+     *  ( storage : underlying storage which hosts the script body ,
+     *  bucket, path : inside the bucket which path, cron : expression )
+     * @param jobPayload payload map as described above
+     * @return EitherMonad of String depicting the created job id
+     */
+    EitherMonad<String> create(Map<String,String> jobPayload);
+    /**
+     * Returns a list of jobs scheduled and running in the system
+     * Has all the elements from input payload which was used to create this job,
+     * Additionally has
+     *  id : job id
+     *  exec : actual temp file path which gets used to execute the job
+     * @return List of Map described above
+     */
+    EitherMonad< List<Map<String,String>> > list();
+    /**
+     * Underlying Scheduler
+     */
+    Scheduler scheduler();
+```
+Typically one can use it as follows:
+
+```scala 
+//prog_cron/job_list.zm
+cron = _ds["my-prog-cron"]
+em = cron.list()
+panic( em.inError, jstr( { "message" : em.error().message ?? "" } )  )
+jstr( em.value )
+```
+
 
 ## References
 
