@@ -96,24 +96,27 @@ public interface TimeSeriesStorage {
      * Puts an entry into the abstract TimeSeries
      * @param extension for the file to be used
      * @param value data for the file
+     * @return EitherMonad of String type, returning the key ( fileName ) which was created to put the value
      */
-    default void put(String extension, Object value) {
+    default EitherMonad<String> put(String extension, Object value) {
         final Instant instant = Instant.now();
-        DateTimeFormatter formatter = FORMATTER_MAP.get(precision());
+        final DateTimeFormatter formatter = FORMATTER_MAP.get(precision());
         final BigInteger toNano = BigInteger.valueOf(instant.toEpochMilli()).add(BigInteger.valueOf(instant.getNano()));
         final String temporalUID = toNano + "_" + ThreadLocalRandom.current().nextInt(10000);
         final String utcTS = instant.atZone(ZoneId.of("UTC")).format(formatter);
         final String bucket = bucket();
         final String fileName = base() + "/" + utcTS + "/" + temporalUID + extension;
-        StorageWrapper<?, ?, ?> storage = storage();
-        if (value instanceof byte[]) {
-            storage.dumpb(bucket, fileName, (byte[]) value);
-        } else if ( value instanceof Collections || value instanceof Map  ){ // string and like
-            storage.dump(bucket, fileName, value );
-        }
-        else { // rest just follow this, ugly null ptr is a problem
-            storage.dumps(bucket, fileName, value.toString());
-        }
+        final StorageWrapper<?, ?, ?> storage = storage();
+        return EitherMonad.call( () -> {
+            if (value instanceof byte[]) {
+                storage.dumpb(bucket, fileName, (byte[]) value);
+            } else if (value instanceof Collections || value instanceof Map) { // string and like
+                storage.dump(bucket, fileName, value);
+            } else { // rest just follow this, ugly null ptr is a problem
+                storage.dumps(bucket, fileName, value.toString());
+            }
+            return fileName;
+        });
     }
 
     /**
@@ -137,26 +140,27 @@ public interface TimeSeriesStorage {
      * Finds all Entries between UTC start and end in MS
      * @param startUTCMS start system time in ms  ( inclusive )
      * @param endUTCMS end system time in ms in UTC ( exclusive )
-     * @return a List of Entries between these two
+     * @return a EitherMonad of a List of Entries between these two
      */
-    default List<Map.Entry<String, Object>> list(long startUTCMS, long endUTCMS) {
-        if ( endUTCMS <= startUTCMS ) return Collections.emptyList() ;
-        DateTimeFormatter formatter = FORMATTER_MAP.get(precision());
-        ZonedDateTime t = ZonedDateTime.ofInstant(Instant.ofEpochMilli(startUTCMS), ZoneId.of( "UTC"));
-        TemporalAmount s = step( precision() );
-        ZonedDateTime e = ZonedDateTime.ofInstant(Instant.ofEpochMilli(endUTCMS), ZoneId.of( "UTC"));
-
-        List<Map.Entry<String, Object>> ret = new ArrayList<>();
-        StorageWrapper<?, ?, ?> storage = storage();
+    default EitherMonad<List<Map.Entry<String, Object>>> list(long startUTCMS, long endUTCMS) {
+        if ( endUTCMS <= startUTCMS ) return EitherMonad.error( new IllegalArgumentException( "endUTCMS <= startUTCMS" ))  ;
+        final DateTimeFormatter formatter = FORMATTER_MAP.get(precision());
         final String base = base();
         final String bucket = bucket() ;
-        while ( t.compareTo(e) < 0 ){
-            final String prefix = base + "/" + formatter.format(t) + "/" ;
-            List<Map.Entry<String, Object>> tmp = storage.entriesData( bucket, prefix ).toList();
-            ret.addAll(tmp);
-            t = t.plus(s);
-        }
-        return ret;
+        final StorageWrapper<?, ?, ?> storage = storage();
+        final TemporalAmount s = step( precision() );
+        final ZonedDateTime e = ZonedDateTime.ofInstant(Instant.ofEpochMilli(endUTCMS), ZoneId.of( "UTC"));
+        return EitherMonad.call( () -> {
+            ZonedDateTime t = ZonedDateTime.ofInstant(Instant.ofEpochMilli(startUTCMS), ZoneId.of( "UTC"));
+            List<Map.Entry<String, Object>> ret = new ArrayList<>();
+            while (t.compareTo(e) < 0) {
+                final String prefix = base + "/" + formatter.format(t) + "/";
+                List<Map.Entry<String, Object>> tmp = storage.entriesData(bucket, prefix).toList();
+                ret.addAll(tmp);
+                t = t.plus(s);
+            }
+            return ret;
+        });
     }
 
     /**

@@ -109,11 +109,16 @@ public class TimeSeriesStorageTest {
         // now list over the data
         // get the timestamp ms
         long stMS = startTime - 1000 ;
-        List<Map.Entry<String,Object>> l = timeSeriesStorage.list( stMS, stMS - 1 );
-        Assert.assertTrue(l.isEmpty());
-        l = timeSeriesStorage.list( stMS, stMS );
-        Assert.assertTrue(l.isEmpty());
-        l = timeSeriesStorage.list( stMS, stMS + 5000 );
-        Assert.assertEquals(20, l.size() );
+        EitherMonad<List<Map.Entry<String,Object>>> lm = timeSeriesStorage.list( stMS, stMS - 1 );
+        Assert.assertTrue(lm.inError());
+        lm = timeSeriesStorage.list( stMS, stMS );
+        Assert.assertTrue(lm.inError());
+        lm = timeSeriesStorage.list( stMS, stMS + 5000 );
+        Assert.assertEquals(20, lm.value().size() );
+    }
+
+    @Test
+    public void putDataErrorTest(){
+        Assert.assertTrue( timeSeriesStorage.put(".null", null).inError() );
     }
 }
