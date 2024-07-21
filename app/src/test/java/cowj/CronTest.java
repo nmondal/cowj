@@ -49,6 +49,12 @@ public class CronTest {
     }
 
     @Test
+    public void noCronConfigTest(){
+        CronModel model = CronModel.fromConfig( () -> ".", Collections.emptyMap() );
+        Assert.assertEquals( CronModel.NULL, model);
+    }
+
+    @Test
     public void runTest() throws Exception {
         Map<String,Object> cronJob = Map.of(
                 CronModel.Task.EXEC, "samples/auth_demo/fetch.zm",

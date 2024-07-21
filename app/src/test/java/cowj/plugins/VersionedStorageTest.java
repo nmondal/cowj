@@ -29,7 +29,8 @@ public class VersionedStorageTest {
         Assert.assertNotNull(fs.absMountPoint);
         Assert.assertTrue( fs.createBucket(BUCKET_NAME, "", false ));
         Assert.assertFalse( fs.createBucket(BUCKET_NAME, "", false ));
-        Assert.assertFalse( VersionedFileStorage.deleteRecurse( Paths.get( "/cdrom") ));
+        Assert.assertFalse( VersionedFileStorage.deleteRecurse( Paths.get( "/bla/bla/bla") ));
+        Assert.assertFalse( VersionedFileStorage.deleteRecurse( Paths.get( "/opt") ));
     }
 
     @AfterClass

@@ -54,9 +54,10 @@ public class FileBackedStorage implements StorageWrapper.SimpleKeyValueStorage {
     /**
      * Recursively deletes a directory
      * @param path starting path of the directory
-     * @return true if it could delete the path, false otherwise
+     * @return true if path existed, and it could delete the path, false otherwise
      */
     public static boolean deleteRecurse(Path path){
+        if ( !path.toFile().exists() ) return false;
         EitherMonad.call( () ->{
             Files.walk(path)
                     .sorted(Comparator.reverseOrder())

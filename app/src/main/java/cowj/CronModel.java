@@ -230,12 +230,30 @@ public interface CronModel {
     }
 
     /**
+     * A specific NULL CronModel to ensure that we have a fallback model when there are no cron
+     */
+    CronModel NULL = new CronModel() {
+        @Override
+        public Map<String, Task> tasks() {
+            return Collections.emptyMap();
+        }
+
+        @Override
+        public Scheduler scheduler() {
+            return null;
+        }
+    };
+
+    /**
      * Creates a CronModel
+     * In case config is empty, returns NULL CronModel
      * @param model the Cowj data model
      * @param config actual configuration
      * @return a CronModel
      */
     static CronModel fromConfig(Model model, Map<String, Map<String,Object>> config) {
+        if ( config.isEmpty() ) return NULL ; // this takes care of the fact that no scheduler gets created
+        // now that it is not empty, continue working
         final Map<String, Task> tasks = new LinkedHashMap<>();
         config.forEach((name, conf) -> {
             tasks.put(name, Task.fromConfig(model, name, (Map) conf));

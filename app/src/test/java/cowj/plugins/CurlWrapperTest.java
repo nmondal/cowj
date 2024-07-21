@@ -4,10 +4,7 @@ import cowj.AsyncHandler;
 import cowj.DataSource;
 import cowj.EitherMonad;
 import cowj.Model;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import spark.Request;
 import spark.Response;
 import zoomba.lang.core.io.ZWeb;
@@ -71,7 +68,7 @@ public class CurlWrapperTest {
 
     static String  callAsynchProxy(String url, String destinationPath) throws Exception {
         DataSource dataSource = CurlWrapper.CURL.create( "dummy",
-                Map.of("url", url), model);
+                Map.of("url", url, "timeout", 6000 ), model);
         CurlWrapper cw = (CurlWrapper) dataSource.proxy();
         Request request = mock(Request.class);
         final String body = ZTypes.jsonString( Map.of("x" , 42 ));
@@ -95,12 +92,19 @@ public class CurlWrapperTest {
         }
     }
 
+    public static boolean isTimeOut(Object res){
+        return res instanceof Throwable && ((Throwable) res).getCause().getMessage().contains("timed out");
+    }
+
     @Test
     public void asyncProxySuccessTest() throws Exception {
         final String resp = callAsynchProxy("https://postman-echo.com","/post");
         // this can take significant time.. so...
         waitAsynchOn(5,resp);
         Object res = AsyncHandler.instance().results().get(resp);
+        // check if there is a timeout ?
+        Assume.assumeFalse( isTimeOut(res) );
+        // then only
         Assert.assertTrue( res instanceof Map<?,?>);
         Assert.assertEquals( 200, ((Map<?, ?>) res).get("status"));
         Assert.assertTrue( ((Map<?, ?>) res).containsKey("body"));
