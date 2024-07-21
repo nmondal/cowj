@@ -296,6 +296,17 @@ public interface  StorageWrapper <B,R,I> {
     boolean delete(String bucketName, String path);
 
     /**
+     * Creates a time series data abstraction using this storage
+     * @param bucket to be used for storing this data
+     * @param base prefix to be used before any other prefix
+     * @param precision one of the constants YEAR, MONTH, DAY, HOUR, MIN, SEC, MS
+     * @return a TimeSeriesStorage abstraction
+     */
+    default TimeSeriesStorage timeSeries( String bucket, String base, String precision ){
+        return TimeSeriesStorage.fromStorage(this, bucket, base, precision);
+    }
+
+    /**
      * A Versioned Storage
      * @param <I> Data Type returned by the storage
      */
