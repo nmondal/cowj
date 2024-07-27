@@ -50,7 +50,7 @@ repositories {
 dependencies {
 
     implementation zmbBinary
-    implementation 'org.zoomba-lang:spark-core:3.0'
+    implementation 'org.zoomba-lang:spark-core:3.0.1-SNAPSHOT'
     // end of local libraries
     implementation 'org.slf4j:slf4j-jdk14:2.1.0-alpha1'
     // Scripting Engines JSR-223
