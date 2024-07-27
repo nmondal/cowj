@@ -1,5 +1,6 @@
 package cowj;
 
+import com.oracle.truffle.js.scriptengine.GraalJSEngineFactory;
 import kotlin.script.experimental.jsr223.KotlinJsr223DefaultScriptEngineFactory;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
 import org.mozilla.javascript.engine.RhinoScriptEngineFactory;
@@ -397,11 +398,32 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      * Basal hack to load Jython and other Engines
      */
     Serializable JythonLoad = new Serializable() { // simplest hack to load Jython ...
+
+        static boolean isRunningOnGRAALVM(){
+            final String vendorURL = System.getProperty("java.vendor.url");
+            if ( vendorURL.contains("graalvm" ) ) {
+                String options = """
+                        polyglot.js.allowHostAccess <boolean>
+                        polyglot.js.allowNativeAccess <boolean>
+                        polyglot.js.allowCreateThread <boolean>
+                        polyglot.js.allowIO <boolean>
+                        polyglot.js.allowHostClassLookup <boolean or Predicate<String>>
+                        polyglot.js.allowHostClassLoading <boolean>
+                        polyglot.js.allowAllAccess <boolean>
+                        polyglot.js.nashorn-compat <boolean> :: setting this sets many of these properties automatically!
+                        polyglot.js.ecmascript-version <String>""";
+                logger.error("Running with GRAALVM - please set these options in java commandline:\n {}\n", options);
+                return true;
+            }
+            return false;
+        }
+
         // https://stackoverflow.com/questions/52825426/jython-listed-by-getenginefactories-but-getenginebynamejython-is-null
         static {
             Options.importSite = false;
             // force load engines for fat-jar issues...
-            MANAGER.registerEngineName("JavaScript", new RhinoScriptEngineFactory());
+            ScriptEngineFactory jsFactory = isRunningOnGRAALVM()? new GraalJSEngineFactory() : new RhinoScriptEngineFactory() ;
+            MANAGER.registerEngineName("JavaScript", jsFactory);
             MANAGER.registerEngineName("groovy", new GroovyScriptEngineFactory());
             MANAGER.registerEngineName("python", new PyScriptEngineFactory());
             MANAGER.registerEngineName("kotlin", new KotlinJsr223DefaultScriptEngineFactory());

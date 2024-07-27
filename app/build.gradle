@@ -50,12 +50,18 @@ repositories {
 dependencies {
 
     implementation zmbBinary
-    implementation 'org.zoomba-lang:spark-core:3.0'
+    implementation 'org.zoomba-lang:spark-core:3.0.1-SNAPSHOT'
     // end of local libraries
     implementation 'org.slf4j:slf4j-jdk14:2.1.0-alpha1'
     // Scripting Engines JSR-223
     implementation 'org.mozilla:rhino-engine:1.7.15' //js
     implementation 'com.github.a-langer:jsr223-commonjs-modules:1.0.1'
+    // https://mvnrepository.com/artifact/org.graalvm.polyglot/polyglot
+    implementation 'org.graalvm.polyglot:polyglot:24.0.2'
+    // https://mvnrepository.com/artifact/org.graalvm.polyglot/js-community
+    implementation 'org.graalvm.polyglot:js-community:24.0.2'
+    // https://mvnrepository.com/artifact/org.graalvm.js/js-scriptengine
+    implementation 'org.graalvm.js:js-scriptengine:24.0.2'
 
     // groovy
     implementation 'org.apache.groovy:groovy:5.0.0-alpha-9'
