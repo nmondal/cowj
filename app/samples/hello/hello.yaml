@@ -59,11 +59,6 @@ proxies:
     /users: json_place/* # it would be interpreted as json_place/users
     /local: local_send/send
 
-filters:
-  before:
-    "*" : _/before.zm
-  after:
-    "*": _/after.zm
 
 plugins:
   cowj.plugins:
@@ -80,14 +75,6 @@ data-sources:
   redis :
     type : redis
     urls: [ "localhost:6379"]
-
-  pgsql:
-    type: jdbc
-    driver: ""
-    connection : ""
-    properties:
-      a: b
-      x: y
 
   g_storage:
     type: g_storage
@@ -110,9 +97,3 @@ data-sources:
     size: 10
     expiry: 1000
 
-cron:
-  r:
-    exec: _/cron.zm
-    boot: true
-    at: "0/30 * * * * ? *"
-    # https://stackoverflow.com/questions/35214149/cron-expression-for-every-30-seconds-in-quartz-scheduler
