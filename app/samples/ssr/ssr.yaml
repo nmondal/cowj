@@ -14,6 +14,8 @@ threading:
 routes:
   get:
     /app: _/ssr_path.zm
+    /next/:n1/:n2 : _/next_fib.zm
+
 
 plugins:
   cowj.plugins:

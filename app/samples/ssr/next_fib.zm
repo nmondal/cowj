@@ -1,0 +1,6 @@
+/*
+react state :: https://www.baeldung.com/react-nashorn-isomorphic-app
+*/
+n1 = int( req.params("n1") ) ?? 1
+n2 = int( req.params("n2") ) ?? 0
+n1 + n2 // just return
