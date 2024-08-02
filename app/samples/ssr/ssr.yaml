@@ -1,0 +1,33 @@
+#########################
+# Server Side Rendering
+#########################
+
+port: 5151
+
+# threading related stuff
+threading:
+  min: 4
+  max : 8
+  timeout: 30000
+
+# path mapping
+routes:
+  get:
+    /app: _/ssr_path.zm
+
+plugins:
+  cowj.plugins:
+    js-ssr: JSRendering::SSR
+
+data-sources:
+
+  react-ssr:
+    type: js-ssr
+    context:
+      - "https://unpkg.com/react@18/umd/react.development.js"
+      - "https://cdnjs.cloudflare.com/ajax/libs/create-react-class/15.7.0/create-react-class.js"
+      - "https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      - "js/app.js"
+
+
+
