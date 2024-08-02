@@ -19,7 +19,7 @@ public interface JSRendering {
 
     default EitherMonad<String> render(String scriptPath, String htmlTemplatePath){
         EitherMonad<Object> em = evalScript( engine(), scriptPath, model().staticPath() );
-        if ( em.inError() ) return EitherMonad.error(em.error());
+        if ( em.inError() ) return EitherMonad.error( new IllegalStateException("Error in Script : " + scriptPath, em.error()));
         if ( em.value() instanceof Map<?,?> ){
             return EitherMonad.call( () ->{
                 final Map<?,?> context = (Map<?,?>)em.value();

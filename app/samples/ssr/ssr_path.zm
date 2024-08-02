@@ -3,7 +3,7 @@ Showing server side scripting in JS with react
 */
 resp.type("text/ html;charset=UTF-8.")
 ssr = _ds["react-ssr"]
-em = ssr.render( "js/main.js", "js/app.html"  )
+em = ssr.render( "js/main.js", "app.html"  )
 panic(em.inError, "Rendering failed : " + em.error() )
 em.value() // return
 
