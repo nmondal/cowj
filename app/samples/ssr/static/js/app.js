@@ -1,7 +1,5 @@
-// does this work?
-var createReactClass = require('create-react-class');
 // and then this?
-var App = createClass({displayName: "App",
+var App = createReactClass({displayName: "App",
     handleSubmit: function() {
     	var last = this.state.data[this.state.data.length-1];
     	var secondLast = this.state.data[this.state.data.length-2];
