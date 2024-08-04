@@ -113,6 +113,7 @@ public interface CronWrapper {
 
     /**
      * Underlying Scheduler
+     * @return a Schedular
      */
     Scheduler scheduler();
 

@@ -991,6 +991,83 @@ panic( em.inError, jstr( { "message" : em.error().message ?? "" } )  )
 jstr( em.value )
 ```
 
+### Server Side Rendering 
+
+Cowj let's you do server side rendering. 
+A typical example of server side rendering is available as [SSR project](../app/samples/ssr).
+This uses react - same example from https://www.baeldung.com/react-nashorn-isomorphic-app 
+while in our case we use `Mozilla Rhino`. 
+Technically this is invariant of the underlying JS Engine. As JS Engine change, 
+one must do some changes in the `context` files.
+
+The plugin is defined as follows:
+
+```yaml
+#########################
+# Server Side Rendering
+#########################
+# Details of thread and port...
+# path mapping
+routes:
+  get:
+    /app: _/ssr_path.zm
+    /next/:n1/:n2 : _/next_fib.zm
+
+plugins:
+  cowj.plugins:
+    js-ssr: JSRendering::SSR # the plugin 
+
+data-sources:
+  react-ssr:
+    type: js-ssr
+    context:
+      - "https://unpkg.com/react@18/umd/react.development.js"
+      - "https://cdnjs.cloudflare.com/ajax/libs/create-react-class/15.7.0/create-react-class.js"
+      - "https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      - "https://unpkg.com/react-dom@18.1.0/umd/react-dom-server-legacy.browser.development.js"
+      - "js/app.js"
+```
+
+As one can see `context` defines the scripts we need to load beforehand to get the plugin ready. 
+This is essentially `importing` the entire JS module in memory.
+Once it is ready, we can all the method on the plugin to populate any HTML template via SSR:
+w
+```java
+/**
+ * Renders to String from data accumulated from the script file using the template file
+ * @param scriptPath JavaScript file that would be run to produce the data ( actual SSR )
+ * @param htmlTemplatePath template file that would be returned after populating the data
+ * @return some HTML rendered on Server Side
+ */
+EitherMonad<String> render(String scriptPath, String htmlTemplatePath);
+```
+The result of execution of the first `js` file must be a dictionary `context` which is then 
+used to populate the the `template`. 
+The example use case can be found in [ssr_path.zm](../app/samples/ssr/ssr_path.zm) :
+
+```scala
+/*
+https://www.baeldung.com/react-nashorn-isomorphic-app
+Showing server side scripting in JS with react
+*/
+resp.type("text/html;charset=UTF-8.")
+ssr = _ds["react-ssr"]
+em = ssr.render( "js/main.js", "app.html"  )
+panic(em.inError, "Rendering failed : " + em.error() )
+em.value() // return
+```
+
+In our SSR demo we are using the `$content` variable
+in the template [app.html](../app/samples/ssr/static/app.html), while the
+[main.js](../app/samples/ssr/static/js/main.js) file :
+
+```js
+var re = React.createElement(App, {data: [0,1,1]}); 
+var html = ReactDOMServer.renderToString(re);
+var response = { "content" : html }; // populate the context to be applied to template
+response // return
+```
+
 
 ## References
 
