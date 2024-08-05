@@ -85,6 +85,12 @@ public class App {
         }
         final String path = args[0];
         ModelRunner mr = ModelRunner.fromModel(path) ;
-        mr.run();
+        try {
+            mr.run();
+        } catch (Exception e) {
+            e.printStackTrace();
+            mr.stop();
+            System.exit(1);
+        }
     }
 }

@@ -40,15 +40,19 @@ via configurations and scripts. It's backbone is written using `spark-11`,  `jet
 
 ### Very Fast `Hello World`
 
-1. Build so that you have the `cowj-jar`  ready with `./deps`  pointing to dependencies.
+1. Clone the repository first 
 
-2. Create a directory `hello` 
+2. 
 
-3. Inside `hello` create a directory `static`
+3. Build so that you have the `cowj-jar`  ready with `./deps`  pointing to dependencies.
 
-4. Inside `static` folder created `index.html` and write down `hello, world!`.
+4. Create a directory `hello` 
 
-5. Inside the `hello` folder create a `hello.yaml` file as follows:
+5. Inside `hello` create a directory `static`
+
+6. Inside `static` folder created `index.html` and write down `hello, world!`.
+
+7. Inside the `hello` folder create a `hello.yaml` file as follows:
 
 ```yaml
 # hello/hello.yaml
@@ -122,8 +126,8 @@ With this note, we shall dive into the world of BED - back end development.
 5. `cd app/build/libs`
 
 6. Ensure `ls` returns `java -jar cowj-0.1-SNAPSHOT.jar` as well as a
-  `deps/` folder. If those two don’t exist, run `gradle clean` and 
-  `gradle build -x test`
+    `deps/` folder. If those two don’t exist, run `gradle clean` and 
+    `gradle build -x test`
 
 7. `java -jar cowj-0.1-SNAPSHOT.jar ../../samples/hello/hello.yaml`
 
