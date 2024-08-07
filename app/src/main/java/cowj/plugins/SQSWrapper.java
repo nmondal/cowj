@@ -264,7 +264,7 @@ public interface SQSWrapper {
             qName = parent.envTemplate( qName );
             logger.info("[{}] name of the queue after transform is '{}'", name, qName );
             EitherMonad<String> qU = url( sqsClient, qName ) ;
-            if ( qU.inError() ) throw new IllegalArgumentException(qU.error() );
+            if ( qU.inError() ) throw new RuntimeException(qU.error() );
             url = qU.value();
         }else{
             logger.info("[{}] url of the queue before transform is '{}'", name, url );
