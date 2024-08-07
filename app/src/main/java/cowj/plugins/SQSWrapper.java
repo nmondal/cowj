@@ -144,9 +144,7 @@ public interface SQSWrapper {
      * @return EitherMonad of Message
      */
     static EitherMonad<Message> getMessage(SqsClient sqsClient, String queueUrl, int waitTimeSeconds) {
-        EitherMonad<List<Message>> em = getMessages(sqsClient, queueUrl, waitTimeSeconds, 1);
-        if (em.inError()) return EitherMonad.error(em.error());
-        return EitherMonad.call(() -> em.value().get(0));
+        return  getMessages(sqsClient, queueUrl, waitTimeSeconds, 1).then( (list) -> list.get(0) );
     }
 
     /**
@@ -263,9 +261,7 @@ public interface SQSWrapper {
             logger.info("[{}] name of the queue before transform is '{}'", name, qName );
             qName = parent.envTemplate( qName );
             logger.info("[{}] name of the queue after transform is '{}'", name, qName );
-            EitherMonad<String> qU = url( sqsClient, qName ) ;
-            if ( qU.inError() ) throw new RuntimeException(qU.error() );
-            url = qU.value();
+            url = url( sqsClient, qName ).ensure().value();
         }else{
             logger.info("[{}] url of the queue before transform is '{}'", name, url );
             url = parent.envTemplate( url );

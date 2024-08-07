@@ -87,7 +87,6 @@ public class SQSWrapperTest {
             SQSWrapper.SQS.create("foo", Map.of("name", sqsQName), () -> ".");
         });
         Assert.assertTrue( th instanceof  RuntimeException );
-        Assert.assertNotNull(th.getCause());
 
         // Nothing is specified
         th = assertThrows(Throwable.class, () -> {

@@ -1,0 +1,71 @@
+package cowj;
+
+import java.util.concurrent.Callable;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+
+import static org.junit.Assert.assertThrows;
+
+public class EitherMonadTest {
+
+    @Test
+    public void basicTest(){
+        EitherMonad<String> ems = EitherMonad.value("");
+        Assert.assertTrue( ems.isSuccessful() );
+        Assert.assertFalse( ems.inError() );
+        ems = EitherMonad.error(new Throwable());
+        Assert.assertFalse( ems.isSuccessful() );
+        Assert.assertTrue( ems.inError() );
+    }
+
+    @Test
+    public void unsafeTest(){
+        Assert.assertEquals(Integer.valueOf(42), EitherMonad.runUnsafe( () -> 42 ) );
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            EitherMonad.runUnsafe( () -> { throw new RuntimeException("boom!") ; });
+        });
+        Assert.assertTrue( exception.getMessage().contains("boom!"));
+        exception = assertThrows(RuntimeException.class, () -> {
+            EitherMonad.runUnsafe( () -> { throw new Exception("boom!") ; });
+        });
+        Assert.assertTrue( exception.getCause().getMessage().contains("boom!"));
+    }
+
+    @Test
+    public void orConditionTest(){
+        // Regular flow
+        Assert.assertEquals( 1L, EitherMonad.orElse( () -> 1L, 0 ));
+        final Callable<Integer> c = () -> {
+            throw new RuntimeException("boom!") ;
+        };
+        // Else flow
+        Assert.assertEquals( 0, (int)EitherMonad.orElse( c, 0));
+        Assert.assertNull( EitherMonad.orNull(c));
+    }
+
+    @Test
+    public void thenTest(){
+        // Regular flow
+        Assert.assertEquals( 0, (int)EitherMonad.value(1).then(x -> x-1).value());
+        final Throwable t = new RuntimeException();
+        Assert.assertEquals( t, EitherMonad.error(t) .then(x -> x).error());
+    }
+
+    @Test
+    public void ensureTest(){
+        // Regular flow
+        Assert.assertEquals( 1, (int)EitherMonad.value(1).ensure().value());
+        final Throwable t = new RuntimeException();
+        Throwable th = assertThrows(RuntimeException.class, () -> {
+            EitherMonad.error(t).ensure();
+        });
+        Assert.assertEquals(t,th);
+        final Throwable tt = new Throwable();
+        th = assertThrows(RuntimeException.class, () -> {
+            EitherMonad.error(tt).ensure();
+        });
+        Assert.assertEquals(tt, th.getCause());
+    }
+}
