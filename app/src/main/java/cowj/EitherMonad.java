@@ -46,17 +46,29 @@ public final class EitherMonad<V> {
 
     /**
      * A Monadic way of handling chained Monads and operations
-     * If the container is in error state, will raise that error and return
+     * If the container is in error state, will return itself
      * Else then() function would be processed
      * @param then a function which takes a type of V and returns T type
      * @return another EitherMonad of type T
      * @param <T> type of the returned EitherMonad
      */
     public <T> EitherMonad<T> then( Function<V,T> then ){
-        if ( inError()) return EitherMonad.error( error());
+        if ( inError()) return error(err); // why not this? because it changed the type from V to T at this point
         return EitherMonad.call( () -> then.apply( value ));
     }
 
+
+    /**
+     * A Monadic way to handle and raise error
+     * In case it is successful, returns itself
+     * Otherwise raise error by
+     * passing the current error to the function ensure which generates a RuntimeException
+     * @return current instance if current isSuccessful()
+     */
+    public <E extends RuntimeException> EitherMonad<V> ensure( Function<Throwable,E> ensure ){
+        if ( isSuccessful() ) return this;
+        throw  ensure.apply(err);
+    }
 
     /**
      * A Monadic way to handle and raise error
@@ -67,9 +79,7 @@ public final class EitherMonad<V> {
      * @return current instance if current isSuccessful()
      */
     public EitherMonad<V> ensure(){
-        if ( isSuccessful() ) return this;
-        if ( err instanceof RuntimeException ) throw (RuntimeException)err;
-        throw new RuntimeException(err);
+        return ensure( (e) -> e instanceof RuntimeException ? (RuntimeException)e : new RuntimeException(e) );
     }
 
     /**
