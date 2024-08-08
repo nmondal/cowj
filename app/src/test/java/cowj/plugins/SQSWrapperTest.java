@@ -118,6 +118,10 @@ public class SQSWrapperTest {
         Assert.assertTrue( emm.isSuccessful() );
         Assert.assertEquals( mockMultiResp, emm.value() );
 
+        // invalid send message - 0 args to push through
+        emm = sqsWrapper.putAll();
+        Assert.assertTrue( emm.inError() );
+        Assert.assertTrue( emm.error() instanceof IllegalArgumentException );
     }
 
     @Test
@@ -138,6 +142,9 @@ public class SQSWrapperTest {
         Assert.assertTrue( em.isSuccessful() );
         Assert.assertEquals( sqsMessage, em.value() );
 
+        EitherMonad<List<Message>> elm = sqsWrapper.getAll(4);
+        Assert.assertTrue( elm.isSuccessful() );
+        Assert.assertEquals( lm, elm.value() );
     }
 
     @Test
@@ -155,7 +162,5 @@ public class SQSWrapperTest {
         EitherMonad<DeleteMessageResponse> em = sqsWrapper.delete(sqsMessage);
         Assert.assertTrue( em.isSuccessful() );
         Assert.assertEquals( mockResponse, em.value() );
-
     }
-
 }
