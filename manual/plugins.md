@@ -990,6 +990,78 @@ em = cron.list()
 panic( em.inError, jstr( { "message" : em.error().message ?? "" } )  )
 jstr( em.value )
 ```
+### AWS SQS - Queuing Support 
+
+The basic configuration is as follows:
+
+```yaml
+plugins:
+  cowj.plugins:
+    aws-sqs: SQSWrapper::SQS # the plugin 
+
+data-sources:
+  my-sqs:
+    type: aws-sqs
+    name: my_awesome_queue_name # name of the queue 
+    url: "sqs.us-east-1.amazonaws.com/1234567890/default_development" # url of the queue 
+    timeout: 10 # read timeout, if read is not successful within this many sec, return with 0 messages
+```
+Api's exposed by the wrapper can be found [here](../app/src/main/java/cowj/plugins/SQSWrapper.java).
+
+```java
+ /**
+     * Gets a single Message from the SQS
+     * @return EitherMonad of a Message
+     */
+    EitherMonad<Message> get();
+
+    /**
+     * Gets a bunch of  Messages from the SQS
+     * @param maxNumberOfMessages max messages to read
+     * @return EitherMonad of a List of Message
+     */
+    EitherMonad<List<Message>> getAll(int maxNumberOfMessages);
+
+    /**
+     * Puts a single Message in the SQS
+     * @param messageBody  body of the message
+     * @return EitherMonad of a SendMessageResponse
+     */
+    EitherMonad<SendMessageResponse> put(String messageBody);
+
+    /**
+     * Puts a single Message in the SQS
+     * @param messageBody  body of the message
+     * @param delaySec time to delay the message by integer amount
+     * @return EitherMonad of a SendMessageResponse
+     */
+    EitherMonad<SendMessageResponse> putDelayed(String messageBody, int delaySec);
+
+    /**
+     * Puts a bunch of Messages in the SQS
+     *
+     * @param messages  body of the messages
+     * @return EitherMonad of a SendMessageBatchResponse
+     */
+    EitherMonad<SendMessageBatchResponse> putAll(String... messages);
+
+    /**
+     * Puts a bunch of Messages in the SQS
+     * @param delaySec time to delay the messages by integer amount
+     * @param messages  body of the messages
+     * @return EitherMonad of a SendMessageBatchResponse
+     */
+    EitherMonad<SendMessageBatchResponse> putAllDelayed(int delaySec, String... messages);
+
+    /**
+     * Deletes the message from SQS
+     * @param m message to be deleted
+     * @return EitherMonad of a DeleteMessageResponse
+     */
+    EitherMonad<DeleteMessageResponse> delete(Message m);
+```
+
+
 
 ### Server Side Rendering 
 

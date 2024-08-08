@@ -88,8 +88,9 @@ dependencies {
     // Storage...
     implementation 'redis.clients:jedis:5.2.0-beta4'
     implementation 'com.google.cloud:google-cloud-storage:2.40.1'
-    implementation 'software.amazon.awssdk:s3:2.26.17'
-    implementation 'software.amazon.awssdk:apache-client:2.26.17'
+    implementation 'software.amazon.awssdk:s3:2.26.30'
+    implementation 'software.amazon.awssdk:apache-client:2.26.30'
+    implementation 'software.amazon.awssdk:sqs:2.26.30'
 
     // fcm
     implementation 'com.google.firebase:firebase-admin:9.3.0'
@@ -99,7 +100,7 @@ dependencies {
 
     /// secret manager
     implementation 'com.google.cloud:google-cloud-secretmanager:2.46.0'
-    implementation 'software.amazon.awssdk:secretsmanager:2.26.17'
+    implementation 'software.amazon.awssdk:secretsmanager:2.26.30'
 
     ///// test stuff
     testImplementation 'junit:junit:4.13.2'

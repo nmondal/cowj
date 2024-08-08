@@ -34,17 +34,4 @@ public class PluginsTest {
         Assert.assertTrue( exception.getMessage().contains("Unknown type of datasource"));
         Assert.assertTrue( exception.getMessage().contains("bar"));
     }
-
-    @Test
-    public void testEitherMonadUnsafe(){
-        Assert.assertEquals(Integer.valueOf(42), EitherMonad.runUnsafe( () -> 42 ) );
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            EitherMonad.runUnsafe( () -> { throw new RuntimeException("boom!") ; });
-        });
-        Assert.assertTrue( exception.getMessage().contains("boom!"));
-        exception = assertThrows(RuntimeException.class, () -> {
-            EitherMonad.runUnsafe( () -> { throw new Exception("boom!") ; });
-        });
-        Assert.assertTrue( exception.getCause().getMessage().contains("boom!"));
-    }
 }

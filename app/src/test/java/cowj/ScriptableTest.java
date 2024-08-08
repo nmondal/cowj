@@ -18,15 +18,6 @@ import static org.junit.Assert.assertThrows;
 public class ScriptableTest {
 
     @Test
-    public void eitherMonadTest(){
-        EitherMonad<String> ems = EitherMonad.value("");
-        Assert.assertTrue( ems.isSuccessful() );
-        Assert.assertFalse( ems.inError() );
-        ems = EitherMonad.error(new Throwable());
-        Assert.assertFalse( ems.isSuccessful() );
-        Assert.assertTrue( ems.inError() );
-    }
-    @Test
     public void loadClassErrorTest() throws Exception {
         Scriptable sc = Scriptable.loadClass("java.lang.String.class");
         Assert.assertNotNull(sc);

@@ -22,6 +22,17 @@ public interface DataSource {
      */
     Object proxy();
 
+
+    /**
+     * Converts the proxy() object to a Type
+     *
+     * @return proxy() as type T
+     * @param <T> type parameter
+     */
+    default <T> T any(){
+        return (T)proxy();
+    }
+
     /**
      * The name via which _ds can use the proxy()
      * @return name of the data source
