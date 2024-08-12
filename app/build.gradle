@@ -70,8 +70,8 @@ dependencies {
     // https://mvnrepository.com/artifact/org.quartz-scheduler/quartz
     implementation 'org.quartz-scheduler:quartz:2.5.0-rc1'
 
-    // schema handler
-    implementation 'org.zoomba-lang:medeia-validator-jackson:1.5'
+    // schema handler TODO MIGRATE TO Release deadline 1 week
+    implementation 'org.zoomba-lang:medeia-validator-jackson:1.6-SNAPSHOT'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
 
     // Auth

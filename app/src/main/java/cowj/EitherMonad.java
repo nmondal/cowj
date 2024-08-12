@@ -61,8 +61,10 @@ public final class EitherMonad<V> {
     /**
      * A Monadic way to handle and raise error
      * In case it is successful, returns itself
-     * Otherwise raise error by
+     * Otherwise raise error by running ensure function
      * passing the current error to the function ensure which generates a RuntimeException
+     * @param ensure a function that takes any throwable type and creates a RunTimeException
+     * @param <E> type of the return parameter for the error transfer function ensure
      * @return current instance if current isSuccessful()
      */
     public <E extends RuntimeException> EitherMonad<V> ensure( Function<Throwable,E> ensure ){
