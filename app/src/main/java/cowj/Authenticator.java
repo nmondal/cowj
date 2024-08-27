@@ -7,8 +7,10 @@ import spark.Spark;
 import zoomba.lang.core.interpreter.ZMethodInterceptor;
 import zoomba.lang.core.types.ZTypes;
 
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.Callable;
+
 
 /**
  * A Basic Implementation for Authentication
@@ -168,6 +170,37 @@ public interface Authenticator {
      * An authenticator that authenticates based on extracting Token from request
      */
     interface TokenAuthenticator extends Authenticator {
+
+        /**
+         * A token creator
+         */
+        interface TokenIssuer {
+
+            SecureRandom SECURE_RANDOM = new SecureRandom();
+
+            int KEY_LEN = 128 ;
+
+            /**
+             * Creates a token
+             * @param user for the user
+             * @param expiry UTC time in ms
+             * @return a String token
+             */
+            default String token(String user, long expiry) throws Exception {
+                byte[] bytes = new byte[KEY_LEN/8];
+                SECURE_RANDOM.nextBytes(bytes);
+                return HexFormat.of().formatHex(bytes).toLowerCase();
+            }
+
+            /**
+             * Creates and issues a token
+             * @param user for the user
+             * @param expiry UTC time in ms
+             * @return a String token which was issued to the user
+             * @throws Exception in case of any error
+             */
+            String issueToken(String user, long expiry) throws Exception ;
+        }
 
         /**
          * In case we need to extract token from header

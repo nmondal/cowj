@@ -14,6 +14,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+// TODO fix the tests, they would break now
 public class StorageAuthenticatorTest {
 
     Authenticator NULL = request -> Authenticator.UserInfo.GUEST;
