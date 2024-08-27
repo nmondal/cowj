@@ -23,7 +23,8 @@ import javax.crypto.spec.SecretKeySpec;
  * Idea is copied from :
  * <a href="https://github.com/metamug/java-jwt/blob/master/src/main/java/com/metamug/jwt/JWebToken.java">...</a>
  */
-public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.CachedAuthenticator {
+public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.CachedAuthenticator
+        implements Authenticator.TokenAuthenticator.TokenIssuer {
     final static Logger logger = LoggerFactory.getLogger(JWTAuthenticator.class);
     final long STD_EXPIRY_OFFSET = 24 * 60 * 60  ; // 1 day, in seconds
 
@@ -310,6 +311,11 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
      */
     public JWebToken jwt(String sub, long expires){
         return jwt(sub,  expires, Collections.emptyList());
+    }
+
+    @Override
+    public String issueToken(String user, long expiry) throws Exception {
+        return jwt(user, expiry).toString() ;
     }
 
     /**
