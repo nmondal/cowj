@@ -48,6 +48,22 @@ public class JWTAuthenticatorTest {
         DataSource.unregisterDataSource ("custom-secret");
     }
 
+    @Test
+    public void issueTokenTest() throws Exception {
+        final long expiry = System.currentTimeMillis() + 4000 ;
+        String tok = prov1.issueToken("foo", expiry );
+        JWTAuthenticator.JWebToken jwt = (JWTAuthenticator.JWebToken)prov1.tryGetUserInfo(tok);
+        Assert.assertEquals("foo", jwt.getSubject());
+        // JWT works in secs, not on MS
+        Assert.assertEquals(expiry/1000, jwt.expiry()/1000);
+
+        tok = prov1.token("foo", expiry );
+        jwt = (JWTAuthenticator.JWebToken)prov1.tryGetUserInfo(tok);
+        Assert.assertEquals("foo", jwt.getSubject());
+        // JWT works in secs, not on MS
+        Assert.assertEquals(expiry/1000, jwt.expiry()/1000);
+    }
+
     public void testSuccess(Map<String,Object> config){
         Authenticator authenticator = AuthSystem.fromConfig(config, model, NULL);
         Assert.assertNotEquals(NULL, authenticator);

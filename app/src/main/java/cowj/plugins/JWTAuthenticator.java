@@ -295,7 +295,7 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
     /**
      * Creates a token with parameters
      * @param sub subject of the token
-     * @param expires expiry time in  sec
+     * @param expires expiry time in sec
      * @param aud audience for the token
      * @return a token object
      */
@@ -306,7 +306,7 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
     /**
      * Creates a token with parameters - audience is empty
      * @param sub subject of the token
-     * @param expires expiry time in milli sec
+     * @param expires expiry time in sec
      * @return a token object
      */
     public JWebToken jwt(String sub, long expires){
@@ -315,7 +315,14 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
 
     @Override
     public String issueToken(String user, long expiry) throws Exception {
-        return jwt(user, expiry).toString() ;
+        // jwt runs on sec, not milli sec
+        return jwt(user, expiry/1000).toString() ;
+    }
+
+    @Override
+    public String token(String user, long expiry) throws Exception {
+        // jwt runs on sec, not milli sec
+        return jwt(user, expiry/1000).toString() ;
     }
 
     /**
