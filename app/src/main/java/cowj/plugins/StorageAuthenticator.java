@@ -22,7 +22,7 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
      * Key for the storage
      * This must point to a valid data source itself
      */
-    final static String STORAGE = "storage" ;
+    final static String DATASOURCE_STORAGE = "storage" ;
 
     /**
      * Key for the expression for token extractor in configuration
@@ -111,7 +111,7 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
         tokenExpression = config.getOrDefault( TOKEN_EXPRESSION, "body:token").toString();
         userColumnName = config.getOrDefault(USER_COLUMN,"user").toString();
         expColumnName = config.getOrDefault(EXPIRY_COLUMN,"expiry").toString();
-        storageWrapperKey = config.getOrDefault( STORAGE, "auth-jdbc").toString();
+        storageWrapperKey = config.getOrDefault(DATASOURCE_STORAGE, "auth-jdbc").toString();
         userQuery = config.getOrDefault( USER_QUERY, "query").toString();
         storage = DataSource.dataSource(storageWrapperKey);
         risks = Set.<String>copyOf((List) config.getOrDefault(RISKS, Collections.emptyList()));
@@ -198,11 +198,12 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
     };
 
     /**
-     * A CLOUD_STORAGE creator to create a CLOUD STORAGE driven Authenticator
+     * A STORAGE based creator to create a STORAGE driven Authenticator
      * Google Storage
      * S3 - AWS Storage
+     * Memory, File, everything works, see @{StorageWrapper}
      */
-    public static DataSource.Creator CLOUD_STORAGE = (name, config, parent) -> {
+    public static DataSource.Creator STORAGE = (name, config, parent) -> {
         final StorageAuthenticator authenticator = new StorageAuthenticator(config) {
 
             @Override

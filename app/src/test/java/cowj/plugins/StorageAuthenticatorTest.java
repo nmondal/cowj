@@ -34,7 +34,7 @@ public class StorageAuthenticatorTest {
         // register stuff
         DataSource.registerType("auth-jdbc", StorageAuthenticator.class.getName() + "::" + "JDBC");
         DataSource.registerType("auth-redis", StorageAuthenticator.class.getName() + "::" + "REDIS");
-        DataSource.registerType("auth-gs", StorageAuthenticator.class.getName() + "::" + "CLOUD_STORAGE");
+        DataSource.registerType("auth-gs", StorageAuthenticator.class.getName() + "::" + "STORAGE");
         jdbcWrapper = mock(JDBCWrapper.class);
         Map<String,Object> data = Map.of("user", "foo", "expiry" , System.currentTimeMillis() + 100000);
         when(jdbcWrapper.select(any(),(List)any())).thenReturn(EitherMonad.value(List.of(data)));

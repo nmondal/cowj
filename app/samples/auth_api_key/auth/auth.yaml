@@ -1,0 +1,24 @@
+# The standard location auth file
+# is it enabled?
+disabled: false
+
+provider:
+  type: "auth-with-storage"
+  storage: "auth-file-storage" # underlying storage wrapper to use
+  # now specific stuff about the same
+  token: "header:token" # extract from headers the header called 'token'
+  query: "auth/tokens"  # in the bucket named auth, create a prefix for the token
+  user: "user" # name of the field for user id
+  expiry: "expiry" # name of teh field for time to expire
+  # which bunch of paths are not covered by authentication
+  risks:
+    - "/token"
+
+user-header: "u"
+# casbin policy
+policy:
+  # this is adapter type file
+  adapter: file
+  # for a file type, CSV is the way
+  file: policy.csv
+message: "thou shall not pass!"

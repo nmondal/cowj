@@ -1,0 +1,9 @@
+// get provider
+HOUR = 60*60*1000
+key_provider = _ds["ds:auth"] ?? ""
+panic( empty(key_provider), "Key Provider does not exist!")
+// create whatever token - presumably after auth
+token_string = key_provider.issueToken("bar", int(time()) + HOUR )
+_log.info("{} : Created token {}", @SCRIPT.location , token_string )
+// respond
+jstr(  { "tok" : token_string } )

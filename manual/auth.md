@@ -61,7 +61,7 @@ plugins:
   cowj.plugins:
     auth-jdbc : StorageAuthenticator::JDBC
     auth-redis: StorageAuthenticator::REDIS
-    auth-gs   : StorageAuthenticator::GOOGLE_STORAGE
+    auth-storage   : StorageAuthenticator::STORAGE # Anything that uses underlying storage, Memory, FileSystem, S3, Google Storage 
     auth-jwt  : JWTAuthenticator::JWT # jwt based authentication
 
 ```
