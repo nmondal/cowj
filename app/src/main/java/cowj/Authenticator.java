@@ -178,7 +178,7 @@ public interface Authenticator {
 
             SecureRandom SECURE_RANDOM = new SecureRandom();
 
-            int KEY_LEN = 128 ;
+            int KEY_LEN = 256 ;
 
             /**
              * Creates a token

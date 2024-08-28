@@ -88,26 +88,39 @@ public class StorageAuthenticatorTest {
         });
         Assert.assertTrue( exception instanceof HaltException );
         Assert.assertEquals( 401, ((HaltException)exception).statusCode() );
+        // jdbc token issue test
+        exception = assertThrows(UnsupportedOperationException.class, () -> {
+            ((Authenticator.TokenAuthenticator.TokenIssuer)authenticator).issueToken( "foo", System.currentTimeMillis() + 4000) ;
+        });
+        Assert.assertTrue( exception.getMessage().contains("creating token") );
     }
 
     @Test
-    public void redisAuthTest(){
+    public void redisAuthTest() throws Exception {
         Map<String,Object> config = Map.of( "type", "auth-redis", "storage" , "__redis",
                 "cache", 8 );
         Authenticator authenticator = AuthSystem.fromConfig(config, model, NULL);
         Assert.assertNotEquals(NULL, authenticator);
         final String userId = authenticator.authenticate(mockRequest);
         Assert.assertEquals("foo", userId);
+
+        // Issuer test
+        String token = ((Authenticator.TokenAuthenticator.TokenIssuer)authenticator).issueToken( "foo", System.currentTimeMillis() + 4000) ;
+        Assert.assertFalse( token.isEmpty() );
     }
 
     @Test
-    public void googleAuthTest(){
+    public void googleAuthTest() throws Exception{
         Map<String,Object> config = Map.of( "type", "auth-gs", "storage" , "__gs",
                 "query", "bucket_name/file_name" );
         Authenticator authenticator = AuthSystem.fromConfig(config, model, NULL);
         Assert.assertNotEquals(NULL, authenticator);
         final String userId = authenticator.authenticate(mockRequest);
         Assert.assertEquals("foo", userId);
+
+        // Issuer test
+        String token = ((Authenticator.TokenAuthenticator.TokenIssuer)authenticator).issueToken( "foo", System.currentTimeMillis() + 4000) ;
+        Assert.assertFalse( token.isEmpty() );
     }
 
     @Test
