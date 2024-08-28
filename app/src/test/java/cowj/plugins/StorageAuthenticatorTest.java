@@ -5,6 +5,7 @@ import org.junit.*;
 import redis.clients.jedis.UnifiedJedis;
 import spark.HaltException;
 import spark.Request;
+import zoomba.lang.core.types.ZTypes;
 
 import java.util.List;
 import java.util.Map;
@@ -14,7 +15,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-// TODO fix the tests, they would break now
 public class StorageAuthenticatorTest {
 
     Authenticator NULL = request -> Authenticator.UserInfo.GUEST;
@@ -34,7 +34,7 @@ public class StorageAuthenticatorTest {
         // register stuff
         DataSource.registerType("auth-jdbc", StorageAuthenticator.class.getName() + "::" + "JDBC");
         DataSource.registerType("auth-redis", StorageAuthenticator.class.getName() + "::" + "REDIS");
-        DataSource.registerType("auth-gs", StorageAuthenticator.class.getName() + "::" + "GOOGLE_STORAGE");
+        DataSource.registerType("auth-gs", StorageAuthenticator.class.getName() + "::" + "CLOUD_STORAGE");
         jdbcWrapper = mock(JDBCWrapper.class);
         Map<String,Object> data = Map.of("user", "foo", "expiry" , System.currentTimeMillis() + 100000);
         when(jdbcWrapper.select(any(),(List)any())).thenReturn(EitherMonad.value(List.of(data)));
@@ -44,8 +44,8 @@ public class StorageAuthenticatorTest {
         // redis...
         unifiedJedis = mock(UnifiedJedis.class);
         DataSource.registerDataSource("__redis", unifiedJedis );
-        when(unifiedJedis.hgetAll((String) any())).thenReturn(
-                Map.of("user", "foo", "expiry" , String.valueOf(System.currentTimeMillis() + 100000)));
+        String jsonData = ZTypes.jsonString(data);
+        when(unifiedJedis.hget((String) any(), (String)any() )).thenReturn( jsonData );
         // Google Storage
         googleStorageWrapper = mock(GoogleStorageWrapper.class);
         DataSource.registerDataSource("__gs", googleStorageWrapper );
