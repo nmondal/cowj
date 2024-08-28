@@ -23,7 +23,8 @@ import javax.crypto.spec.SecretKeySpec;
  * Idea is copied from :
  * <a href="https://github.com/metamug/java-jwt/blob/master/src/main/java/com/metamug/jwt/JWebToken.java">...</a>
  */
-public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.CachedAuthenticator {
+public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.CachedAuthenticator
+        implements Authenticator.TokenAuthenticator.TokenIssuer {
     final static Logger logger = LoggerFactory.getLogger(JWTAuthenticator.class);
     final long STD_EXPIRY_OFFSET = 24 * 60 * 60  ; // 1 day, in seconds
 
@@ -294,7 +295,7 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
     /**
      * Creates a token with parameters
      * @param sub subject of the token
-     * @param expires expiry time in  sec
+     * @param expires expiry time in sec
      * @param aud audience for the token
      * @return a token object
      */
@@ -305,11 +306,23 @@ public abstract class JWTAuthenticator extends Authenticator.TokenAuthenticator.
     /**
      * Creates a token with parameters - audience is empty
      * @param sub subject of the token
-     * @param expires expiry time in milli sec
+     * @param expires expiry time in sec
      * @return a token object
      */
     public JWebToken jwt(String sub, long expires){
         return jwt(sub,  expires, Collections.emptyList());
+    }
+
+    @Override
+    public String issueToken(String user, long expiry) throws Exception {
+        // jwt runs on sec, not milli sec
+        return jwt(user, expiry/1000).toString() ;
+    }
+
+    @Override
+    public String token(String user, long expiry) throws Exception {
+        // jwt runs on sec, not milli sec
+        return jwt(user, expiry/1000).toString() ;
     }
 
     /**

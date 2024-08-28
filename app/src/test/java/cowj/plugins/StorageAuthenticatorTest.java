@@ -5,6 +5,7 @@ import org.junit.*;
 import redis.clients.jedis.UnifiedJedis;
 import spark.HaltException;
 import spark.Request;
+import zoomba.lang.core.types.ZTypes;
 
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,7 @@ public class StorageAuthenticatorTest {
         // register stuff
         DataSource.registerType("auth-jdbc", StorageAuthenticator.class.getName() + "::" + "JDBC");
         DataSource.registerType("auth-redis", StorageAuthenticator.class.getName() + "::" + "REDIS");
-        DataSource.registerType("auth-gs", StorageAuthenticator.class.getName() + "::" + "GOOGLE_STORAGE");
+        DataSource.registerType("auth-gs", StorageAuthenticator.class.getName() + "::" + "CLOUD_STORAGE");
         jdbcWrapper = mock(JDBCWrapper.class);
         Map<String,Object> data = Map.of("user", "foo", "expiry" , System.currentTimeMillis() + 100000);
         when(jdbcWrapper.select(any(),(List)any())).thenReturn(EitherMonad.value(List.of(data)));
@@ -43,8 +44,8 @@ public class StorageAuthenticatorTest {
         // redis...
         unifiedJedis = mock(UnifiedJedis.class);
         DataSource.registerDataSource("__redis", unifiedJedis );
-        when(unifiedJedis.hgetAll((String) any())).thenReturn(
-                Map.of("user", "foo", "expiry" , String.valueOf(System.currentTimeMillis() + 100000)));
+        String jsonData = ZTypes.jsonString(data);
+        when(unifiedJedis.hget((String) any(), (String)any() )).thenReturn( jsonData );
         // Google Storage
         googleStorageWrapper = mock(GoogleStorageWrapper.class);
         DataSource.registerDataSource("__gs", googleStorageWrapper );
@@ -87,26 +88,39 @@ public class StorageAuthenticatorTest {
         });
         Assert.assertTrue( exception instanceof HaltException );
         Assert.assertEquals( 401, ((HaltException)exception).statusCode() );
+        // jdbc token issue test
+        exception = assertThrows(UnsupportedOperationException.class, () -> {
+            ((Authenticator.TokenAuthenticator.TokenIssuer)authenticator).issueToken( "foo", System.currentTimeMillis() + 4000) ;
+        });
+        Assert.assertTrue( exception.getMessage().contains("creating token") );
     }
 
     @Test
-    public void redisAuthTest(){
+    public void redisAuthTest() throws Exception {
         Map<String,Object> config = Map.of( "type", "auth-redis", "storage" , "__redis",
                 "cache", 8 );
         Authenticator authenticator = AuthSystem.fromConfig(config, model, NULL);
         Assert.assertNotEquals(NULL, authenticator);
         final String userId = authenticator.authenticate(mockRequest);
         Assert.assertEquals("foo", userId);
+
+        // Issuer test
+        String token = ((Authenticator.TokenAuthenticator.TokenIssuer)authenticator).issueToken( "foo", System.currentTimeMillis() + 4000) ;
+        Assert.assertFalse( token.isEmpty() );
     }
 
     @Test
-    public void googleAuthTest(){
+    public void googleAuthTest() throws Exception{
         Map<String,Object> config = Map.of( "type", "auth-gs", "storage" , "__gs",
                 "query", "bucket_name/file_name" );
         Authenticator authenticator = AuthSystem.fromConfig(config, model, NULL);
         Assert.assertNotEquals(NULL, authenticator);
         final String userId = authenticator.authenticate(mockRequest);
         Assert.assertEquals("foo", userId);
+
+        // Issuer test
+        String token = ((Authenticator.TokenAuthenticator.TokenIssuer)authenticator).issueToken( "foo", System.currentTimeMillis() + 4000) ;
+        Assert.assertFalse( token.isEmpty() );
     }
 
     @Test

@@ -10,7 +10,8 @@ import java.util.*;
  * A Class to connect to actual identity providers from the token string
  * For performance reason things are cached
  */
-public abstract class StorageAuthenticator extends Authenticator.TokenAuthenticator.CachedAuthenticator {
+public abstract class StorageAuthenticator extends Authenticator.TokenAuthenticator.CachedAuthenticator
+        implements Authenticator.TokenAuthenticator.TokenIssuer {
 
     /**
      * Key for the Cache Size in configuration
@@ -142,6 +143,12 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
      */
     public static DataSource.Creator JDBC = (name, config, parent) -> {
         final StorageAuthenticator authenticator = new StorageAuthenticator(config) {
+
+            @Override
+            public String issueToken(String user, long expiry) {
+                throw new UnsupportedOperationException("JDBC does not support creating token as of now!");
+            }
+
             @Override
             Map<String, Object> userData(String token) throws Exception {
                 JDBCWrapper jdbcWrapper = (JDBCWrapper) storage;
@@ -161,26 +168,67 @@ public abstract class StorageAuthenticator extends Authenticator.TokenAuthentica
      */
     public static DataSource.Creator REDIS = (name, config, parent) -> {
         final StorageAuthenticator authenticator = new StorageAuthenticator(config) {
+
+            @Override
+            public String issueToken(String user, long expiry) throws Exception {
+                UnifiedJedis jedis = (UnifiedJedis) storage;
+                Map<String,Object> userData = Map.of(userColumnName, user, expColumnName, expiry );
+                final String data = TypeSystem.OBJECT_MAPPER.writeValueAsString(userData);
+                final String token = token(user, expiry);
+                jedis.hset(userQuery, token, data );
+                return token;
+            }
+
+            /**
+             * userQuery becomes the name of the Map, which is storing the token --> user Data map
+             *
+             * @param token string token for the user - this will be used as key to the map pointed by userQuery
+             * @return A map ( json type ) storing the user details of that token
+             * @throws Exception in case of any error
+             */
             @Override
             Map<String, Object> userData(String token) throws Exception {
                 UnifiedJedis jedis = (UnifiedJedis) storage;
-                Map<String,String> data = jedis.hgetAll(userQuery);
-                return Map.of( userColumnName, data.get(userColumnName), expColumnName, data.get(expColumnName));
+                String jsonData = jedis.hget( userQuery, token );
+                final Map<String,Object> data = TypeSystem.OBJECT_MAPPER.readValue( jsonData, Map.class);
+                return data;
             }
         };
         return DataSource.dataSource(name, authenticator);
     };
 
     /**
-     * A GOOGLE_STORAGE creator to create a GOOGLE STORAGE driven Authenticator
+     * A CLOUD_STORAGE creator to create a CLOUD STORAGE driven Authenticator
+     * Google Storage
+     * S3 - AWS Storage
      */
-    public static DataSource.Creator GOOGLE_STORAGE = (name, config, parent) -> {
+    public static DataSource.Creator CLOUD_STORAGE = (name, config, parent) -> {
         final StorageAuthenticator authenticator = new StorageAuthenticator(config) {
+
+            @Override
+            public String issueToken(String user, long expiry) throws Exception {
+                StorageWrapper<?,?,?> storageWrapper = (StorageWrapper<?,?,?>) storage;
+                Map<String,Object> userData = Map.of(userColumnName, user, expColumnName, expiry );
+                final String token = token(user, expiry);
+                // bucket/prefix_for_tokens/token
+                String[] arr = userQuery.split("/");
+                storageWrapper.dump(arr[0], arr[1] +"/" + token, userData);
+                return token;
+            }
+
+            /**
+             * userQuery becomes bucket_name/token_storage_prefix
+             * token would be passed post this bucket_name/token_storage_prefix/token
+             * @param token string token for the user - this will be used as key to the map pointed by userQuery
+             * @return A map ( json type ) storing the user details of that token
+             * @throws Exception in case of any error
+             */
             @Override
             Map<String, Object> userData(String token) throws Exception {
-                GoogleStorageWrapper googleStorageWrapper = (GoogleStorageWrapper) storage;
+                StorageWrapper<?,?,?> storageWrapper = (StorageWrapper<?,?,?>) storage;
+                // bucket/prefix_for_tokens/token
                 String[] arr = userQuery.split("/");
-                Object o = googleStorageWrapper.load(arr[0], arr[1] );
+                Object o = storageWrapper.load(arr[0], arr[1] + "/" + token );
                 if ( o instanceof Map){
                     return (Map)o;
                 }
