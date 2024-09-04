@@ -93,6 +93,11 @@ public interface TimeSeriesStorage {
     String base();
 
     /**
+     * A multiplier for nano time
+     */
+    BigInteger NANO_TIME_MULT = BigInteger.valueOf(1_000_000_000) ;
+
+    /**
      * Puts an entry into the abstract TimeSeries
      * @param extension for the file to be used
      * @param value data for the file
@@ -101,7 +106,8 @@ public interface TimeSeriesStorage {
     default EitherMonad<String> put(String extension, Object value) {
         final Instant instant = Instant.now();
         final DateTimeFormatter formatter = FORMATTER_MAP.get(precision());
-        final BigInteger toNano = BigInteger.valueOf(instant.toEpochMilli()).add(BigInteger.valueOf(instant.getNano()));
+        // generate the nano sec time stamp for the instant
+        final BigInteger toNano = BigInteger.valueOf(instant.getEpochSecond()).multiply(NANO_TIME_MULT).add(BigInteger.valueOf(instant.getNano()));
         final String temporalUID = toNano + "_" + ThreadLocalRandom.current().nextInt(10000);
         final String utcTS = instant.atZone(ZoneId.of("UTC")).format(formatter);
         final String bucket = bucket();

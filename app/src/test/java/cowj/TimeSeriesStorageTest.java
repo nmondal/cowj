@@ -91,6 +91,20 @@ public class TimeSeriesStorageTest {
     }
 
     @Test
+    public void keyNanoSecTest(){
+        final String curEPOCSec = "" + System.currentTimeMillis() / 1000 ;
+        timeSeriesStorage.put("", "x");
+        String key = mem.keySet().stream().toList().get(0);
+        Assert.assertTrue( key.contains("/"));
+        String[] arr = key.split("/");
+        Assert.assertTrue( key.contains("_"));
+        arr = arr[arr.length-1].split("_");
+        final String nanoTS = arr[0];
+        // that current time in UTC is encoded in the key
+        Assert.assertTrue( nanoTS.startsWith( curEPOCSec ));
+    }
+
+    @Test
     public void dataTest(){
         final String sData = "hello" ;
         final byte[] raw = sData.getBytes(StandardCharsets.UTF_8);
