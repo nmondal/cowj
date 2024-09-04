@@ -2,6 +2,7 @@ package cowj;
 
 import java.util.concurrent.Callable;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Abstraction over Result of any operation
@@ -57,6 +58,31 @@ public final class EitherMonad<V> {
         return EitherMonad.call( () -> then.apply( value ));
     }
 
+    public final static class Verifiable<T>{
+
+        public final EitherMonad<T> eitherMonad;
+
+        public final Predicate<T> condition;
+
+        Verifiable(Predicate<T> c, EitherMonad<T> em ){
+            this.eitherMonad = em;
+            this.condition = c;
+        }
+
+        public <E extends RuntimeException> EitherMonad<T> ensure( Function<T,E> ensure ){
+            if ( EitherMonad.call( ( ) -> condition.test( eitherMonad.value )).ensure().value() ) return eitherMonad;
+            throw  ensure.apply(eitherMonad.value);
+        }
+
+        public EitherMonad<T> ensure(){
+            return ensure( v -> new IllegalStateException( "Failed Verification : Value " + v ));
+        }
+    }
+
+    public Verifiable<V> verify( Predicate<V> verify){
+        ensure();
+        return new Verifiable<>(verify,this);
+    }
 
     /**
      * A Monadic way to handle and raise error
