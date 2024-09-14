@@ -101,6 +101,7 @@ dependencies {
     /// secret manager
     implementation 'com.google.cloud:google-cloud-secretmanager:2.46.0'
     implementation 'software.amazon.awssdk:secretsmanager:2.26.30'
+    implementation 'com.azure:azure-security-keyvault-secrets:4.8.6'
 
     ///// test stuff
     testImplementation 'junit:junit:4.13.2'
