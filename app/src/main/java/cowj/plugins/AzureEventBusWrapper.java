@@ -14,13 +14,13 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
-
+import cowj.EitherMonad.Nothing ;
 /**
  * Azure Event Bus Wrapper
  * Lets one do Queuing stuff on top of Azure Eventing
  */
 
-public interface AzureEventBusWrapper extends MessageQueue<ServiceBusReceivedMessage,Boolean,Boolean,Boolean> {
+public interface AzureEventBusWrapper extends MessageQueue<ServiceBusReceivedMessage, Nothing, Boolean, Nothing> {
 
     /**
      * Logger for the wrapper
@@ -32,11 +32,8 @@ public interface AzureEventBusWrapper extends MessageQueue<ServiceBusReceivedMes
     Queue<ServiceBusReceivedMessage> queue();
 
     @Override
-    default EitherMonad<Boolean> put(String messageBody) {
-        return EitherMonad.call( () -> {
-            sender().sendMessage(new ServiceBusMessage(messageBody));
-            return true;
-        });
+    default EitherMonad<Nothing> put(String messageBody) {
+        return EitherMonad.run( () -> sender().sendMessage(new ServiceBusMessage(messageBody)));
     }
 
     @Override
@@ -79,7 +76,7 @@ public interface AzureEventBusWrapper extends MessageQueue<ServiceBusReceivedMes
     }
 
     @Override
-    default EitherMonad<Boolean> delete(ServiceBusReceivedMessage serviceBusReceivedMessage) {
+    default EitherMonad<Nothing> delete(ServiceBusReceivedMessage serviceBusReceivedMessage) {
         return EitherMonad.error( new UnsupportedOperationException("Delete is not supported for Azure Event Bus!"));
     }
 

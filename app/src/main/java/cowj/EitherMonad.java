@@ -104,6 +104,23 @@ public final class EitherMonad<V> {
         return new EitherMonad<>(value, null);
     }
 
+    public enum Nothing{
+        SUCCESS
+    }
+
+    /**
+     * Creates an EitherMonad by running the callable code
+     * If successful, returns the result , if not returns error
+     * @param runnable Runnable code to be called
+     * @return EitherMonad of type Void
+     */
+    public static EitherMonad<Nothing> run( Runnable runnable){
+        return EitherMonad.call( () ->{
+            runnable.run();
+            return Nothing.SUCCESS;
+        });
+    }
+
     /**
      * Creates an EitherMonad by running the callable code
      * If successful, returns the result , if not returns error
