@@ -1,7 +1,9 @@
 package cowj.plugins;
 
+import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.azure.security.keyvault.secrets.SecretClient;
 import com.azure.security.keyvault.secrets.SecretClientBuilder;
+import com.azure.security.keyvault.secrets.models.KeyVaultSecret;
 import com.google.cloud.secretmanager.v1.AccessSecretVersionResponse;
 import com.google.cloud.secretmanager.v1.SecretManagerServiceClient;
 import com.google.cloud.secretmanager.v1.SecretVersionName;
@@ -105,23 +107,23 @@ public interface SecretManager {
     };
 
     /**
-     * A DataSource.Creator for Azure Keyvault Secret
+     * A DataSource.Creator for Azure KeyVault Secret
      */
-    DataSource.Creator AKS = (name, config, parent) -> {
-    try {
-        String secretKey = config.getOrDefault("config", "").toString();
-        String secret = parent.envTemplate(secretKey);
-        SecretClient secretClient = new SecretClientBuilder() //<https://learn.microsoft.com/en-us/java/api/overview/azure/security-keyvault-secrets-readme?view=azure-java-stable>
-                .vaultUrl(config.getOrDefault("vaultUrl", "").toString()) // this way no need for change everytime
-                .credential(new DefaultAzureCredentialBuilder().build())
-                .buildClient();
-        KeyVaultSecret retrievedSecret = secretClient.getSecret(secret);
-        String jsonString = retrievedSecret.getValue();
-        Map object = (Map) ZTypes.json(jsonString);
-        final SecretManager secretManager = from(object);
-        return DataSource.dataSource(name, secretManager);
-    } catch (Exception e) {
-        throw new RuntimeException(e);
-    }
-}
+    DataSource.Creator AKV = (name, config, parent) -> {
+        try {
+            String secretKey = config.getOrDefault("config", "").toString();
+            String secret = parent.envTemplate(secretKey);
+            SecretClient secretClient = new SecretClientBuilder() //<https://learn.microsoft.com/en-us/java/api/overview/azure/security-keyvault-secrets-readme?view=azure-java-stable>
+                    .vaultUrl(config.getOrDefault("vaultUrl", "").toString()) // this way no need for change everytime
+                    .credential(new DefaultAzureCredentialBuilder().build())
+                    .buildClient();
+            KeyVaultSecret retrievedSecret = secretClient.getSecret(secret);
+            String jsonString = retrievedSecret.getValue();
+            Map object = (Map) ZTypes.json(jsonString);
+            final SecretManager secretManager = from(object);
+            return DataSource.dataSource(name, secretManager);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    };
 }

@@ -77,6 +77,9 @@ dependencies {
     // Auth
     implementation 'org.casbin:jcasbin:1.55.0'
 
+    // Identity
+    implementation 'com.azure:azure-identity:1.13.3'
+
     // File Watching ....
     implementation 'io.methvin:directory-watcher:0.18.0'
 
@@ -90,9 +93,12 @@ dependencies {
     implementation 'com.google.cloud:google-cloud-storage:2.40.1'
     implementation 'software.amazon.awssdk:s3:2.26.30'
     implementation 'software.amazon.awssdk:apache-client:2.26.30'
-    implementation 'software.amazon.awssdk:sqs:2.26.30'
 
-    // fcm
+    // Message Queueing
+    implementation 'software.amazon.awssdk:sqs:2.26.30'
+    implementation 'com.azure:azure-messaging-servicebus:7.17.3'
+
+    // fcm - close to Messaging, but not close enough
     implementation 'com.google.firebase:firebase-admin:9.3.0'
 
     // mysql connector ( DO NOT MIGRATE To 9.*, protobuf upgrade destroyed peoples happiness )
