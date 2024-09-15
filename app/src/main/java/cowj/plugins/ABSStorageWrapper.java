@@ -13,6 +13,8 @@ import com.azure.storage.blob.models.ListBlobsOptions;
 import cowj.DataSource;
 import cowj.EitherMonad;
 import cowj.StorageWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zoomba.lang.core.types.ZNumber;
 
 import java.time.Duration;
@@ -26,15 +28,20 @@ import java.util.stream.Stream;
  */
 public interface ABSStorageWrapper extends StorageWrapper.KeyValueStorage<Boolean, Boolean, BinaryData>, StorageWrapper.VersionedStorage<BinaryData> {
 
+    /**
+     * Logger for the wrapper
+     */
+    Logger logger = LoggerFactory.getLogger(ABSStorageWrapper.class);
+
     BlobServiceClient client();
 
     @Override
     default Boolean dumps(String containerName, String fileName, String data) {
-        return EitherMonad.run( () -> {
+        return safeBoolean( () -> {
             BlobContainerClient blobContainerClient = client().getBlobContainerClient(containerName);
             BlobClient blobClient = blobContainerClient.getBlobClient(fileName);
             blobClient.upload(BinaryData.fromString(data));
-        }).isSuccessful() ;
+        });
     }
 
     @Override
@@ -56,11 +63,11 @@ public interface ABSStorageWrapper extends StorageWrapper.KeyValueStorage<Boolea
 
     @Override
     default Boolean dumpb(String containerName, String fileName, byte[] data) {
-        return EitherMonad.run( () -> {
+        return safeBoolean( () -> {
             BlobContainerClient blobContainerClient = client().getBlobContainerClient(containerName);
             BlobClient blobClient = blobContainerClient.getBlobClient(fileName);
             blobClient.upload(BinaryData.fromBytes(data));
-        }).isSuccessful() ;
+        });
     }
 
     @Override
@@ -79,7 +86,7 @@ public interface ABSStorageWrapper extends StorageWrapper.KeyValueStorage<Boolea
 
     @Override
     default Boolean createBucket(String containerName, String location, boolean preventPublicAccess) {
-        return EitherMonad.run( () ->  client().createBlobContainer(containerName)).isSuccessful() ;
+        return safeBoolean( () ->  client().createBlobContainer(containerName)) ;
     }
 
     @Override
