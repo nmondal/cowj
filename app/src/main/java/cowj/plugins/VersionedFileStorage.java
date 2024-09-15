@@ -65,7 +65,7 @@ public class VersionedFileStorage extends FileBackedStorage
         final File keyFile = new File(key);
         final Path latestPath = Paths.get( path );
 
-        EitherMonad<Boolean> em = EitherMonad.call( () -> {
+        EitherMonad<?> em = EitherMonad.run( () -> {
             if ( !keyFile.exists() ) {
                 if (fileName.contains("/")) {
                     int li = path.lastIndexOf('/');
@@ -83,7 +83,6 @@ public class VersionedFileStorage extends FileBackedStorage
                 Files.deleteIfExists( latestPath);
                 Files.createSymbolicLink(latestPath, target);
             }
-            return true;
         });
         return em.isSuccessful() ;
     }

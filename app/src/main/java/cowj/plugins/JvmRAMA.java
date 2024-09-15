@@ -62,16 +62,15 @@ public interface JvmRAMA {
      * @param data the data we need to dump as event or whatever
      * @return EitherMonad for success or failure
      */
-    default EitherMonad<Boolean> put(String topic, String data){
+    default EitherMonad<EitherMonad.Nothing> put(String topic, String data){
         long curTime = System.currentTimeMillis();
         // More than good enough to be honest... for any scale > 50 calls per msec
         String randomSuffix = suffix() ;
         String fileName = directoryPrefix(curTime) + "/" + curTime + "_" + randomSuffix ;
         logger.debug("{} - {}", topic, fileName);
         StorageWrapper<?,?,?> st = prefixedStorage();
-        return EitherMonad.call( () -> {
+        return EitherMonad.run( () -> {
             st.dumps( topic, fileName, data);
-            return true;
         } );
     }
 
@@ -155,9 +154,9 @@ public interface JvmRAMA {
      * @param prefix the prefix to consume
      * @param pageSize size of the page to read each time
      * @param consumer a BiConsumer, which consumes, first arg is the topic itself, second is a Map.Entry of key, and value
-     * @return EitherMonad of boolean, if successful with no error
+     * @return EitherMonad of Nothing, if successful with no error
      */
-    default EitherMonad<Boolean> consumePrefix(String topic, String prefix, long pageSize, BiConsumer<String, Map.Entry<String,String>> consumer){
+    default EitherMonad<EitherMonad.Nothing> consumePrefix(String topic, String prefix, long pageSize, BiConsumer<String, Map.Entry<String,String>> consumer){
         long offset = 0;
         boolean hasMoreData = true;
         long total = 0;
@@ -166,16 +165,15 @@ public interface JvmRAMA {
             if ( em.inError() ) return EitherMonad.error(em.error());
             final Response response = em.value();
             hasMoreData = response.hasMoreData;
-            EitherMonad<Boolean> consume = EitherMonad.call( () -> {
+            EitherMonad<EitherMonad.Nothing> consume = EitherMonad.run( () -> {
                 response.data.forEach( (s) -> consumer.accept(topic,s) );
-                return true;
             });
             if ( consume.inError() ) return consume;
             offset = response.readOffset ;
             total += response.data.size();
         }
         logger.info("Topic '{}' , Prefix '{}', Total: {} event processed", topic, prefix, total );
-        return EitherMonad.value(true);
+        return EitherMonad.value(EitherMonad.Nothing.SUCCESS);
     }
 
     /**
@@ -189,7 +187,7 @@ public interface JvmRAMA {
      * @return EitherMonad of boolean, if successful with no error
      */
 
-    default EitherMonad<Boolean> consumePrefix(String topic, String prefix, long pageSize, Scriptable scriptable){
+    default EitherMonad<EitherMonad.Nothing> consumePrefix(String topic, String prefix, long pageSize, Scriptable scriptable){
         return consumePrefix( topic, prefix, pageSize, (eventClass, event) -> {
             Bindings bindings = new SimpleBindings();
             bindings.put("event", eventClass );
@@ -319,7 +317,7 @@ public interface JvmRAMA {
                 String datePrefix = jobPayload.df.format( item );
                 logger.info("consumer reading topic: '{}' with prefix '{}'", jobPayload.topic, datePrefix );
                 jobPayload.handlers.stream().parallel().forEach( handler -> {
-                   EitherMonad<Boolean> em = jobPayload.rama.consumePrefix( jobPayload.topic, datePrefix, jobPayload.pageSize, handler);
+                   EitherMonad<?> em = jobPayload.rama.consumePrefix( jobPayload.topic, datePrefix, jobPayload.pageSize, handler);
                    if ( em.inError() ){
                        final String err = String.format("From %s Error reading!!!", jobPayload.name);
                        logger.error(err , em.error() );

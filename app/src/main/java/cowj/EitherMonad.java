@@ -1,5 +1,7 @@
 package cowj;
 
+import org.checkerframework.checker.units.qual.N;
+
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 
@@ -109,12 +111,38 @@ public final class EitherMonad<V> {
     }
 
     /**
+     * <a href="https://stackoverflow.com/questions/11584159/is-there-a-way-to-make-runnables-run-throw-an-exception">...</a>
+     *
+     * @param <E> Type of Error thrown, really
+     */
+    @FunctionalInterface
+    public interface CheckedRunnable<E extends Throwable> extends Runnable {
+
+        class WrappedError extends RuntimeException{
+            WrappedError(Throwable cause){
+                super(cause);
+            }
+        }
+
+        @Override
+        default void run(){
+            try {
+                runThrows();
+            }
+            catch (Throwable ex) {
+                throw new WrappedError(ex);
+            }
+        }
+        void runThrows() throws E;
+    }
+
+    /**
      * Creates an EitherMonad by running the callable code
      * If successful, returns the result , if not returns error
-     * @param runnable Runnable code to be called
+     * @param runnable CheckedRunnable code to be called
      * @return EitherMonad of type Void
      */
-    public static EitherMonad<Nothing> run( Runnable runnable){
+    public static EitherMonad<Nothing> run( CheckedRunnable<?> runnable){
         return EitherMonad.call( () ->{
             runnable.run();
             return Nothing.SUCCESS;
@@ -132,7 +160,8 @@ public final class EitherMonad<V> {
         try {
             return value(callable.call());
         }catch (Throwable t){
-            return error(t);
+            final Throwable actError = ( t instanceof CheckedRunnable.WrappedError ) ? t.getCause() : t ;
+            return error(actError);
         }
     }
 

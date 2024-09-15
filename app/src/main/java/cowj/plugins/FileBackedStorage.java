@@ -44,10 +44,7 @@ public class FileBackedStorage implements StorageWrapper.SimpleKeyValueStorage {
     public Boolean createBucket(String bucketName, String location, boolean preventPublicAccess) {
         File f = new File(absMountPoint + "/" + bucketName );
         if( f.exists() ) return false;
-        EitherMonad<Boolean> em = EitherMonad.call( () -> {
-            Files.createDirectories( f.toPath() );
-            return true;
-        }  );
+        EitherMonad<EitherMonad.Nothing> em = EitherMonad.run( () -> Files.createDirectories( f.toPath() ));
         return em.isSuccessful();
     }
 
@@ -107,14 +104,13 @@ public class FileBackedStorage implements StorageWrapper.SimpleKeyValueStorage {
         File f = new File(absMountPoint + "/" + bucketName );
         if( !f.exists() ) return false;
         final String path = absMountPoint + "/" + bucketName + "/" + fileName ;
-        EitherMonad<Boolean> em = EitherMonad.call( () -> {
+        EitherMonad<EitherMonad.Nothing> em = EitherMonad.run( () -> {
             if (fileName.contains("/")) {
                 int li = path.lastIndexOf('/');
                 String folderPath = path.substring(0, li);
                 Files.createDirectories( Paths.get(folderPath));
             }
             Files.write(Paths.get(path), data);
-            return true;
         });
         return em.isSuccessful() ;
     }

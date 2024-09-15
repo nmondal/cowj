@@ -76,7 +76,7 @@ public class ScriptableSocketTest {
         Session session = mock(Session.class);
         ss.connected(session); // load it up
         ss.error(session, new Throwable("Boom!"));
-        EitherMonad<Boolean> em = ScriptableSocket.broadcast("/err", "hey!");
+        EitherMonad<?> em = ScriptableSocket.broadcast("/err", "hey!");
         Assert.assertTrue(em.inError());
         ss.closed(session, 42, "boom!" );
     }
