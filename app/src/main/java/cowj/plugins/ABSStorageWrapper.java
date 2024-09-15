@@ -7,6 +7,8 @@ import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
+import com.azure.storage.blob.models.BlobItem;
+import com.azure.storage.blob.models.BlobListDetails;
 import com.azure.storage.blob.models.ListBlobsOptions;
 import cowj.DataSource;
 import cowj.EitherMonad;
@@ -22,7 +24,7 @@ import java.util.stream.Stream;
  * Bucket is the Azure Container
  * Data loaded as BinaryData
  */
-public interface ABSStorageWrapper extends StorageWrapper.KeyValueStorage<Boolean, Boolean, BinaryData>{
+public interface ABSStorageWrapper extends StorageWrapper.KeyValueStorage<Boolean, Boolean, BinaryData>, StorageWrapper.VersionedStorage<BinaryData> {
 
     BlobServiceClient client();
 
@@ -100,6 +102,35 @@ public interface ABSStorageWrapper extends StorageWrapper.KeyValueStorage<Boolea
         return blobClient.deleteIfExists();
     }
 
+    /////////////////////// Versioning /////////////////////
+
+
+    @Override
+    default BinaryData dataAtVersion(String containerName, String fileName, String versionId) {
+        return EitherMonad.orNull( () -> {
+            // when and if things go bonkers, this helps straight away
+            BlobContainerClient blobContainerClient = client().getBlobContainerClient(containerName);
+            BlobClient blobClient = blobContainerClient.getBlobClient(fileName).getVersionClient(versionId);
+            return blobClient.downloadContent();
+        });
+    }
+
+    @Override
+    default Stream<String> versions(String containerName, String fileName) {
+        BlobContainerClient blobContainerClient = client().getBlobContainerClient(containerName);
+        BlobClient blobClient = blobContainerClient.getBlobClient(fileName);
+        if ( blobClient.exists() ){
+            // https://stackoverflow.com/questions/67214642/azure-blobs-java-sdk-can-not-return-the-list-of-versionids-of-an-object
+            ListBlobsOptions listBlobsOptions = new ListBlobsOptions();
+            listBlobsOptions.setMaxResultsPerPage( pageSize() );
+            listBlobsOptions.setPrefix(fileName);
+            listBlobsOptions.setDetails(new BlobListDetails().setRetrieveVersions(true));
+            return blobContainerClient.listBlobs(listBlobsOptions, Duration.ofMinutes(1))
+                    .stream().filter( blobItem -> blobItem.getName().equals(fileName) ).map(BlobItem::getVersionId);
+        }
+        return Stream.empty();
+    }
+
     String ACCOUNT = "account" ;
 
 
@@ -124,7 +155,6 @@ public interface ABSStorageWrapper extends StorageWrapper.KeyValueStorage<Boolea
 
         final String endPoint = String.format( "https://%s.blob.core.windows.net/" , storageAccountName );
         // Azure SDK client builders accept the credential as a parameter
-        // TODO: Replace <storage-account-name> with your actual storage account name
         final BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
                 .endpoint(endPoint)
                 .credential(defaultCredential)
