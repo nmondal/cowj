@@ -18,6 +18,18 @@ import java.util.stream.Stream;
 public interface  StorageWrapper <B,R,I> {
 
     /**
+     * The key to be used to find the Page Size for Streaming
+     * In the configuration map
+     */
+    String PAGE_SIZE = "page-size";
+
+    /**
+     * Default Page size for listing on a bucket
+     * @return default page size for any bucket
+     */
+    default int pageSize(){ return  1000 ; }
+
+    /**
      * Creates an Entry
      * @param <K> type parameter for key
      * @param k K key
