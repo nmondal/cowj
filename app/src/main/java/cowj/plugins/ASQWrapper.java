@@ -33,8 +33,17 @@ public interface ASQWrapper extends MessageQueue<QueueMessageItem, SendMessageRe
      */
     Logger logger = LoggerFactory.getLogger(ASQWrapper.class);
 
+    /**
+     * A QueueClient which allows us to use Azure Storage Queue
+     * @return underlying QueueClient
+     */
     QueueClient client();
 
+    /**
+     * How long till we make each item visible for different consumers in Seconds
+     * <a href="https://github.com/Azure/azure-sdk-for-net/issues/30716">...</a>
+     * @return seconds for making queue item eventual visibility
+     */
     int visibility();
 
     @Override
@@ -55,6 +64,11 @@ public interface ASQWrapper extends MessageQueue<QueueMessageItem, SendMessageRe
         return getAll(1).then(List::getFirst);
     }
 
+    /**
+     * Approximate size of the queue
+     *
+     * @return approximate size of the queue
+     */
     default long size(){
         QueueProperties properties = client().getProperties();
         return properties.getApproximateMessagesCount();
@@ -74,8 +88,11 @@ public interface ASQWrapper extends MessageQueue<QueueMessageItem, SendMessageRe
         return EitherMonad.run( () -> client().deleteMessage(messageItem.getMessageId(), messageItem.getPopReceipt()) );
     }
 
+    /**
+     * Key for Visibility Timeout
+     * <a href="https://github.com/Azure/azure-sdk-for-net/issues/30716">...</a>
+     */
     String VISIBILITY_TIMEOUT = "visibility" ;
-
 
     /**
      * A DataSource.Creator for Azure Storage Queues Wrapper
