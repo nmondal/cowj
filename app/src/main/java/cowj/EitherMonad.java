@@ -120,6 +120,9 @@ public final class EitherMonad<V> {
     }
 
     /**
+     * A basal implementation for bad design in Java's explicit throwable
+     * Runnable can not have explicit throws associated with it
+     * And this is the solution
      * <a href="https://stackoverflow.com/questions/11584159/is-there-a-way-to-make-runnables-run-throw-an-exception">...</a>
      *
      * @param <E> Type of Error thrown, really
@@ -145,6 +148,13 @@ public final class EitherMonad<V> {
                 throw new WrappedError(ex);
             }
         }
+
+        /**
+         * A basal implementation for bad design in Java's explicit throwable
+         * Runnable can not have explicit throws associated with it
+         * And this is the solution
+         * @throws E any type of Error/Exception/Throwable
+         */
         void runThrows() throws E;
     }
 
