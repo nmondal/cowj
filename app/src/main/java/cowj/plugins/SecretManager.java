@@ -8,20 +8,16 @@ import com.google.cloud.secretmanager.v1.AccessSecretVersionResponse;
 import com.google.cloud.secretmanager.v1.SecretManagerServiceClient;
 import com.google.cloud.secretmanager.v1.SecretVersionName;
 import cowj.DataSource;
+import cowj.EitherMonad;
 import cowj.Model;
-import net.jodah.expiringmap.ExpirationListener;
-import net.jodah.expiringmap.ExpiringMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
-import zoomba.lang.core.types.ZNumber;
 import zoomba.lang.core.types.ZTypes;
 
-import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 
@@ -61,13 +57,12 @@ public interface SecretManager {
 
 
     /**
-     * The key to the configuration which specifies the time in seconds to reload the keys
-     * If this is less than or equal to zero, does not reload
-     */
-    String RELOAD_INTERVAL = "reload" ;
-
-    /**
      * Use this function to create any Secret Manager
+     * Config object must have a key 'config'
+     * If the value of the key is string, this is used to redirect and load a string which would be a JSON object
+     * This JSON object should be a map of string,string and thus would be used as the basal dictionary
+     *   - List of keys to load
+     *   - Map - where keys are keys to load and values are descriptions
      * @since  Sept 2024
      * @param config a Map Object
      * @param secretFetcher a Function that takes a secret key and maps it to values
@@ -96,26 +91,10 @@ public interface SecretManager {
             entries = ((Map)cfg).entrySet() ;
         }
 
-        final long reloadInSeconds = ZNumber.integer( config.getOrDefault( RELOAD_INTERVAL, -42 ), -4).longValue();
-
-        final Map<String,String> envMap ;
-        if ( reloadInSeconds <= 0 ){
-            envMap = new HashMap<>();
-        } else {
-            final ExpiringMap<String,String> eMap = ExpiringMap.builder()
-                    .maxSize( entries.size() )
-                    .expiration( reloadInSeconds, TimeUnit.SECONDS).build();
-            ExpirationListener<String,String> listener = (k,v) -> {
-                String secretValue = secretFetcher.apply(k);
-                eMap.put(k, secretValue) ;
-            };
-            eMap.addExpirationListener(listener);
-            envMap = eMap;
-        }
+        final Map<String,String> envMap = new HashMap<>();
         // now just iterate and load
-        entries.stream().forEach( secret -> {
-            secret = parent.envTemplate(secret);
-            logger.info("SecretManager [{}] transformed key is [{}]", name, secret);
+        entries.forEach(secret -> {
+            logger.info("SecretManager [{}] secret key name is [{}]", name, secret);
             String secretValue = secretFetcher.apply(secret);
             envMap.put(secret, secretValue) ;
         } );
@@ -144,41 +123,35 @@ public interface SecretManager {
 
     /**
      * A DataSource.Creator for Google SecretManager
+     * Project Identifier is mandatory and is the field 'project-id'
      */
-    DataSource.Creator GSM = (name, config, parent) -> {
-        try (SecretManagerServiceClient client = SecretManagerServiceClient.create()) {
-            String secretKey = config.getOrDefault("config", "").toString();
-            String secret = parent.envTemplate(secretKey);
-            String projectID = config.getOrDefault("project-id", "").toString();
+    DataSource.Creator GSM = (name, config, parent) -> EitherMonad.call( () -> {
+        logger.info("Started Creating Google Secret Manager [{}]",name);
+        SecretManagerServiceClient client = SecretManagerServiceClient.create();
+        final String projectID = config.getOrDefault("project-id", "").toString();
+        final Function<String, String> secretFetcher = (secret) -> {
             AccessSecretVersionResponse resp = client.accessSecretVersion(SecretVersionName.of(projectID, secret, "latest"));
-            String jsonString = resp.getPayload().getData().toStringUtf8();
-            Map object = (Map) ZTypes.json(jsonString);
-            final SecretManager secretManager = () -> object;
-            return DataSource.dataSource(name, secretManager);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    };
+            return resp.getPayload().getData().toStringUtf8();
+        };
+        final SecretManager secretManager = secretManager(name, config, parent, secretFetcher);
+        return DataSource.dataSource(name, secretManager);
+    }).ensure().value();
 
     /**
      * A DataSource.Creator for AWS SecretManager
      */
     DataSource.Creator ASM = (name, config, parent) -> {
-        try(SecretsManagerClient secretsClient = SecretsManagerClient.create()) {
-            String secretKey = config.getOrDefault("config", "").toString();
-            String secret = parent.envTemplate(secretKey);
+        logger.info("Started Creating AWS Secret Manager [{}]",name);
+        SecretsManagerClient secretsClient = SecretsManagerClient.create();
+        final Function<String, String> secretFetcher = (secret) -> {
             GetSecretValueRequest valueRequest = GetSecretValueRequest.builder()
-                    .secretId(secret)
-                    .build();
-
+                        .secretId(secret)
+                        .build();
             GetSecretValueResponse valueResponse = secretsClient.getSecretValue(valueRequest);
-            String jsonString = valueResponse.secretString();
-            Map object = (Map) ZTypes.json(jsonString);
-            final SecretManager secretManager = () -> object;
-            return DataSource.dataSource(name, secretManager);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+            return valueResponse.secretString();
+        };
+        final SecretManager secretManager = secretManager(name, config, parent, secretFetcher);
+        return DataSource.dataSource(name, secretManager);
     };
 
     /**
@@ -187,7 +160,7 @@ public interface SecretManager {
      * <a href="https://learn.microsoft.com/en-us/java/api/overview/azure/security-keyvault-secrets-readme?view=azure-java-stable">...</a>
      */
     DataSource.Creator AKV = (name, config, parent) -> {
-
+        logger.info("Started Creating Azure Key Vault Secret Manager [{}]",name);
         String vaultUrl = config.getOrDefault("url", "").toString();
         logger.info("AKV SecretManager [{}] vault url is [{}]", name, vaultUrl);
         vaultUrl = parent.envTemplate(vaultUrl);

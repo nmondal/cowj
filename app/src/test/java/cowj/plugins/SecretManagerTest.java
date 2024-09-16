@@ -46,7 +46,7 @@ public class SecretManagerTest {
         when(sp.getData()).thenReturn(bs);
         when(resp.getPayload()).thenReturn(sp);
         when(smsc.accessSecretVersion((SecretVersionName) any()) ).thenReturn(resp);
-        DataSource ds =  SecretManager.GSM.create("foo", Collections.emptyMap(), model  );
+        DataSource ds =  SecretManager.GSM.create("foo", Map.of("config", "bar") , model  );
         Assert.assertNotNull(ds);
         Assert.assertEquals("foo", ds.name() );
         Assert.assertTrue( ds.proxy() instanceof SecretManager );
