@@ -106,7 +106,16 @@ public final class EitherMonad<V> {
         return new EitherMonad<>(value, null);
     }
 
+    /**
+     * A Java Substitute for inability to formally create Void Instance
+     * Ideally JDK should have a single void instance created and available for better type system
+     * <a href="https://www.baeldung.com/scala/nil-null-nothing-unit-none">...</a>
+     * Making it enum to ensure a single instance would be available
+     */
     public enum Nothing{
+        /**
+         * It must have a single value to instantiate, and it depicts void function success value
+         */
         SUCCESS
     }
 
@@ -118,6 +127,9 @@ public final class EitherMonad<V> {
     @FunctionalInterface
     public interface CheckedRunnable<E extends Throwable> extends Runnable {
 
+        /**
+         * A wrapper for Wrapping up errors
+         */
         class WrappedError extends RuntimeException{
             WrappedError(Throwable cause){
                 super(cause);
