@@ -33,6 +33,16 @@ public interface ASQWrapper extends MessageQueue<QueueMessageItem, SendMessageRe
      */
     Logger logger = LoggerFactory.getLogger(ASQWrapper.class);
 
+    @Override
+    default String body(QueueMessageItem message) {
+        return message.getBody().toString();
+    }
+
+    @Override
+    default String id(QueueMessageItem message) {
+        return message.getMessageId();
+    }
+
     /**
      * A QueueClient which allows us to use Azure Storage Queue
      * @return underlying QueueClient

@@ -28,6 +28,16 @@ public interface SQSWrapper extends MessageQueue<
      */
     Logger logger = LoggerFactory.getLogger(SQSWrapper.class);
 
+    @Override
+    default String body(Message message) {
+        return message.body();
+    }
+
+    @Override
+    default String id(Message message) {
+        return message.messageId();
+    }
+
     /**
      * List down all the queues with the prefix - to return the list of urls
      *

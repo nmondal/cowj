@@ -14,7 +14,19 @@ import java.util.List;
 
 public interface  MessageQueue<M,MR,BR,DR> {
 
+    /**
+     * Get Message body as String
+     * @param message a Message object
+     * @return body of the Message as String
+     */
+    String body(M message);
 
+    /**
+     * Get the Unique Identifier of the Message
+     * @param message a Message Object
+     * @return Unique Identifier of the message as String
+     */
+    String id(M message);
 
     /**
      * time to wait before response with no message
