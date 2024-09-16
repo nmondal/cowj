@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import zoomba.lang.core.types.ZNumber;
 
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -33,6 +34,10 @@ public interface ABSStorageWrapper extends StorageWrapper.KeyValueStorage<Boolea
      */
     Logger logger = LoggerFactory.getLogger(ABSStorageWrapper.class);
 
+    /**
+     * A client that returns the BlobServiceClient to interact with Azure Blogs
+     * @return a BlobServiceClient
+     */
     BlobServiceClient client();
 
     @Override
@@ -122,22 +127,34 @@ public interface ABSStorageWrapper extends StorageWrapper.KeyValueStorage<Boolea
         });
     }
 
+    /**
+     * This might actually be slow - read further
+     * <a href="https://stackoverflow.com/questions/67214642/azure-blobs-java-sdk-can-not-return-the-list-of-versionids-of-an-object">...</a>
+     * VersionId is a timestamp so we can simply reverse sort to get from the latest version backward
+     * <a href="https://learn.microsoft.com/en-us/azure/storage/blobs/versioning-overview">...</a>
+     * @param containerName name of the bucket
+     * @param fileName name of the file whose versions we need to find
+     * @return a Stream of Strings which are the versions of the fileName key
+     */
     @Override
     default Stream<String> versions(String containerName, String fileName) {
         BlobContainerClient blobContainerClient = client().getBlobContainerClient(containerName);
         BlobClient blobClient = blobContainerClient.getBlobClient(fileName);
         if ( blobClient.exists() ){
-            // https://stackoverflow.com/questions/67214642/azure-blobs-java-sdk-can-not-return-the-list-of-versionids-of-an-object
             ListBlobsOptions listBlobsOptions = new ListBlobsOptions();
             listBlobsOptions.setMaxResultsPerPage( pageSize() );
             listBlobsOptions.setPrefix(fileName);
             listBlobsOptions.setDetails(new BlobListDetails().setRetrieveVersions(true));
             return blobContainerClient.listBlobs(listBlobsOptions, Duration.ofMinutes(1))
-                    .stream().filter( blobItem -> blobItem.getName().equals(fileName) ).map(BlobItem::getVersionId);
+                    .stream().filter( blobItem -> blobItem.getName().equals(fileName) )
+                    .map(BlobItem::getVersionId).sorted(Comparator.reverseOrder());
         }
         return Stream.empty();
     }
 
+    /**
+     * Key for the storage account for Azure Blob Storage
+     */
     String ACCOUNT = "account" ;
 
 
