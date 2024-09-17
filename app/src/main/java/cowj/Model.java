@@ -423,10 +423,6 @@ public interface Model {
         } else {
             input = path;
         }
-        try {
-            return new File( input ).getCanonicalFile().getPath();
-        } catch (Exception ignore){
-            return input;
-        }
+        return EitherMonad.orElse( () -> new File( input ).getCanonicalFile().getPath(), input);
     }
 }
