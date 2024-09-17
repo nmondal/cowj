@@ -52,6 +52,7 @@ public class CronTest {
     public void noCronConfigTest(){
         CronModel model = CronModel.fromConfig( () -> ".", Collections.emptyMap() );
         Assert.assertEquals( CronModel.NULL, model);
+        Assert.assertNull( model.scheduler() );
     }
 
     @Test
