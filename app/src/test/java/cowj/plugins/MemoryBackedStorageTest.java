@@ -47,7 +47,10 @@ public class MemoryBackedStorageTest {
         Assert.assertTrue(ds.proxy() instanceof MemoryBackedStorage);
         Assert.assertTrue(ds.proxy() instanceof MemoryBackedStorage.VersionedMemoryStorage);
         // access the data memory once 
-        Assert.assertTrue( ((MemoryBackedStorage.VersionedMemoryStorage)ds.proxy()).dataMemory().isEmpty() );    
+        final MemoryBackedStorage.VersionedMemoryStorage vmst = (MemoryBackedStorage.VersionedMemoryStorage)ds.proxy();
+        Assert.assertTrue( vmst.dataMemory().isEmpty() );
+        Assert.assertEquals( "foo", vmst.string("foo") );
+        Assert.assertNull( vmst.string(null) );
     }
 
     @Test
