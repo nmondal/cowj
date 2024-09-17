@@ -40,6 +40,14 @@ public class MemoryBackedStorageTest {
         Assert.assertNotNull(ds);
         Assert.assertTrue(ds.proxy() instanceof MemoryBackedStorage);
         Assert.assertFalse(ds.proxy() instanceof MemoryBackedStorage.VersionedMemoryStorage);
+
+        // versioned storage 
+        ds = MemoryBackedStorage.STORAGE.create("barv", Map.of("versioned", true ), () -> "");
+        Assert.assertNotNull(ds);
+        Assert.assertTrue(ds.proxy() instanceof MemoryBackedStorage);
+        Assert.assertTrue(ds.proxy() instanceof MemoryBackedStorage.VersionedMemoryStorage);
+        // access the data memory once 
+        Assert.assertTrue( ((MemoryBackedStorage.VersionedMemoryStorage)ds.proxy()).dataMemory().isEmpty() );    
     }
 
     @Test
