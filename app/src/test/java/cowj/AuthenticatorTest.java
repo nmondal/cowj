@@ -98,6 +98,18 @@ public class AuthenticatorTest {
     }
 
     @Test
+    public void nullUserInfoTest(){
+        final Request request = mock(Request.class);
+        when(request.pathInfo()).thenReturn("/") ;
+        Authenticator auth = request1 -> null;
+        HaltException exception = assertThrows(HaltException.class, () -> {
+            auth.authenticate(request);
+        });
+        Assert.assertEquals(401, exception.statusCode() );
+    }
+
+
+    @Test
     public void sessionExpiredTest(){
         final Request request = mock(Request.class);
         when(request.pathInfo()).thenReturn("/") ;

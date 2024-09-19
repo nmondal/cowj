@@ -154,7 +154,10 @@ public interface Authenticator {
         }
         logger.debug("Before Auth : [{}]", pathInfo); // log it
         UserInfo userInfo = safeAuthExecute( () -> userInfo(request));
-        assert userInfo != null;
+        if ( userInfo == null ){
+            logger.error("UserInfo was passed as null!");
+            Spark.halt(401, UN_AUTHENTICATED);
+        }
         // already expired...
         long currentTime = System.currentTimeMillis();
         if ( userInfo.expiry() <  currentTime){
