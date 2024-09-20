@@ -4,10 +4,14 @@ import cowj.AsyncHandler;
 import cowj.DataSource;
 import cowj.EitherMonad;
 import cowj.Model;
+import cowj.ModelRunner;
+import cowj.ModelRunnerTest;
+
 import org.junit.*;
 import spark.Request;
 import spark.Response;
 import zoomba.lang.core.io.ZWeb;
+import zoomba.lang.core.io.ZWeb.ZWebCom;
 import zoomba.lang.core.types.ZTypes;
 
 import java.net.ConnectException;
@@ -19,10 +23,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class CurlWrapperTest {
+
+    final String proxy = "samples/proxy/proxy.yaml" ;
+    
     public static Model model = () -> ".";
+
+    static ModelRunner mr ;
 
     @BeforeClass
     public static void boot(){
+        mr = null;
         AsyncHandler.fromConfig( Collections.emptyMap(), model);
     }
 
@@ -30,6 +40,10 @@ public class CurlWrapperTest {
     public static void shutDown(){
         AsyncHandler.instance().results().clear();
         AsyncHandler.stop();
+        if ( mr != null ){
+            mr.stop();
+        }
+        mr = null;
     }
 
     @Test
@@ -117,5 +131,16 @@ public class CurlWrapperTest {
         Object res = AsyncHandler.instance().results().get(resp);
         Assert.assertTrue( res instanceof Throwable);
         Assert.assertTrue( ((Throwable) res).getCause() instanceof ConnectException );
+    }
+
+    @Test
+    public void emptyBodyWithErrorTest(){
+        mr = ModelRunnerTest.runModel(proxy);
+        DataSource dataSource = CurlWrapper.CURL.create( "foo-bar",
+                Map.of("url", "http://localhost:5004", "timeout", 6000 ), model);
+        CurlWrapper cw = dataSource.any();
+        EitherMonad<ZWebCom> em = cw.send("get", "/empty", Collections.emptyMap(), Collections.emptyMap(), "");
+        Assert.assertTrue( em.isSuccessful() );
+        Assert.assertEquals(405,  em.value().status);
     }
 }

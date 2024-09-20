@@ -16,6 +16,7 @@ threading:
 # path mapping
 routes:
   get:
+    /empty: _/empty_with_err.zm 
     /get: _/get.zm
   post:
     /send: _/post.zm

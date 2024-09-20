@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 public class SQSWrapperTest {
@@ -44,6 +45,38 @@ public class SQSWrapperTest {
         Assert.assertNotNull(ds);
         Assert.assertEquals("foo", ds.name());
     }
+
+    @Test
+    public void messageFunctionsTest(){
+        final SQSWrapper wrapper = new SQSWrapper() {
+            @Override
+            public SqsClient sqsClient() {
+                return null;
+            }
+
+            @Override
+            public int waitTime() {
+                return 42;
+            }
+
+            @Override
+            public String url() {
+                return "";
+            }
+        };
+        final String messageId = "42" ;
+        final String messageBody = "Hello!" ;
+
+        Message mockMessage = mock( Message.class );
+        when(mockMessage.messageId()).thenReturn(messageId);
+        when(mockMessage.body()).thenReturn(messageBody);
+        
+        // Id test 
+        Assert.assertEquals(messageId, wrapper.id( mockMessage ));
+        // Body test 
+        Assert.assertEquals(messageBody, wrapper.body( mockMessage ));
+    
+    }    
 
     @Test
     public void initViaNameTest() {

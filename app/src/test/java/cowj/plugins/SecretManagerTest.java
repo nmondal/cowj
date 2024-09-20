@@ -1,5 +1,7 @@
 package cowj.plugins;
 
+import com.azure.security.keyvault.secrets.SecretClient;
+import com.azure.security.keyvault.secrets.models.KeyVaultSecret;
 import com.google.cloud.secretmanager.v1.AccessSecretVersionResponse;
 import com.google.cloud.secretmanager.v1.SecretManagerServiceClient;
 import com.google.cloud.secretmanager.v1.SecretPayload;
@@ -13,10 +15,13 @@ import org.mockito.MockedStatic;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
+import zoomba.lang.core.types.ZTypes;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.*;
@@ -36,6 +41,33 @@ public class SecretManagerTest {
     }
 
     @Test
+    public void genericCreationTest(){
+        final Function<String,String> fetcherJSON = s -> ZTypes.jsonString( Map.of("x", "42" ));
+        final Function<String,String> fetcherDirect = s -> s;
+
+        // Creation Failure Test
+        IllegalArgumentException ex = Assert.assertThrows( IllegalArgumentException.class, () ->{
+            SecretManager.secretManager("foo", Map.of(), model, fetcherDirect);
+        });
+        Assert.assertTrue(ex.getMessage().contains("'config'") );
+
+        // now run through -- default case, config points to a key which points to JSON String
+        SecretManager sm = SecretManager.secretManager("foo", Map.of("config", "foo-bar"), model, fetcherJSON);
+        Assert.assertEquals( "42", sm.getOrDefault("x", "1000") );
+
+        // config points to a List of elements
+        List<String> l = List.of("a", "b") ;
+        final SecretManager smList = SecretManager.secretManager("foo", Map.of("config", l) , model, fetcherDirect);
+        l.forEach( x -> Assert.assertEquals( x, smList.getOrDefault(x, "")));
+
+        // config points to a Map
+        Map<String,String> keys = Map.of("a", "some a", "b", "some b") ;
+        final SecretManager smMap = SecretManager.secretManager("foo", Map.of("config", keys) , model, fetcherDirect);
+        keys.keySet().forEach( x -> Assert.assertEquals( x, smMap.getOrDefault(x, "")));
+    }
+
+
+    @Test
     public void testGSM(){
         MockedStatic<SecretManagerServiceClient> smscStatic =  mockStatic(SecretManagerServiceClient.class);
         SecretManagerServiceClient smsc = mock( SecretManagerServiceClient.class);
@@ -46,7 +78,7 @@ public class SecretManagerTest {
         when(sp.getData()).thenReturn(bs);
         when(resp.getPayload()).thenReturn(sp);
         when(smsc.accessSecretVersion((SecretVersionName) any()) ).thenReturn(resp);
-        DataSource ds =  SecretManager.GSM.create("foo", Collections.emptyMap(), model  );
+        DataSource ds =  SecretManager.GSM.create("foo", Map.of("config", "bar") , model  );
         Assert.assertNotNull(ds);
         Assert.assertEquals("foo", ds.name() );
         Assert.assertTrue( ds.proxy() instanceof SecretManager );
@@ -93,5 +125,23 @@ public class SecretManagerTest {
             DataSource ds =  SecretManager.GSM.create("bar", Collections.emptyMap(), model  );
         });
         Assert.assertNotNull(exception);
+    }
+
+    @Test
+    public void azureKeyVaultTest(){
+        // Check this, this should work no matter what
+        Assert.assertNotNull(SecretManager.AzureKeyVaultClientCreator.create("https://foo-bar.com"));
+        Assert.assertNotNull( new SecretManager.AzureKeyVaultClientCreator() );
+        SecretClient sc = mock(SecretClient.class);
+        KeyVaultSecret kvs = mock(KeyVaultSecret.class);
+        when(kvs.getValue()).thenReturn(ZTypes.jsonString( Map.of("akv", "akv")));
+        when(sc.getSecret(any())).thenReturn( kvs );
+        MockedStatic<SecretManager.AzureKeyVaultClientCreator> smakvsStatic =  mockStatic(SecretManager.AzureKeyVaultClientCreator.class);
+        smakvsStatic.when( () -> SecretManager.AzureKeyVaultClientCreator.create( any() ) ).thenReturn( sc );
+        DataSource ds = SecretManager.AKV.create( "akv",
+                Map.of("url", "https://foo-bar.com", "config", "akv-json"), () ->".");
+        Assert.assertNotNull(ds);
+        SecretManager sm = ds.any();
+        Assert.assertEquals( "akv", sm.getOrDefault( "akv", "foo-bar"));
     }
 }

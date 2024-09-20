@@ -553,7 +553,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         prepareBinding(bindings, handler);
         // This ensures things are pure function
         Function.MonadicContainer mc = zs.eval(bindings);
-        if (mc.isNil()) return "";
+        // when there is an error ...
         if (mc.value() instanceof Throwable th) {
             final Exception ex;
             if (th instanceof ZException.ZRuntimeAssertion) {

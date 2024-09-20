@@ -154,7 +154,10 @@ public interface Authenticator {
         }
         logger.debug("Before Auth : [{}]", pathInfo); // log it
         UserInfo userInfo = safeAuthExecute( () -> userInfo(request));
-        assert userInfo != null;
+        if ( userInfo == null ){
+            logger.error("UserInfo was passed as null!");
+            Spark.halt(401, UN_AUTHENTICATED);
+        }
         // already expired...
         long currentTime = System.currentTimeMillis();
         if ( userInfo.expiry() <  currentTime){
@@ -176,8 +179,14 @@ public interface Authenticator {
          */
         interface TokenIssuer {
 
+            /**
+             * A Single Instance Secure Random Instance
+             */
             SecureRandom SECURE_RANDOM = new SecureRandom();
 
+            /**
+             * Default length of the key issued by the Issuer
+             */
             int KEY_LEN = 256 ;
 
             /**
@@ -185,6 +194,7 @@ public interface Authenticator {
              * @param user for the user
              * @param expiry UTC time in ms
              * @return a String token
+             * @throws Exception in case of any error that can happen
              */
             default String token(String user, long expiry) throws Exception {
                 byte[] bytes = new byte[KEY_LEN/8];

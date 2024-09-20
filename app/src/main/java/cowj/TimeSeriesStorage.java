@@ -116,7 +116,7 @@ public interface TimeSeriesStorage {
         return EitherMonad.call( () -> {
             if (value instanceof byte[]) {
                 storage.dumpb(bucket, fileName, (byte[]) value);
-            } else if (value instanceof Collections || value instanceof Map) { // string and like
+            } else if (value instanceof Collection<?> || value instanceof Map<?,?>) { // Collection, List, Set, Map
                 storage.dump(bucket, fileName, value);
             } else { // rest just follow this, ugly null ptr is a problem
                 storage.dumps(bucket, fileName, value.toString());

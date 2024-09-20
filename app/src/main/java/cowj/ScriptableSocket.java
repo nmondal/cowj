@@ -95,12 +95,11 @@ public final class ScriptableSocket {
      * Sends a message to a client via  session
      * @param session jetty Session
      * @param message String to be sent
-     * @return EitherMonad true if success, on error the error
+     * @return EitherMonad Nothing, on error the error
      */
-    public static EitherMonad<Boolean> send(Session session, String message){
-        return EitherMonad.call( () -> {
+    public static EitherMonad<EitherMonad.Nothing> send(Session session, String message){
+        return EitherMonad.run( () -> {
             session.getRemote().sendString(message);
-            return true;
         } );
     }
 
@@ -110,13 +109,13 @@ public final class ScriptableSocket {
      * @param message String to be sent
      * @return EitherMonad true if no error, else returns last error encountered
      */
-    public static EitherMonad<Boolean> broadcast(String path, String message){
+    public static EitherMonad<EitherMonad.Nothing> broadcast(String path, String message){
         final Set<Session> sessions = SESSIONS.getOrDefault(path, Collections.emptySet());
         final List<Throwable> errors =
                 sessions.parallelStream().map( s -> send(s,message))
                         .filter(EitherMonad::inError).map(EitherMonad::error)
                         .toList();
-        if ( errors.isEmpty() ) return EitherMonad.value(true);
+        if ( errors.isEmpty() ) return EitherMonad.value(EitherMonad.Nothing.SUCCESS);
         return EitherMonad.error(errors.get( errors.size()-1));
     }
 

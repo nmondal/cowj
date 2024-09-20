@@ -1,5 +1,7 @@
 package cowj;
 
+import org.checkerframework.checker.units.qual.N;
+
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 
@@ -105,6 +107,71 @@ public final class EitherMonad<V> {
     }
 
     /**
+     * A Java Substitute for inability to formally create Void Instance
+     * Ideally JDK should have a single void instance created and available for better type system
+     * <a href="https://www.baeldung.com/scala/nil-null-nothing-unit-none">...</a>
+     * Making it enum to ensure a single instance would be available
+     */
+    public enum Nothing{
+        /**
+         * It must have a single value to instantiate, and it depicts void function success value
+         */
+        SUCCESS
+    }
+
+    /**
+     * A basal implementation for bad design in Java's explicit throwable
+     * Runnable can not have explicit throws associated with it
+     * And this is the solution
+     * <a href="https://stackoverflow.com/questions/11584159/is-there-a-way-to-make-runnables-run-throw-an-exception">...</a>
+     *
+     * @param <E> Type of Error thrown, really
+     */
+    @FunctionalInterface
+    public interface CheckedRunnable<E extends Throwable> extends Runnable {
+
+        /**
+         * A wrapper for Wrapping up errors
+         */
+        class WrappedError extends RuntimeException{
+            WrappedError(Throwable cause){
+                super(cause);
+            }
+        }
+
+        @Override
+        default void run(){
+            try {
+                runThrows();
+            }
+            catch (Throwable ex) {
+                throw new WrappedError(ex);
+            }
+        }
+
+        /**
+         * A basal implementation for bad design in Java's explicit throwable
+         * Runnable can not have explicit throws associated with it
+         * And this is the solution
+         * @throws E any type of Error/Exception/Throwable
+         */
+        void runThrows() throws E;
+    }
+
+    /**
+     * Creates an EitherMonad by running the callable code
+     * If successful, returns the result , if not returns error
+     * @param runnable CheckedRunnable code to be called
+     * @return EitherMonad of type Void
+     */
+    public static EitherMonad<Nothing> run( CheckedRunnable<?> runnable){
+        return EitherMonad.call( () ->{
+            runnable.run();
+            return Nothing.SUCCESS;
+        });
+    }
+
+    /**
      * Creates an EitherMonad by running the callable code
      * If successful, returns the result , if not returns error
      * @param callable Callable code to be called
@@ -115,7 +182,8 @@ public final class EitherMonad<V> {
         try {
             return value(callable.call());
         }catch (Throwable t){
-            return error(t);
+            final Throwable actError = ( t instanceof CheckedRunnable.WrappedError ) ? t.getCause() : t ;
+            return error(actError);
         }
     }
 

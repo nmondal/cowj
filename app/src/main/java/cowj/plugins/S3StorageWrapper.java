@@ -127,11 +127,6 @@ public interface S3StorageWrapper extends
         return resultStream;
     }
 
-    /**
-     * Default Page size for listing on a bucket
-     * @return default page size for any bucket
-     */
-    default int pageSize(){ return  1000 ; }
 
     /**
      * Create a new bucket
@@ -213,12 +208,6 @@ public interface S3StorageWrapper extends
      * In the configuration map
      */
     String REGION_ID = "region-id";
-
-    /**
-     * The key to be used to find the Page Size for Streaming
-     * In the configuration map
-     */
-    String PAGE_SIZE = "page-size";
 
     /**
      * A DataSource.Creator for GoogleStorageWrapper

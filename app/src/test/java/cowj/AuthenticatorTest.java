@@ -96,4 +96,55 @@ public class AuthenticatorTest {
             authenticator.authenticate(request);
         });
     }
+
+    @Test
+    public void nullUserInfoTest(){
+        final Request request = mock(Request.class);
+        when(request.pathInfo()).thenReturn("/") ;
+        Authenticator auth = request1 -> null;
+        HaltException exception = assertThrows(HaltException.class, () -> {
+            auth.authenticate(request);
+        });
+        Assert.assertEquals(401, exception.statusCode() );
+    }
+
+
+    @Test
+    public void sessionExpiredTest(){
+        final Request request = mock(Request.class);
+        when(request.pathInfo()).thenReturn("/") ;
+        final Authenticator.UserInfo userInfo = mock(Authenticator.UserInfo.class);
+        when(userInfo.expiry()).thenReturn( System.currentTimeMillis() - 10000L );
+        Authenticator auth = request1 -> userInfo;
+        HaltException exception = assertThrows(HaltException.class, () -> {
+            auth.authenticate(request);
+        });
+        Assert.assertEquals(401, exception.statusCode() );
+    }
+
+    @Test
+    public void tokenAuthEmptyTokenTest(){
+        Request request = mock(Request.class);
+        when(request.pathInfo()).thenReturn("/") ;
+        Authenticator.TokenAuthenticator auth = new Authenticator.TokenAuthenticator() {
+            @Override
+            public String tokenExpression() {
+                return "";
+            }
+
+            @Override
+            public String token(Request request) {
+                return "";
+            }
+
+            @Override
+            public UserInfo userFromToken(String token) {
+                return null;
+            }
+        };
+        HaltException exception = assertThrows(HaltException.class, () -> {
+            auth.authenticate(request);
+        });
+        Assert.assertEquals(401, exception.statusCode() );
+    }
 }

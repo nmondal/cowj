@@ -114,8 +114,8 @@ public class TimeSeriesStorageTest {
         IntStream.range(0,5).parallel().forEach( (i) -> {
             timeSeriesStorage.put(".txt", sData);
             timeSeriesStorage.put(".bin", raw);
-            timeSeriesStorage.put(".json", ll);
-            timeSeriesStorage.put(".json", map);
+            timeSeriesStorage.put(".l.json", ll);
+            timeSeriesStorage.put(".o.json", map);
         });
         Assert.assertEquals(20, mem.size() );
         Set<String> s = new HashSet<>(mem.values());

@@ -68,4 +68,12 @@ public class EitherMonadTest {
         });
         Assert.assertEquals(tt, th.getCause());
     }
+
+    @Test
+    public void runnableTest(){
+        Assert.assertTrue( EitherMonad.run( () -> {}).isSuccessful() );
+        Assert.assertTrue( EitherMonad.run( () -> {
+            int i = 1 / 0;
+        }).inError() );
+    }
 }

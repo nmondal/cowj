@@ -87,6 +87,9 @@ public class S3StorageWrapperTest {
 
         S3StorageWrapper s3 = () -> s3Client;
 
+        // check if string() returns null on null 
+        Assert.assertNull(s3.string(null));
+
         Assert.assertEquals( hello, s3.utf8(data));
         Assert.assertEquals( bytes, s3.bytes(data));
 

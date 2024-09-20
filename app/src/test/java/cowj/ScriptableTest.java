@@ -12,6 +12,7 @@ import javax.script.SimpleBindings;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertThrows;
 
@@ -176,25 +177,26 @@ public class ScriptableTest {
 
     @Test
     public void prefixLoggerTest(){
+        final int times = 100000 ;
         final Logger logger = Scriptable.logger ; // this may take a bit of time to get inited
-        // create 100000 loggers with random ids
-        long start = System.currentTimeMillis();
-        for ( int i =0; i < 100000; i++ ){
-            Scriptable.prefixedLogger( logger, String.valueOf(i));
-        }
-        long end = System.currentTimeMillis();
-        final long create = end  - start ;
-        System.out.printf("Time taken to create 100,000 Logger : %d ms %n", create );
-        Assert.assertTrue( create < 500L );
-        // create 100000 loggers with random ids
-        start = System.currentTimeMillis();
-        for ( int i =0; i < 100000; i++ ){
-            Scriptable.prefixedLogger( logger, String.valueOf(i));
-        }
-        end = System.currentTimeMillis();
-        final long access = end  - start ;
-        System.out.printf("Time taken to access 100,000 Logger : %d ms %n", access );
-        Assert.assertTrue( access < 20L );
+        EitherMonad<Long> createMonad = TestUtils.timeIt( () ->{
+            for ( int i =0; i < times; i++ ){
+                Scriptable.prefixedLogger( logger, String.valueOf(i));
+            }
+        }).then( ns -> TimeUnit.NANOSECONDS.toMillis(ns) );
+        Assert.assertTrue(createMonad.isSuccessful());
+        System.out.printf("Time taken to create 100,000 Logger : %d ms %n", createMonad.value() );
+        Assert.assertTrue( createMonad.value() < 500L );
+
+        EitherMonad<Long> accessMonad = TestUtils.timeIt( () ->{
+            for ( int i =0; i < times; i++ ){
+                Scriptable.prefixedLogger( logger, String.valueOf(i));
+            }
+        }).then( ns -> TimeUnit.NANOSECONDS.toMillis(ns) );
+
+        Assert.assertTrue(accessMonad.isSuccessful());
+        System.out.printf("Time taken to access 100,000 Logger : %d ms %n", accessMonad.value() );
+        Assert.assertTrue( accessMonad.value() < 40L );
 
         // now the access of methods which use marker
         Marker m = MarkerFactory.getMarker("marker");
