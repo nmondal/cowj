@@ -134,7 +134,7 @@ public interface ASQWrapper extends MessageQueue<QueueMessageItem, SendMessageRe
         logger.info("[{}] visibility time of the queue  is '{}'", name, visibility);
 
         final QueueClient queueClient = new QueueClientBuilder()
-                .endpoint("https://<storage-account-name>.queue.core.windows.net/")
+                .endpoint(url)
                 .queueName(qName)
                 .credential(new DefaultAzureCredentialBuilder().build())
                 .buildClient();
