@@ -1,5 +1,7 @@
 package cowj.plugins;
 
+import com.azure.security.keyvault.secrets.SecretClient;
+import com.azure.security.keyvault.secrets.models.KeyVaultSecret;
 import com.google.cloud.secretmanager.v1.AccessSecretVersionResponse;
 import com.google.cloud.secretmanager.v1.SecretManagerServiceClient;
 import com.google.cloud.secretmanager.v1.SecretPayload;
@@ -123,5 +125,23 @@ public class SecretManagerTest {
             DataSource ds =  SecretManager.GSM.create("bar", Collections.emptyMap(), model  );
         });
         Assert.assertNotNull(exception);
+    }
+
+    @Test
+    public void azureKeyVaultTest(){
+        // Check this, this should work no matter what
+        Assert.assertNotNull(SecretManager.AzureKeyVaultClientCreator.create("https://foo-bar.com"));
+        Assert.assertNotNull( new SecretManager.AzureKeyVaultClientCreator() );
+        SecretClient sc = mock(SecretClient.class);
+        KeyVaultSecret kvs = mock(KeyVaultSecret.class);
+        when(kvs.getValue()).thenReturn(ZTypes.jsonString( Map.of("akv", "akv")));
+        when(sc.getSecret(any())).thenReturn( kvs );
+        MockedStatic<SecretManager.AzureKeyVaultClientCreator> smakvsStatic =  mockStatic(SecretManager.AzureKeyVaultClientCreator.class);
+        smakvsStatic.when( () -> SecretManager.AzureKeyVaultClientCreator.create( any() ) ).thenReturn( sc );
+        DataSource ds = SecretManager.AKV.create( "akv",
+                Map.of("url", "https://foo-bar.com", "config", "akv-json"), () ->".");
+        Assert.assertNotNull(ds);
+        SecretManager sm = ds.any();
+        Assert.assertEquals( "akv", sm.getOrDefault( "akv", "foo-bar"));
     }
 }

@@ -155,6 +155,24 @@ public interface SecretManager {
     };
 
     /**
+     * This primarily exists for testability
+     * W/o this, there would be no way to test AzureKeyVault w/o actual Impl with Azure
+     */
+    final class AzureKeyVaultClientCreator{
+        /**
+         * Creates a SecretClient from vaultURL and default cred
+         * @param vaultUrl url of the vault
+         * @return SecretClient
+         */
+        static SecretClient create( String vaultUrl){
+            return new SecretClientBuilder()
+                    .vaultUrl(vaultUrl)
+                    .credential(new DefaultAzureCredentialBuilder().build())
+                    .buildClient();
+        }
+    }
+
+    /**
      * A DataSource.Creator for Azure KeyVault Secret
      * Key Vault Url is specified using "url" property
      * <a href="https://learn.microsoft.com/en-us/java/api/overview/azure/security-keyvault-secrets-readme?view=azure-java-stable">...</a>
@@ -166,12 +184,9 @@ public interface SecretManager {
         vaultUrl = parent.envTemplate(vaultUrl);
         logger.info("AKV SecretManager [{}] transformed vault url is [{}]", name, vaultUrl);
 
-        SecretClient secretClient = new SecretClientBuilder()
-                .vaultUrl(vaultUrl)
-                .credential(new DefaultAzureCredentialBuilder().build())
-                .buildClient();
+        final SecretClient secretClient = AzureKeyVaultClientCreator.create(vaultUrl);
 
-        Function<String,String> secretFetcher = (secret) -> {
+        final Function<String,String> secretFetcher = (secret) -> {
             KeyVaultSecret retrievedSecret = secretClient.getSecret(secret);
             return retrievedSecret.getValue();
         };
