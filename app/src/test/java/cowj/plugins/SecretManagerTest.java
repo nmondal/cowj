@@ -13,10 +13,13 @@ import org.mockito.MockedStatic;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
+import zoomba.lang.core.types.ZTypes;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.*;
@@ -34,6 +37,33 @@ public class SecretManagerTest {
         SecretManager sm = (SecretManager)ds.proxy();
         Assert.assertFalse( sm.getOrDefault("PATH", "").isEmpty() );
     }
+
+    @Test
+    public void genericCreationTest(){
+        final Function<String,String> fetcherJSON = s -> ZTypes.jsonString( Map.of("x", "42" ));
+        final Function<String,String> fetcherDirect = s -> s;
+
+        // Creation Failure Test
+        IllegalArgumentException ex = Assert.assertThrows( IllegalArgumentException.class, () ->{
+            SecretManager.secretManager("foo", Map.of(), model, fetcherDirect);
+        });
+        Assert.assertTrue(ex.getMessage().contains("'config'") );
+
+        // now run through -- default case, config points to a key which points to JSON String
+        SecretManager sm = SecretManager.secretManager("foo", Map.of("config", "foo-bar"), model, fetcherJSON);
+        Assert.assertEquals( "42", sm.getOrDefault("x", "1000") );
+
+        // config points to a List of elements
+        List<String> l = List.of("a", "b") ;
+        final SecretManager smList = SecretManager.secretManager("foo", Map.of("config", l) , model, fetcherDirect);
+        l.forEach( x -> Assert.assertEquals( x, smList.getOrDefault(x, "")));
+
+        // config points to a Map
+        Map<String,String> keys = Map.of("a", "some a", "b", "some b") ;
+        final SecretManager smMap = SecretManager.secretManager("foo", Map.of("config", keys) , model, fetcherDirect);
+        keys.keySet().forEach( x -> Assert.assertEquals( x, smMap.getOrDefault(x, "")));
+    }
+
 
     @Test
     public void testGSM(){

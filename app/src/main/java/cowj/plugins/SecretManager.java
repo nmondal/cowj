@@ -88,7 +88,7 @@ public interface SecretManager {
             entries = (List)cfg ;
         } else {
             logger.info("SecretManager [{}] using Map as secret entries", name);
-            entries = ((Map)cfg).entrySet() ;
+            entries = ((Map)cfg).keySet() ;
         }
 
         final Map<String,String> envMap = new HashMap<>();
