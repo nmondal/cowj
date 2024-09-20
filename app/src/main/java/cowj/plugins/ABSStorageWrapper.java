@@ -40,13 +40,24 @@ public interface ABSStorageWrapper extends StorageWrapper.KeyValueStorage<Boolea
      */
     BlobServiceClient client();
 
-    @Override
-    default Boolean dumps(String containerName, String fileName, String data) {
+    /**
+     * Upload data to the container with fileName
+     * @param containerName name of the container
+     * @param fileName name of the file
+     * @param binaryData data to be uploaded
+     * @return true if successful, false if any error happened
+     */
+    default boolean upload( String containerName, String fileName, BinaryData binaryData){
         return safeBoolean( () -> {
             BlobContainerClient blobContainerClient = client().getBlobContainerClient(containerName);
             BlobClient blobClient = blobContainerClient.getBlobClient(fileName);
-            blobClient.upload(BinaryData.fromString(data));
+            blobClient.upload(binaryData);
         });
+    }
+
+    @Override
+    default Boolean dumps(String containerName, String fileName, String data) {
+        return upload( containerName, fileName, BinaryData.fromString(data));
     }
 
     @Override
@@ -68,11 +79,7 @@ public interface ABSStorageWrapper extends StorageWrapper.KeyValueStorage<Boolea
 
     @Override
     default Boolean dumpb(String containerName, String fileName, byte[] data) {
-        return safeBoolean( () -> {
-            BlobContainerClient blobContainerClient = client().getBlobContainerClient(containerName);
-            BlobClient blobClient = blobContainerClient.getBlobClient(fileName);
-            blobClient.upload(BinaryData.fromBytes(data));
-        });
+        return upload( containerName, fileName, BinaryData.fromBytes(data));
     }
 
     @Override
@@ -96,11 +103,12 @@ public interface ABSStorageWrapper extends StorageWrapper.KeyValueStorage<Boolea
 
     @Override
     default boolean fileExist(String containerName, String fileName) {
-        BlobContainerClient blobContainerClient = client().getBlobContainerClient(containerName);
-        BlobClient blobClient = blobContainerClient.getBlobClient(fileName);
-        return blobClient.exists();
+        return EitherMonad.orElse( () -> {
+            BlobContainerClient blobContainerClient = client().getBlobContainerClient(containerName);
+            BlobClient blobClient = blobContainerClient.getBlobClient(fileName);
+            return blobClient.exists();
+        }, false );
     }
-
 
     @Override
     default boolean deleteBucket(String containerName) {
@@ -109,9 +117,11 @@ public interface ABSStorageWrapper extends StorageWrapper.KeyValueStorage<Boolea
 
     @Override
     default boolean delete(String containerName, String path) {
-        BlobContainerClient blobContainerClient = client().getBlobContainerClient(containerName);
-        BlobClient blobClient = blobContainerClient.getBlobClient(path);
-        return blobClient.deleteIfExists();
+        return EitherMonad.orElse( () -> {
+            BlobContainerClient blobContainerClient = client().getBlobContainerClient(containerName);
+            BlobClient blobClient = blobContainerClient.getBlobClient(path);
+            return blobClient.deleteIfExists();
+        }, false );
     }
 
     /////////////////////// Versioning /////////////////////
@@ -140,16 +150,15 @@ public interface ABSStorageWrapper extends StorageWrapper.KeyValueStorage<Boolea
     default Stream<String> versions(String containerName, String fileName) {
         BlobContainerClient blobContainerClient = client().getBlobContainerClient(containerName);
         BlobClient blobClient = blobContainerClient.getBlobClient(fileName);
-        if ( blobClient.exists() ){
-            ListBlobsOptions listBlobsOptions = new ListBlobsOptions();
-            listBlobsOptions.setMaxResultsPerPage( pageSize() );
-            listBlobsOptions.setPrefix(fileName);
-            listBlobsOptions.setDetails(new BlobListDetails().setRetrieveVersions(true));
-            return blobContainerClient.listBlobs(listBlobsOptions, Duration.ofMinutes(1))
-                    .stream().filter( blobItem -> blobItem.getName().equals(fileName) )
-                    .map(BlobItem::getVersionId).sorted(Comparator.reverseOrder());
-        }
-        return Stream.empty();
+        if ( !blobClient.exists() ) return Stream.empty(); // why bother when we know things do not exist ?
+        // Now rest here...
+        ListBlobsOptions listBlobsOptions = new ListBlobsOptions();
+        listBlobsOptions.setMaxResultsPerPage( pageSize() );
+        listBlobsOptions.setPrefix(fileName);
+        listBlobsOptions.setDetails(new BlobListDetails().setRetrieveVersions(true));
+        return blobContainerClient.listBlobs(listBlobsOptions, Duration.ofMinutes(1))
+                .stream().filter( blobItem -> blobItem.getName().equals(fileName) )
+                .map(BlobItem::getVersionId).sorted(Comparator.reverseOrder());
     }
 
     /**
