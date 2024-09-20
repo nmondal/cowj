@@ -208,7 +208,7 @@ public interface CurlWrapper {
                 final ZWeb.ZWebCom com = zWeb.send(verb, path, params, body);
                 if ( com.status >= 400 ){
                     logger.warn("{} : Non OK Response : [{}]  body : [{}]", name, com.status,
-                            com.bytes == null ? "(null)" : com.body());
+                            com.emptyBody() ? "(body returned was empty)" : com.body());
                 }
                 return EitherMonad.value(com);
             } catch (Throwable t) {
