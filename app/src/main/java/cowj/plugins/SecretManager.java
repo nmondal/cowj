@@ -64,7 +64,9 @@ public interface SecretManager {
      *   - List of keys to load
      *   - Map - where keys are keys to load and values are descriptions
      * @since  Sept 2024
-     * @param config a Map Object
+     * @param name of the Secret Manager in the config
+     * @param config a Map Object which depicts how to create a Secret Manager
+     * @param parent parent ModelRunner for the SecretManager
      * @param secretFetcher a Function that takes a secret key and maps it to values
      * @return a SecretManager
      */
