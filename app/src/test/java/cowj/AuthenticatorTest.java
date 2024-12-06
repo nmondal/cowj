@@ -78,7 +78,7 @@ public class AuthenticatorTest {
     @Test
     public void riskyRouteTest(){
         Request request = mock(Request.class);
-        when(request.pathInfo()).thenReturn("foo/bar");
+        when(request.uri()).thenReturn("foo/bar");
         int[] counters = { 0 };
         Authenticator authenticator = new CachedAuthTestImpl(counters,1);
         String user = authenticator.authenticate(request);
@@ -89,7 +89,7 @@ public class AuthenticatorTest {
     @Test
     public void riskyRouteErrorTest(){
         Request request = mock(Request.class);
-        when(request.pathInfo()).thenReturn("foo/whatever");
+        when(request.uri()).thenReturn("foo/whatever");
         int[] counters = { 0 };
         Authenticator authenticator = new CachedAuthTestImpl(counters,1);
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
@@ -100,7 +100,7 @@ public class AuthenticatorTest {
     @Test
     public void nullUserInfoTest(){
         final Request request = mock(Request.class);
-        when(request.pathInfo()).thenReturn("/") ;
+        when(request.uri()).thenReturn("/") ;
         Authenticator auth = request1 -> null;
         HaltException exception = assertThrows(HaltException.class, () -> {
             auth.authenticate(request);
@@ -112,7 +112,7 @@ public class AuthenticatorTest {
     @Test
     public void sessionExpiredTest(){
         final Request request = mock(Request.class);
-        when(request.pathInfo()).thenReturn("/") ;
+        when(request.uri()).thenReturn("/") ;
         final Authenticator.UserInfo userInfo = mock(Authenticator.UserInfo.class);
         when(userInfo.expiry()).thenReturn( System.currentTimeMillis() - 10000L );
         Authenticator auth = request1 -> userInfo;
@@ -125,7 +125,7 @@ public class AuthenticatorTest {
     @Test
     public void tokenAuthEmptyTokenTest(){
         Request request = mock(Request.class);
-        when(request.pathInfo()).thenReturn("/") ;
+        when(request.uri()).thenReturn("/") ;
         Authenticator.TokenAuthenticator auth = new Authenticator.TokenAuthenticator() {
             @Override
             public String tokenExpression() {
