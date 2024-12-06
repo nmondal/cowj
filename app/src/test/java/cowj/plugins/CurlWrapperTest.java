@@ -54,7 +54,7 @@ public class CurlWrapperTest {
         Assert.assertTrue( cw instanceof  CurlWrapper );
         EitherMonad<ZWeb.ZWebCom> res = ((CurlWrapper) cw).send("get", "/", Collections.emptyMap(), Collections.emptyMap(), "");
         Assert.assertTrue( res.inError() );
-        Assert.assertTrue( res.error().getMessage().contains("no protocol") );
+        Assert.assertTrue( res.error().getCause().getMessage().contains("no protocol") );
     }
 
     @Test
