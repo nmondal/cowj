@@ -37,7 +37,6 @@ base{
 }
 
 repositories {
-    mavenLocal()
     // Use Maven Central for resolving dependencies.
     mavenCentral()
     // add sonatype repository
@@ -50,8 +49,8 @@ repositories {
 
 dependencies {
 
-    implementation zmbBinary
-    implementation 'org.zoomba-lang:spark-core:3.0.1-SNAPSHOT'
+    implementation ( zmbBinary ) { changing = true }
+    implementation ( 'org.zoomba-lang:spark-core:3.0.1-SNAPSHOT' ) { changing = true }
     // end of local libraries
     implementation 'org.slf4j:slf4j-jdk14:2.1.0-alpha1'
     // Scripting Engines JSR-223
