@@ -9,6 +9,9 @@ import javax.script.Bindings;
 import javax.script.SimpleBindings;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Template jetty based WebSocket implementation
@@ -56,12 +59,21 @@ public final class ScriptableSocket {
             this.code = code;
         }
 
+        /**
+         * Sends a message to the session
+         * @param message the text message
+         * @param timeOutSec  number of sec before the call times
+         * @return an EitherMonad
+         */
+        public EitherMonad<EitherMonad.Nothing> send(String message, int timeOutSec){
+            return ScriptableSocket.send( session, message, timeOutSec);
+        }
     }
 
     /**
      * Logger for the Cowj ScriptableSocket
      */
-    Logger logger = LoggerFactory.getLogger(ScriptableSocket.class);
+    final static Logger logger = LoggerFactory.getLogger(ScriptableSocket.class);
 
     /**
      * A holder for all sessions across all WebSocket connections across paths
@@ -95,11 +107,15 @@ public final class ScriptableSocket {
      * Sends a message to a client via  session
      * @param session jetty Session
      * @param message String to be sent
+     * @param timeOutSec  number of sec before the call times
      * @return EitherMonad Nothing, on error the error
      */
-    public static EitherMonad<EitherMonad.Nothing> send(Session session, String message){
+    public static EitherMonad<EitherMonad.Nothing> send(Session session, String message, int timeOutSec){
+
+        final Callback.Completable completable = new Callback.Completable();
         return EitherMonad.run( () -> {
-            session.sendText(message, Callback.NOOP); // TODO, later use scriptable callbacks
+            session.sendText(message, completable);
+            completable.get(timeOutSec, TimeUnit.SECONDS);
         } );
     }
 
@@ -107,12 +123,13 @@ public final class ScriptableSocket {
      * Sends same message to all clients in the specific path
      * @param path websocket path
      * @param message String to be sent
+     * @param timeOutSec  number of sec before the call times
      * @return EitherMonad true if no error, else returns last error encountered
      */
-    public static EitherMonad<EitherMonad.Nothing> broadcast(String path, String message){
+    public static EitherMonad<EitherMonad.Nothing> broadcast(String path, String message, int timeOutSec){
         final Set<Session> sessions = SESSIONS.getOrDefault(path, Collections.emptySet());
         final List<Throwable> errors =
-                sessions.parallelStream().map( s -> send(s,message))
+                sessions.parallelStream().map( s -> send(s,message, timeOutSec))
                         .filter(EitherMonad::inError).map(EitherMonad::error)
                         .toList();
         if ( errors.isEmpty() ) return EitherMonad.value(EitherMonad.Nothing.SUCCESS);
@@ -123,6 +140,11 @@ public final class ScriptableSocket {
      * Event Variable Key for the Scriptable
      */
     public static final String EVENT = "event" ;
+
+    /**
+     * Connect Event
+     */
+    public static final String EVENT_CONNECT = "connect" ;
 
     /**
      * Closed Event
@@ -155,6 +177,17 @@ public final class ScriptableSocket {
     }
 
     /**
+     * Template method for passing 'connected' event to Scriptable
+     * @param session jetty WebSocket Session
+     */
+    @OnWebSocketOpen
+    public void connected(Session session) {
+        logger.debug("connect - {}", session);
+        SESSIONS.get(path).add(session);
+        handleEvent( new SocketEvent(EVENT_CONNECT, session, null, -1));
+    }
+
+    /**
      * Template method for passing 'closed' event to Scriptable
      * @param session jetty WebSocket Session
      * @param statusCode code for why connection was closed
@@ -172,9 +205,10 @@ public final class ScriptableSocket {
      * Template method for passing 'frame' event to Scriptable
      * @param session jetty WebSocket Session
      * @param frame a jetty Frame
+     * @param callback  a jetty Callback
      */
     @OnWebSocketFrame
-    public void frame(Session session, Frame frame){
+    public void frame(Session session, Frame frame, Callback callback){
         logger.debug("frame - {} , frame {}", session, frame);
         handleEvent( new SocketEvent(EVENT_FRAME, session, frame, -1));
     }
