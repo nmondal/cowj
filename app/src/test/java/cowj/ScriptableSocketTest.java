@@ -74,7 +74,6 @@ public class ScriptableSocketTest {
     public void errorTest(){
         ScriptableSocket ss = ScriptableSocket.socket( "/err", "samples/test_scripts/error_1_arg.zm" );
         Session session = mock(Session.class);
-        ss.connected(session); // load it up
         ss.error(session, new Throwable("Boom!"));
         EitherMonad<?> em = ScriptableSocket.broadcast("/err", "hey!");
         Assert.assertTrue(em.inError());

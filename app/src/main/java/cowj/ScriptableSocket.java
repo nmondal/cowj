@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * This wraps around a Scriptable
  * Default timeout is 2 minutes
  */
-@WebSocket(idleTimeout=120000)
+@WebSocket
 public final class ScriptableSocket {
 
     /**
@@ -99,7 +99,7 @@ public final class ScriptableSocket {
      */
     public static EitherMonad<EitherMonad.Nothing> send(Session session, String message){
         return EitherMonad.run( () -> {
-            session.getRemote().sendString(message);
+            session.sendText(message, Callback.NOOP); // TODO, later use scriptable callbacks
         } );
     }
 
@@ -123,11 +123,6 @@ public final class ScriptableSocket {
      * Event Variable Key for the Scriptable
      */
     public static final String EVENT = "event" ;
-
-    /**
-     * Connect Event
-     */
-    public static final String EVENT_CONNECT = "connect" ;
 
     /**
      * Closed Event
@@ -157,17 +152,6 @@ public final class ScriptableSocket {
         }catch (Throwable th){
             logger.error("Error processing event  {} due to {}",event.type, th.toString());
         }
-    }
-
-    /**
-     * Template method for passing 'connected' event to Scriptable
-     * @param session jetty WebSocket Session
-     */
-    @OnWebSocketConnect
-    public void connected(Session session) {
-        logger.debug("connect - {}", session);
-        SESSIONS.get(path).add(session);
-        handleEvent( new SocketEvent(EVENT_CONNECT, session, null, -1));
     }
 
     /**

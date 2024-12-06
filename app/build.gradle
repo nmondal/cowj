@@ -37,6 +37,7 @@ base{
 }
 
 repositories {
+    mavenLocal()
     // Use Maven Central for resolving dependencies.
     mavenCentral()
     // add sonatype repository
@@ -75,10 +76,10 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
 
     // Auth
-    implementation 'org.casbin:jcasbin:1.55.0'
+    implementation 'org.casbin:jcasbin:1.76.0'
 
     // Identity
-    implementation 'com.azure:azure-identity:1.13.3'
+    implementation 'com.azure:azure-identity:1.14.2'
 
     // File Watching ....
     implementation 'io.methvin:directory-watcher:0.18.0'
@@ -90,7 +91,7 @@ dependencies {
 
     // Storage...
     implementation 'redis.clients:jedis:5.2.0-beta4'
-    implementation 'com.google.cloud:google-cloud-storage:2.40.1'
+    implementation 'com.google.cloud:google-cloud-storage:2.45.0'
     implementation 'software.amazon.awssdk:s3:2.26.30'
     implementation 'software.amazon.awssdk:apache-client:2.26.30'
     implementation 'com.azure:azure-storage-blob:12.27.1'
