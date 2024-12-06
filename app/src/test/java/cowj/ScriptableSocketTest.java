@@ -12,7 +12,8 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 public class ScriptableSocketTest {
 
@@ -75,9 +76,12 @@ public class ScriptableSocketTest {
         ScriptableSocket ss = ScriptableSocket.socket( "/err", "samples/test_scripts/error_1_arg.zm" );
         Session session = mock(Session.class);
         ss.connected(session); // load it up
-        ss.error(session, new Throwable("Boom!"));
+        final RuntimeException th = new RuntimeException("Boom!");
+        ss.error(session, th );
+        doThrow( th ).when( session).sendText( any(), any());
         EitherMonad<?> em = ScriptableSocket.broadcast("/err", "hey!", 3 );
         Assert.assertTrue(em.inError());
+        Assert.assertSame(th, em.error());
         ss.closed(session, 42, "boom!" );
     }
 }
