@@ -145,7 +145,7 @@ public interface Authenticator {
      */
     default String authenticate(Request request){
         // is the route allowed to be accessed... by guest ?
-        String pathInfo = request.pathInfo();
+        String pathInfo = request.uri(); // jetty 12 pathInfo goes to null
         pathInfo = pathInfo == null ? "" : pathInfo;
         if ( risks().contains(pathInfo) ){
             // you are on your own ...

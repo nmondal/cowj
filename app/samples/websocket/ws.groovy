@@ -1,7 +1,7 @@
 _log.info(event.type)
 
 switch (event.type){
-    case "connect" -> event.session.getRemote().sendString("Welcome!")
-    case "message" -> event.session.getRemote().sendString("ya!")
+    case "connect" -> event.send("Welcome!", 3 )
+    case "message" -> event.send("ya!", 3 )
     case "error" ->  event.data.printStackTrace()
 }

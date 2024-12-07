@@ -146,7 +146,7 @@ public interface AuthSystem {
         final Authenticator authenticator = authenticator();
         final Enforcer enforcer = new Enforcer(casBinModel, adapter);
         Spark.before("*", ((request, response) -> {
-            final String pathInfo = request.pathInfo();
+            final String pathInfo = request.uri(); // jetty 12 spark pathInfo comes null, hence uri
             final String verb = request.requestMethod();
             final String userName = authenticator.authenticate(request);
             final boolean thouShallPass = enforcer.enforce( userName, pathInfo, verb);

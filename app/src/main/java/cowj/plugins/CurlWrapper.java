@@ -184,7 +184,7 @@ public interface CurlWrapper {
     default Route route(String verb, String localPath, String destPath) {
         return (request, response) -> {
             final boolean async = localPath.startsWith(ASYNC_ROUTE_PREFIX);
-            return proxy(async, verb, "*".equals(destPath) ? request.pathInfo() : destPath, request, response);
+            return proxy(async, verb, "*".equals(destPath) ? request.uri() : destPath, request, response);
         };
     }
 

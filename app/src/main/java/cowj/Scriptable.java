@@ -74,7 +74,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
             final Object ret = exec(sb);
             if ( ret == null ){
                 // Patch for issues/92
-                logger.error("{} @ {} produced null, returning empty string", request.requestMethod(), request.pathInfo());
+                logger.error("{} @ {} produced null, returning empty string", request.requestMethod(), request.uri());
                 return "" ;
             }
             return ret;
