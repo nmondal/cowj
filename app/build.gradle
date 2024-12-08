@@ -26,6 +26,23 @@ ext {
     isCoverage =  System.properties['cowj.cover'] != null
     zmbPrefix = isCoverage ?  'INSTRUMENTED-' : '' // handle coverage binary
     zmbBinary = 'org.zoomba-lang:zoomba.lang.core:' + zmbPrefix + '0.3-SNAPSHOT'
+
+    // now fast changing versions
+    spark_version      = '3.0.1-SNAPSHOT'
+    groovy_version     = '5.0.0-alpha-11'
+    jython_version     = '2.7.4'
+    kotlin_version     = '2.1.0'
+    quartz_version     = '2.5.0'
+    jackson_version    = '2.18.2'
+    jcasbin_version    = '1.77.0'
+    jedis_version      = '5.2.0'
+
+    // now cloud providers client dependencies
+    // amazon aws is really good at keeping versions together
+    aws_client_version = '2.29.29'
+    // google cloud and microsoft azure are terrible at keeping versioning
+    // test binary
+    mockito_version    = '5.14.2'
 }
 
 // the maven identifiers
@@ -50,7 +67,7 @@ repositories {
 dependencies {
 
     implementation ( zmbBinary ) { changing = true }
-    implementation ( 'org.zoomba-lang:spark-core:3.0.1-SNAPSHOT' ) { changing = true }
+    implementation ( "org.zoomba-lang:spark-core:$spark_version" ) { changing = true }
     // end of local libraries
     implementation 'org.slf4j:slf4j-jdk14:2.1.0-alpha1'
     // Scripting Engines JSR-223
@@ -58,24 +75,24 @@ dependencies {
     implementation 'com.github.a-langer:jsr223-commonjs-modules:1.0.1'
 
     // groovy
-    implementation 'org.apache.groovy:groovy:5.0.0-alpha-9'
-    implementation 'org.apache.groovy:groovy-jsr223:5.0.0-alpha-9'
+    implementation "org.apache.groovy:groovy:$groovy_version"
+    implementation "org.apache.groovy:groovy-jsr223:$groovy_version"
     // jython ???
-    implementation 'org.python:jython-standalone:2.7.4b2'
+    implementation "org.python:jython-standalone:$jython_version"
     // Kotlin - hold all libs to same version, as long as it works
-    implementation 'org.jetbrains.kotlin:kotlin-compiler-embeddable:2.0.0'
-    implementation 'org.jetbrains.kotlin:kotlin-scripting-jsr223:2.0.0'
+    implementation "org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-scripting-jsr223:$kotlin_version"
 
     // Cron
     // https://mvnrepository.com/artifact/org.quartz-scheduler/quartz
-    implementation 'org.quartz-scheduler:quartz:2.5.0-rc1'
+    implementation "org.quartz-scheduler:quartz:$quartz_version"
 
     // schema handler TODO MIGRATE TO Release deadline 1 week
     implementation 'org.zoomba-lang:medeia-validator-jackson:1.6-SNAPSHOT'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
+    implementation "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
 
     // Auth
-    implementation 'org.casbin:jcasbin:1.76.0'
+    implementation "org.casbin:jcasbin:$jcasbin_version"
 
     // Identity
     implementation 'com.azure:azure-identity:1.14.2'
@@ -89,27 +106,27 @@ dependencies {
     ////////// Plugin Stuff //////////////
 
     // Storage...
-    implementation 'redis.clients:jedis:5.2.0-beta4'
+    implementation "redis.clients:jedis:$jedis_version"
     implementation 'com.google.cloud:google-cloud-storage:2.45.0'
-    implementation 'software.amazon.awssdk:s3:2.26.30'
-    implementation 'software.amazon.awssdk:apache-client:2.26.30'
-    implementation 'com.azure:azure-storage-blob:12.27.1'
+    implementation "software.amazon.awssdk:s3:$aws_client_version"
+    implementation "software.amazon.awssdk:apache-client:$aws_client_version"
+    implementation 'com.azure:azure-storage-blob:12.29.0'
 
 
     // Message Queueing
-    implementation 'software.amazon.awssdk:sqs:2.26.30'
-    implementation 'com.azure:azure-storage-queue:12.22.1'
+    implementation "software.amazon.awssdk:sqs:$aws_client_version"
+    implementation 'com.azure:azure-storage-queue:12.24.0'
 
     // fcm - close to Messaging, but not close enough
-    implementation 'com.google.firebase:firebase-admin:9.3.0'
+    implementation 'com.google.firebase:firebase-admin:9.4.2'
 
     // mysql connector ( DO NOT MIGRATE To 9.*, protobuf upgrade destroyed peoples happiness )
     implementation 'com.mysql:mysql-connector-j:8.4.0'
 
     /// secret manager
-    implementation 'com.google.cloud:google-cloud-secretmanager:2.46.0'
-    implementation 'software.amazon.awssdk:secretsmanager:2.26.30'
-    implementation 'com.azure:azure-security-keyvault-secrets:4.8.6'
+    implementation 'com.google.cloud:google-cloud-secretmanager:2.54.0'
+    implementation "software.amazon.awssdk:secretsmanager:$aws_client_version"
+    implementation 'com.azure:azure-security-keyvault-secrets:4.9.1'
 
     ///// test stuff
     testImplementation 'junit:junit:4.13.2'
@@ -120,7 +137,7 @@ dependencies {
     // WebSocket
     testImplementation 'org.java-websocket:Java-WebSocket:1.5.7'
     // Mockito ...
-    testImplementation 'org.mockito:mockito-core:5.12.0'
+    testImplementation "org.mockito:mockito-core:$mockito_version"
 }
 
 /**
