@@ -28,7 +28,7 @@ ext {
     zmbBinary = 'org.zoomba-lang:zoomba.lang.core:' + zmbPrefix + '0.3-SNAPSHOT'
 
     // now fast changing versions
-    spark_version      = '3.0.1-SNAPSHOT'
+    spark_version      = '3.0.1'
     groovy_version     = '5.0.0-alpha-11'
     jython_version     = '2.7.4'
     kotlin_version     = '2.1.0'

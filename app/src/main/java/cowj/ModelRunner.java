@@ -194,7 +194,19 @@ public interface ModelRunner extends Runnable {
         typeSystem.attachOutput();
         // now if type system has typed storage, replace all storages via typed storage mechanism
         TypedStorage.attach(typeSystem);
-        awaitInitialization();
+        try {
+            awaitInitialization();
+        }catch (IllegalStateException ex){
+            logger.info("Perhaps init() was not called... ");
+            if ( ex.getMessage().contains("properly")){
+                // this is only possible when we are just using cowj to do static web server
+                logger.info("init() was not called for sure, calling and waiting");
+                Spark.init();
+                awaitInitialization();
+            } else{
+                throw ex; // should not hold it, throw it back
+            }
+        }
         logger.info("Cowj is initialized!");
     }
 
