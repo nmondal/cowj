@@ -54,6 +54,7 @@ base{
 }
 
 repositories {
+    // mavenLocal() // local repo
     // Use Maven Central for resolving dependencies.
     mavenCentral()
     // add sonatype repository
@@ -87,8 +88,8 @@ dependencies {
     // https://mvnrepository.com/artifact/org.quartz-scheduler/quartz
     implementation "org.quartz-scheduler:quartz:$quartz_version"
 
-    // schema handler TODO MIGRATE TO Release deadline 1 week
-    implementation 'org.zoomba-lang:medeia-validator-jackson:1.6-SNAPSHOT'
+    // schema handler
+    implementation 'org.zoomba-lang:medeia-validator-jackson:1.6'
     implementation "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
 
     // Auth
