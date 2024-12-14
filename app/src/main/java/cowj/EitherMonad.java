@@ -118,51 +118,12 @@ public final class EitherMonad<V> {
     }
 
     /**
-     * A basal implementation for bad design in Java's explicit throwable
-     * Runnable can not have explicit throws associated with it
-     * And this is the solution
-     * <a href="https://stackoverflow.com/questions/11584159/is-there-a-way-to-make-runnables-run-throw-an-exception">...</a>
-     *
-     * @param <E> Type of Error thrown, really
-     */
-    @FunctionalInterface
-    public interface CheckedRunnable<E extends Throwable> extends Runnable {
-
-        /**
-         * A wrapper for Wrapping up errors
-         */
-        class WrappedError extends RuntimeException{
-            WrappedError(Throwable cause){
-                super(cause);
-            }
-        }
-
-        @Override
-        default void run(){
-            try {
-                runThrows();
-            }
-            catch (Throwable ex) {
-                throw new WrappedError(ex);
-            }
-        }
-
-        /**
-         * A basal implementation for bad design in Java's explicit throwable
-         * Runnable can not have explicit throws associated with it
-         * And this is the solution
-         * @throws E any type of Error/Exception/Throwable
-         */
-        void runThrows() throws E;
-    }
-
-    /**
      * Creates an EitherMonad by running the callable code
      * If successful, returns the result , if not returns error
      * @param runnable CheckedRunnable code to be called
      * @return EitherMonad of type Void
      */
-    public static EitherMonad<Nothing> run( CheckedRunnable<?> runnable){
+    public static EitherMonad<Nothing> run( CheckedFunctional.Runnable<?> runnable){
         return EitherMonad.call( () ->{
             runnable.run();
             return Nothing.SUCCESS;
@@ -180,7 +141,7 @@ public final class EitherMonad<V> {
         try {
             return value(callable.call());
         }catch (Throwable t){
-            final Throwable actError = ( t instanceof CheckedRunnable.WrappedError ) ? t.getCause() : t ;
+            final Throwable actError = ( t instanceof CheckedFunctional.Error) ? t.getCause() : t ;
             return error(actError);
         }
     }
@@ -196,8 +157,7 @@ public final class EitherMonad<V> {
         try {
             return callable.call();
         }catch (Throwable t){
-            if ( t instanceof RuntimeException )throw  (RuntimeException)t;
-            throw new RuntimeException(t);
+            throw CheckedFunctional.Error.error(t);
         }
     }
 
