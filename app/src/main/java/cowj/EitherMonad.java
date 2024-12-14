@@ -1,6 +1,5 @@
 package cowj;
 
-import org.checkerframework.checker.units.qual.N;
 
 import java.util.concurrent.Callable;
 import java.util.function.Function;
@@ -58,7 +57,6 @@ public final class EitherMonad<V> {
         if ( inError()) return error(err); // why not this? because it changed the type from V to T at this point
         return EitherMonad.call( () -> then.apply( value ));
     }
-
 
     /**
      * A Monadic way to handle and raise error

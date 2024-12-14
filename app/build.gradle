@@ -117,6 +117,8 @@ dependencies {
     // Message Queueing
     implementation "software.amazon.awssdk:sqs:$aws_client_version"
     implementation 'com.azure:azure-storage-queue:12.24.0'
+    implementation 'com.google.cloud:google-cloud-pubsub:1.134.2'
+
 
     // fcm - close to Messaging, but not close enough
     implementation 'com.google.firebase:firebase-admin:9.4.2'
