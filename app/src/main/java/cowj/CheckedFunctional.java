@@ -1,11 +1,14 @@
 package cowj;
 
+
 /**
  * A basal implementation for bad design in Java's explicit throwable
  * <a href="https://stackoverflow.com/questions/11584159/is-there-a-way-to-make-runnables-run-throw-an-exception">...</a>
  */
-public final class CheckedFunctional {
-
+public enum CheckedFunctional {
+    // https://stackoverflow.com/questions/8848107/how-to-construct-a-non-instantiable-and-non-inheritable-class-in-java
+    ;
+    // following the footstep for the Giants
     /**
      * A wrapper for Wrapping up errors
      *
@@ -25,6 +28,11 @@ public final class CheckedFunctional {
         public static RuntimeException error(Throwable t){
             if ( t instanceof RuntimeException ) return (RuntimeException) t;
             return new Error(t);
+        }
+
+        public static Throwable cause(Throwable t){
+            if ( t instanceof Error ) return t.getCause();
+            return t;
         }
     }
 
@@ -55,4 +63,61 @@ public final class CheckedFunctional {
         void runThrows() throws E;
     }
 
+    /**
+     * Function can not have explicit throws associated with it
+     * And this is the solution
+     * @param <T> Type of input
+     * @param <R> Type of result
+     * @param <E> Type of Error thrown, really
+     */
+    @FunctionalInterface
+    public interface Function<T,R, E extends Throwable> extends java.util.function.Function<T,R> {
+
+        @Override
+        default R apply(T t ){
+            try {
+                return applyThrows(t);
+            }
+            catch (Throwable ex) {
+                throw Error.error(ex);
+            }
+        }
+
+        /**
+         * A basal implementation for bad design in Java's explicit throwable
+         * Function can not have explicit throws associated with it
+         * @param t input
+         * @return a value
+         * @throws E some error
+         */
+        R applyThrows(T t) throws E;
+    }
+
+    /**
+     * Consumer can not have explicit throws associated with it
+     * And this is the solution
+     * @param <T> Type of input
+     * @param <E> Type of Error thrown, really
+     */
+    @FunctionalInterface
+    public interface Consumer<T, E extends Throwable> extends java.util.function.Consumer<T> {
+
+        @Override
+        default void accept(T t ){
+            try {
+                acceptThrows(t);
+            }
+            catch (Throwable ex) {
+                throw Error.error(ex);
+            }
+        }
+
+        /**
+         * A basal implementation for bad design in Java's explicit throwable
+         * Function can not have explicit throws associated with it
+         * @param t input
+         * @throws E some error
+         */
+        void acceptThrows(T t) throws E;
+    }
 }

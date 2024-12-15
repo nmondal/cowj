@@ -9,10 +9,7 @@ import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.ProjectSubscriptionName;
 import com.google.pubsub.v1.PubsubMessage;
 import com.google.pubsub.v1.TopicName;
-import cowj.DataSource;
-import cowj.EitherMonad;
-import cowj.MessageQueue;
-import cowj.Scriptable;
+import cowj.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zoomba.lang.core.types.ZNumber;
@@ -161,20 +158,16 @@ public interface GooglePubSubWrapper extends MessageQueue<PubsubMessage, String,
      * @param timeOutInMS time out in milli sec
      * @return EitherMonad of List of PubsubMessage
      */
-    default EitherMonad<List<PubsubMessage>> getAll(int maxNumberOfMessages, long timeOutInMS) {
+    default EitherMonad<List<PubsubMessage>> getAll(final int maxNumberOfMessages, final long timeOutInMS) {
         if (maxNumberOfMessages <= 0) throw new IllegalArgumentException("Num message should be > 0");
         final Queue<PubsubMessage> mq = bufferQueue();
         return EitherMonad.call(() -> {
-            final long timeWeHave = timeOutInMS ;
             final List<PubsubMessage> res = new ArrayList<>();
             long timeSpent = 0L;
             final long startTime = System.currentTimeMillis();
-            while ( res.size() < maxNumberOfMessages && timeSpent < timeWeHave ){
-                final boolean inError = EitherMonad.call(mq::remove).then( (res::add) ).inError();
-                if ( inError ) {
-                    Thread.sleep(42L);
-                    timeSpent = System.currentTimeMillis() - startTime  ;
-                }
+            while ( res.size() < maxNumberOfMessages && timeSpent < timeOutInMS ){
+                EitherMonad.call(mq::remove).then( (res::add) ).whenError( (t) -> Thread.sleep(42L));
+                timeSpent = System.currentTimeMillis() - startTime  ;
             }
             return res;
         });
@@ -260,36 +253,32 @@ public interface GooglePubSubWrapper extends MessageQueue<PubsubMessage, String,
             final boolean doSync = config.containsKey(SYNC);
             logger.info("[{}] synchronous mode '{}'", name, doSync );
 
-            final MessageReceiver receiver;
+            final CheckedFunctional.Consumer<PubsubMessage,?> messageConsumer;
+
             if (doSync) {
                 final int nBufSize = ZNumber.integer( config.getOrDefault(SYNC, 42) , 42).intValue();
                 logger.info("[{}] synchronous buf size '{}'", name, nBufSize );
                 bufferQueue = new ArrayBlockingQueue<>(nBufSize);
-                receiver = (PubsubMessage message, AckReplyConsumer consumer) -> {
-                    try {
-                        bufferQueue.add( message );
-                        consumer.ack();
-                    }catch (Throwable th){
-                        consumer.nack();
-                    }
-                };
+                messageConsumer = bufferQueue::add;
             } else {
                 final String messageHandler = config.getOrDefault(SUB, "").toString();
                 final Scriptable scriptable = Scriptable.UNIVERSAL.create("gps://" + name, messageHandler);
                 bufferQueue = new SynchronousQueue<>();
-                receiver =
-                        (PubsubMessage message, AckReplyConsumer consumer) -> {
-                            Bindings bindings = new SimpleBindings(Map.of("msg", message));
-                            final boolean processingError = EitherMonad.call(() -> scriptable.exec(bindings)).inError();
-                            if (processingError) {
-                                // send again
-                                consumer.nack();
-                            } else {
-                                // did process it, so carry on
-                                consumer.ack();
-                            }
-                        };
+                messageConsumer = (m) ->{
+                    Bindings bindings = new SimpleBindings(Map.of("msg", m));
+                    scriptable.exec(bindings);
+                };
             }
+            final MessageReceiver receiver = (PubsubMessage message, AckReplyConsumer consumer) -> {
+                try {
+                    messageConsumer.accept(message);
+                    consumer.ack();
+                    logger.debug("message consumed : {}", message.getMessageId());
+                } catch ( Throwable th){
+                    consumer.nack();
+                    logger.error("message failed to consume : " +  message.getMessageId(), th);
+                }
+            };
 
             ProjectSubscriptionName subscriptionName =
                     ProjectSubscriptionName.of(projectId, pub_subId);
