@@ -45,6 +45,19 @@ public interface ModelRunner extends Runnable {
         return DataSource.UNIVERSAL;
     }
 
+    /**
+     * Checks in case the verb, path combo is unique or not
+     * Raises IllegalStateException in case a repeat route is seen
+     * @param verb GET, SET etc HTTP verb
+     * @param path path of the route
+     * @param myRoutes a Set of strings
+     */
+    default void checkUniqueRoute(String verb, String path, Set<String> myRoutes){
+        final String routeKey = verb + "::" + path ;
+        if ( myRoutes.contains(routeKey ) ) throw new IllegalStateException("route already exists : " + routeKey );
+        myRoutes.add(routeKey);
+    }
+
     @Override
     default void run() {
         final Map<String, BiConsumer<String, Route>> routeLoaderMap = new HashMap<>();
@@ -132,12 +145,15 @@ public interface ModelRunner extends Runnable {
             logger.info("scriptable websocket: {} -> {}", r.getKey(), scriptPath);
         }
 
+        Set<String> myRoutes = new HashSet<>();
+
         logger.info("Routes mapping are as follows...");
         Map<String, Map<String, String>> paths = m.routes();
         for (String verb : paths.keySet()) {
             Map<String, String> verbRoutes = paths.getOrDefault(verb, Collections.emptyMap());
             BiConsumer<String, Route> bic = routeLoaderMap.get(verb);
             for (Map.Entry<String, String> r : verbRoutes.entrySet()) {
+                checkUniqueRoute( verb, r.getKey(), myRoutes);
                 String scriptPath = m.interpretPath(r.getValue());
                 Route route = creator.createRoute(r.getKey(), scriptPath);
                 bic.accept(r.getKey(), route);
@@ -151,6 +167,7 @@ public interface ModelRunner extends Runnable {
             Map<String, String> verbProxies = proxies.getOrDefault(verb, Collections.emptyMap());
             BiConsumer<String, Route> bic = routeLoaderMap.get(verb);
             for (Map.Entry<String, String> r : verbProxies.entrySet()) {
+                checkUniqueRoute( verb, r.getKey(), myRoutes);
                 String proxyPath = r.getValue();
                 String[] arr = proxyPath.split("/");
                 String curlKey = arr[0];
