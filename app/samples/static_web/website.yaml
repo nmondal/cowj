@@ -1,0 +1,17 @@
+# This is the sample routes file
+# basic support are given
+
+# port in which to connect
+port: 5993
+
+# for all static files, js, html pages, pds and what not
+static: _/.
+
+# to load all external jars which are not part of the distribution
+lib: _/lib
+
+# threading related stuff
+threading:
+  min: 4
+  max : 8
+  timeout: 30000
