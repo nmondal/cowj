@@ -30,6 +30,15 @@ public class GooglePubSubWrapperTest {
         assertNotNull( gps );
         assertNull( gps.subscriber() );
         assertSame( pub, gps.publisher() );
+        assertEquals( "foo", gps.projectId() );
+        assertEquals( "foo", gps.idPubSub() );
+        assertEquals( 4, gps.asyncWaitTime() );
+        assertThrows( IllegalArgumentException.class,
+                () -> GooglePubSubWrapper.PUB_SUB.create("foo",  Map.of(), () -> ".")) ;
+        assertThrows( IllegalArgumentException.class,
+                () -> GooglePubSubWrapper.PUB_SUB.create("foo",  Map.of("project-id", "xxx"), () -> ".")) ;
+
+
     }
 
     @Test
