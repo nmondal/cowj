@@ -39,7 +39,7 @@ public interface GooglePubSubWrapper extends MessageQueue<PubsubMessage, String,
     EitherMonad<EitherMonad.Nothing> NOT_IMPLEMENTED = EitherMonad.error(new UnsupportedOperationException("We do not support Delete!"));
 
     /**
-     * Key to represent that use this as subscriber
+     * Key to represent that use this as subscriber - value points to subscription script
      */
     String SUB = "sub";
 
@@ -239,7 +239,10 @@ public interface GooglePubSubWrapper extends MessageQueue<PubsubMessage, String,
         final int waitTime = ZNumber.integer(config.getOrDefault(WAIT_TIME, 4), 4).intValue();
         logger.info("[{}] default async wait time of the queue  is '{}'", name, waitTime);
 
-        final boolean isSub = config.containsKey(SUB);
+        final boolean hasSubscriptionScript = config.containsKey(SUB);
+        final boolean doSync = config.containsKey(SYNC);
+        final boolean isSub = hasSubscriptionScript || doSync ;
+
         logger.info("[{}] is subscription ? '{}'", name, isSub);
 
         final Publisher publisher;
@@ -250,7 +253,6 @@ public interface GooglePubSubWrapper extends MessageQueue<PubsubMessage, String,
         if (isSub) {
             publisher = null;
             logger.info("[{}] subscription id is '{}'", name, pub_subId);
-            final boolean doSync = config.containsKey(SYNC);
             logger.info("[{}] synchronous mode '{}'", name, doSync );
 
             final CheckedFunctional.Consumer<PubsubMessage,?> messageConsumer;
