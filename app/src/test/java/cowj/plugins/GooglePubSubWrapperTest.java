@@ -14,6 +14,7 @@ import com.google.pubsub.v1.TopicName;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.mockito.MockedStatic;
+import zoomba.lang.core.collections.ZList;
 
 import java.io.IOException;
 import java.util.List;
@@ -59,6 +60,7 @@ public class GooglePubSubWrapperTest {
 
         Publisher pub = mock( Publisher.class );
         Subscriber sub = mock( Subscriber.class ) ;
+        Queue q = new ZList();
 
         @Override
         public String projectId() {
@@ -82,12 +84,12 @@ public class GooglePubSubWrapperTest {
 
         @Override
         public Queue<PubsubMessage> bufferQueue() {
-            return null;
+            return q;
         }
 
         @Override
         public int waitTime() {
-            return 42;
+            return 1;
         }
     };
 
@@ -159,6 +161,15 @@ public class GooglePubSubWrapperTest {
 
     @Test
     public void messageGetTest()  {
+        assertFalse( instance.get().isSuccessful() );
+        instance.bufferQueue().add( instance.message("hi") );
+        assertTrue( instance.get().isSuccessful() );
+        assertTrue( instance.getAll(1).isSuccessful() );
+        assertThrows( IllegalArgumentException.class, () -> instance.getAll(-1) );
+    }
+
+    @Test
+    public void asyncEventingTest(){
 
     }
 }
