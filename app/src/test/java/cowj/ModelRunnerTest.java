@@ -9,10 +9,7 @@ import zoomba.lang.core.io.ZWeb;
 import zoomba.lang.core.operations.ZJVMAccess;
 import zoomba.lang.core.types.ZTypes;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 public class ModelRunnerTest {
@@ -21,6 +18,7 @@ public class ModelRunnerTest {
     final String proxy = "samples/proxy/proxy.yaml" ;
     final String test = "samples/test_scripts/test.yml" ;
     final String jython = "samples/jython/jython.yaml" ;
+    final String website = "samples/static_web/website.yaml" ;
 
     private ModelRunner mr ;
 
@@ -70,10 +68,11 @@ public class ModelRunnerTest {
     }
     @Test
     public void bootTest(){
-        ModelRunner mr = runModel(hello);
-        Assert.assertTrue( ping("http://localhost:5003", "/hello/z"));
+        ModelRunner mr = runModel(website);
+        Assert.assertTrue( ping("http://localhost:5993", "/"));
+        Assert.assertThrows( IllegalStateException.class ,  () -> mr.checkUniqueRoute( "get", "/x" , Set.of("get::/x") ) );
         mr.stop();
-        Assert.assertFalse( ping("http://localhost:5003", "/hello/z"));
+        Assert.assertFalse( ping("http://localhost:5993", "/"));
     }
 
     @Test

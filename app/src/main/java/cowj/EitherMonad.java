@@ -1,9 +1,10 @@
 package cowj;
 
-import org.checkerframework.checker.units.qual.N;
 
 import java.util.concurrent.Callable;
-import java.util.function.Function;
+import cowj.CheckedFunctional.Function;
+import cowj.CheckedFunctional.Consumer;
+import cowj.CheckedFunctional.Error ;
 
 /**
  * Abstraction over Result of any operation
@@ -54,11 +55,40 @@ public final class EitherMonad<V> {
      * @return another EitherMonad of type T
      * @param <T> type of the returned EitherMonad
      */
-    public <T> EitherMonad<T> then( Function<V,T> then ){
+    public <T> EitherMonad<T> then( Function<V,T,?> then ){
         if ( inError()) return error(err); // why not this? because it changed the type from V to T at this point
         return EitherMonad.call( () -> then.apply( value ));
     }
 
+    /**
+     * A Monadic way to handle error case
+     * When Error exists, this method call allows a consumer to consume the error
+     * If the consumption does not end in error, then returns the current monad
+     * In case the consumption itself ends in an error, returns that error monad
+     * @param errorConsumer a Check type of Consumer which may raise any error
+     * @return itself in case of no error, or no error in error consumption otherwise returns the error monad
+     */
+    public EitherMonad<V> whenError(Consumer<Throwable,?> errorConsumer ){
+        if ( isSuccessful() ) return this;
+        EitherMonad<?> c = EitherMonad.run( () -> errorConsumer.accept( error() ));
+        if ( c.inError() ) return error( c.error() );
+        return this;
+    }
+
+    /**
+     * A Monadic way to handle success case
+     * When no error exists, this method call allows a consumer to consume the monad valie
+     * If the consumption does not end in error, or it was already in error then returns the current monad
+     * In case the consumption itself ends in an error, returns that error monad
+     * @param valueConsumer a Check type of Consumer which may raise any error
+     * @return itself in case of no error, or no error in error consumption otherwise returns the error monad
+     */
+    public EitherMonad<V> whenSuccess(Consumer<V,?> valueConsumer){
+        if ( inError() ) return this;
+        EitherMonad<?> c = EitherMonad.run( () -> valueConsumer.accept( value() ));
+        if ( c.inError() ) return error( c.error() );
+        return this;
+    }
 
     /**
      * A Monadic way to handle and raise error
@@ -69,7 +99,7 @@ public final class EitherMonad<V> {
      * @param <E> type of the return parameter for the error transfer function ensure
      * @return current instance if current isSuccessful()
      */
-    public <E extends RuntimeException> EitherMonad<V> ensure( Function<Throwable,E> ensure ){
+    public <E extends RuntimeException> EitherMonad<V> ensure( Function<Throwable,E,?> ensure ){
         if ( isSuccessful() ) return this;
         throw  ensure.apply(err);
     }
@@ -83,7 +113,7 @@ public final class EitherMonad<V> {
      * @return current instance if current isSuccessful()
      */
     public EitherMonad<V> ensure(){
-        return ensure( (e) -> e instanceof RuntimeException ? (RuntimeException)e : new RuntimeException(e) );
+        return ensure( CheckedFunctional.Error::error );
     }
 
     /**
@@ -120,51 +150,12 @@ public final class EitherMonad<V> {
     }
 
     /**
-     * A basal implementation for bad design in Java's explicit throwable
-     * Runnable can not have explicit throws associated with it
-     * And this is the solution
-     * <a href="https://stackoverflow.com/questions/11584159/is-there-a-way-to-make-runnables-run-throw-an-exception">...</a>
-     *
-     * @param <E> Type of Error thrown, really
-     */
-    @FunctionalInterface
-    public interface CheckedRunnable<E extends Throwable> extends Runnable {
-
-        /**
-         * A wrapper for Wrapping up errors
-         */
-        class WrappedError extends RuntimeException{
-            WrappedError(Throwable cause){
-                super(cause);
-            }
-        }
-
-        @Override
-        default void run(){
-            try {
-                runThrows();
-            }
-            catch (Throwable ex) {
-                throw new WrappedError(ex);
-            }
-        }
-
-        /**
-         * A basal implementation for bad design in Java's explicit throwable
-         * Runnable can not have explicit throws associated with it
-         * And this is the solution
-         * @throws E any type of Error/Exception/Throwable
-         */
-        void runThrows() throws E;
-    }
-
-    /**
      * Creates an EitherMonad by running the callable code
      * If successful, returns the result , if not returns error
      * @param runnable CheckedRunnable code to be called
      * @return EitherMonad of type Void
      */
-    public static EitherMonad<Nothing> run( CheckedRunnable<?> runnable){
+    public static EitherMonad<Nothing> run( CheckedFunctional.Runnable<?> runnable){
         return EitherMonad.call( () ->{
             runnable.run();
             return Nothing.SUCCESS;
@@ -182,7 +173,7 @@ public final class EitherMonad<V> {
         try {
             return value(callable.call());
         }catch (Throwable t){
-            final Throwable actError = ( t instanceof CheckedRunnable.WrappedError ) ? t.getCause() : t ;
+            final Throwable actError = Error.cause(t) ;
             return error(actError);
         }
     }
@@ -198,8 +189,7 @@ public final class EitherMonad<V> {
         try {
             return callable.call();
         }catch (Throwable t){
-            if ( t instanceof RuntimeException )throw  (RuntimeException)t;
-            throw new RuntimeException(t);
+            throw CheckedFunctional.Error.error(t);
         }
     }
 
