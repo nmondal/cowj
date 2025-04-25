@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 import static cowj.AsyncHandler.ASYNC_ROUTE_PREFIX;
 
@@ -36,6 +37,19 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      * Logger for the Cowj Scriptable
      */
     Logger logger = LoggerFactory.getLogger(Scriptable.class);
+
+    /**
+     * Uses this Scriptable as a CheckedFunctional.Consumer
+     * @param payloadVar variable name for the param
+     * @return a CheckedFunctional.Consumer
+     * @param <T> type of the consumer
+     */
+    default <T> CheckedFunctional.Consumer<T, Exception >  checkedConsumer(String payloadVar){
+        return (m) ->{
+            final Bindings bindings = new SimpleBindings(Map.of(payloadVar, m));
+            exec(bindings);
+        };
+    }
 
     /**
      * Basal method to run any scripts

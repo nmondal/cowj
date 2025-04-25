@@ -7,10 +7,13 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import com.google.api.core.ApiFuture;
+import com.google.cloud.pubsub.v1.AckReplyConsumer;
+import com.google.cloud.pubsub.v1.MessageReceiver;
 import com.google.cloud.pubsub.v1.Publisher;
 import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.pubsub.v1.PubsubMessage;
 import com.google.pubsub.v1.TopicName;
+import cowj.Scriptable;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.mockito.MockedStatic;
@@ -169,7 +172,32 @@ public class GooglePubSubWrapperTest {
     }
 
     @Test
-    public void asyncEventingTest(){
+    public void messageReceiverTest(){
+        Scriptable nop = Scriptable.NOP.create( "", "" );
+        MessageReceiver mr = GooglePubSubWrapper.messageReceiver( nop.checkedConsumer( "msg") ) ;
+        final boolean [] arr = new boolean[] { false, false };
+
+        AckReplyConsumer arc = new AckReplyConsumer() {
+            @Override
+            public void ack() {
+                arr[0] = true;
+            }
+
+            @Override
+            public void nack() {
+                arr[1] = true;
+            }
+        };
+
+        mr.receiveMessage( instance.message("hi"), arc );
+        assertTrue( arr[0] );
+        assertFalse(arr[1] );
+        arr[0] = false;
+        mr = GooglePubSubWrapper.messageReceiver( null ) ;
+        mr.receiveMessage( instance.message("hi"), arc );
+
+        assertFalse(arr[0]);
+        assertTrue( arr[1] );
 
     }
 }

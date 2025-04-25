@@ -218,6 +218,25 @@ public interface GooglePubSubWrapper extends MessageQueue<PubsubMessage, String,
     Queue<PubsubMessage> bufferQueue();
 
     /**
+     * Creates a MessageReceiver by using a CheckedFunctional.Consumer
+     * If we do not want to ack the message, then we need to just raise error while accepting
+     * @param messageConsumer a CheckedFunctional.Consumer for the PubsubMessage
+     * @return a CheckedFunctional.Consumer
+     */
+    static MessageReceiver messageReceiver(CheckedFunctional.Consumer<PubsubMessage,?> messageConsumer ){
+        return (PubsubMessage message, AckReplyConsumer consumer) -> {
+            try {
+                messageConsumer.accept(message);
+                consumer.ack();
+                logger.debug("message consumed : {}", message.getMessageId());
+            } catch ( Throwable th){
+                consumer.nack();
+                logger.error("message failed to consume : " +  message.getMessageId(), th);
+            }
+        };
+    }
+
+    /**
      * A Creator for Google Pub Sub
      */
     DataSource.Creator PUB_SUB = (name, config, parent) -> {
@@ -266,21 +285,9 @@ public interface GooglePubSubWrapper extends MessageQueue<PubsubMessage, String,
                 final String messageHandler = config.getOrDefault(SUB, "").toString();
                 final Scriptable scriptable = Scriptable.UNIVERSAL.create("gps://" + name, messageHandler);
                 bufferQueue = new SynchronousQueue<>();
-                messageConsumer = (m) ->{
-                    Bindings bindings = new SimpleBindings(Map.of("msg", m));
-                    scriptable.exec(bindings);
-                };
+                messageConsumer = scriptable.checkedConsumer("msg");
             }
-            final MessageReceiver receiver = (PubsubMessage message, AckReplyConsumer consumer) -> {
-                try {
-                    messageConsumer.accept(message);
-                    consumer.ack();
-                    logger.debug("message consumed : {}", message.getMessageId());
-                } catch ( Throwable th){
-                    consumer.nack();
-                    logger.error("message failed to consume : " +  message.getMessageId(), th);
-                }
-            };
+            final MessageReceiver receiver = messageReceiver( messageConsumer );
 
             ProjectSubscriptionName subscriptionName =
                     ProjectSubscriptionName.of(projectId, pub_subId);
