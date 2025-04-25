@@ -138,7 +138,7 @@ dependencies {
     // REDIS
     testImplementation 'it.ozimov:embedded-redis:0.7.3'
     // WebSocket
-    testImplementation 'org.java-websocket:Java-WebSocket:1.5.7'
+    testImplementation 'org.java-websocket:Java-WebSocket:1.6.0'
     // Mockito ...
     testImplementation "org.mockito:mockito-core:$mockito_version"
 }
