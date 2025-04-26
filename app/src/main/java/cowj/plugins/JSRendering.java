@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.script.ScriptEngine;
+import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -65,10 +66,10 @@ public interface JSRendering {
 
     private static String relocAndLoadFileData( String path, String modelStaticPath) throws Exception {
         final String localPath;
-        if ( path.startsWith("/")){
+        if ( new File(path).isAbsolute() ){
             localPath =  path;
         } else {
-            localPath =  modelStaticPath + "/" + path ;
+            localPath =  modelStaticPath + File.separator + path ;
         }
         logger.info("Reading script locally : {}", localPath);
         return  Files.readString(Paths.get(localPath));
