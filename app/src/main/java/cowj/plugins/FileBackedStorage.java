@@ -18,7 +18,9 @@ import java.util.stream.Stream;
 
 /**
  * A file system backed Storage for persistence
- * Does not work with Windows as of now
+ * This also runs on Windows - because File and Path in java does necessary translation
+ * Remember to use linux/unix style path separation while using it : e.g x/y convention
+ * Under the hood, the proper folder structure would be auto created
  */
 public class FileBackedStorage implements StorageWrapper.SimpleKeyValueStorage {
 
