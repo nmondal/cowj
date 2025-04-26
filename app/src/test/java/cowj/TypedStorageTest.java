@@ -3,6 +3,7 @@ package cowj;
 
 import org.junit.*;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -131,6 +132,6 @@ public class TypedStorageTest {
         Assert.assertTrue( typeSystem.match( "customer.json", c) );
         Assert.assertFalse( typeSystem.match( "address.json", c) );
         Assert.assertFalse( typeSystem.match( "customer.json", a) );
-        Assert.assertNotNull( TypeSystem.reloadForFileWatcher( typeSystem.definitionsDir() + "/" + "Person.json") );
+        Assert.assertNotNull( TypeSystem.reloadForFileWatcher( typeSystem.definitionsDir() + File.separator + "Person.json") );
     }
 }
