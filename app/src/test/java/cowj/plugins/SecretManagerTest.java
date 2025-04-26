@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueReques
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 import zoomba.lang.core.types.ZTypes;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +31,8 @@ public class SecretManagerTest {
 
     final static Model model = () -> ".";
 
+    final static boolean isWindows = File.separator.equals("\\") ;
+
     @Test
     public void testLocal(){
         DataSource ds =  SecretManager.LOCAL.create("foo", Collections.emptyMap(), model  );
@@ -37,7 +40,8 @@ public class SecretManagerTest {
         Assert.assertEquals("foo", ds.name() );
         Assert.assertTrue( ds.proxy() instanceof SecretManager );
         SecretManager sm = (SecretManager)ds.proxy();
-        Assert.assertFalse( sm.getOrDefault("PATH", "").isEmpty() );
+        final String pathVarName = isWindows ? "Path" : "PATH" ;
+        Assert.assertFalse( sm.getOrDefault(pathVarName, "").isEmpty() );
     }
 
     @Test
