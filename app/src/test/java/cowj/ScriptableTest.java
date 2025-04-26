@@ -136,8 +136,8 @@ public class ScriptableTest {
         Scriptable sc= Scriptable.JSR.create(Scriptable.INLINE, "Test.print('hello, world!%n'); Test.printe('hello, world!%n'); //.js" );
         try {
             sc.exec( new SimpleBindings( ) );
-            Assert.assertTrue( baos.toString().contains( "hello, world!\n") );
-            Assert.assertTrue( baes.toString().contains( "hello, world!\n") );
+            Assert.assertTrue( baos.toString().contains( "hello, world!" + System.lineSeparator()) );
+            Assert.assertTrue( baes.toString().contains( "hello, world!" + System.lineSeparator() ) );
         }finally {
             System.setOut(os);
             System.setOut(es);
