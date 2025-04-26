@@ -5,11 +5,15 @@ package cowj;
 
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.File;
 import java.util.Map;
 
 import static org.junit.Assert.assertThrows;
 
 public class ModelTest {
+
+    static final boolean isWindows = File.separator.equals( "\\" ) ;
 
     final String p = "samples/hello/hello.yaml" ;
     final String pj = "samples/proxy/proxy.json" ;
@@ -25,7 +29,7 @@ public class ModelTest {
         Assert.assertFalse(m.filters().isEmpty());
         Assert.assertFalse(m.dataSources().isEmpty());
         Assert.assertEquals( 5003, m.port());
-        Assert.assertTrue( m.base().endsWith("samples/hello"));
+        Assert.assertTrue( m.base().endsWith("samples" + File.separator + "hello"));
         Assert.assertFalse( m.cron().isEmpty() );
     }
 
@@ -51,8 +55,8 @@ public class ModelTest {
     @Test
     public void templateEnvTests(){
         Model m = Model.from(p);
-        // runs only on *Nix
-        String r = m.envTemplate("Hello, ${USER}!");
+        String templateMacro = isWindows ? "Hello, ${USERNAME}!" : "Hello, ${USER}!" ;
+        String r = m.envTemplate(templateMacro);
         Assert.assertFalse(r.contains("?"));
         Assert.assertTrue(r.contains("Hello, "));
     }
@@ -75,7 +79,7 @@ public class ModelTest {
         });
         Assert.assertNotNull(exception);
         Assert.assertTrue( exception.getMessage().contains("exists"));
-        Assert.assertTrue( exception.getMessage().contains("foo/bar.yaml"));
+        Assert.assertTrue( exception.getMessage().contains("foo" + File.separator + "bar.yaml"));
     }
 
     @Test
@@ -85,7 +89,7 @@ public class ModelTest {
         });
         Assert.assertNotNull(exception);
         Assert.assertTrue( exception.getMessage().contains("Invalid Type"));
-        Assert.assertTrue( exception.getMessage().contains(wm));
+        Assert.assertTrue( exception.getMessage().contains( "proxy.zm" ));
     }
 
 }
