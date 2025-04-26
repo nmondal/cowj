@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 
 /**
  * A file system backed Storage for persistence
+ * Does not work with Windows as of now
  */
 public class FileBackedStorage implements StorageWrapper.SimpleKeyValueStorage {
 

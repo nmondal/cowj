@@ -1,11 +1,9 @@
 package cowj.plugins;
 
 import cowj.DataSource;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
+import java.io.File;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +11,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * Currently no support for windows, need to think to give support
+ */
 public class VersionedStorageTest {
     static final String BUCKET_NAME = "fs-bar-versioned";
 
@@ -22,6 +23,7 @@ public class VersionedStorageTest {
 
     @BeforeClass
     public static void beforeClass() {
+        Assume.assumeTrue(File.separator.equals("/") );
         VersionedFileStorage.deleteRecurse(Paths.get(MOUNT_PT + "/" + BUCKET_NAME) );
         DataSource ds  = VersionedFileStorage.STORAGE.create( "_vfs_", Map.of(VersionedFileStorage.MOUNT_POINT, MOUNT_PT ), () ->"");
         Assert.assertTrue( ds.proxy() instanceof  VersionedFileStorage );
@@ -35,6 +37,7 @@ public class VersionedStorageTest {
 
     @AfterClass
     public static void afterClass(){
+        if ( fs == null ) return;
         fs.deleteBucket(BUCKET_NAME);
         Assert.assertFalse( fs.deleteBucket(BUCKET_NAME));
     }

@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 
 /**
  * A Versioned (journaled) file system backed key value Storage for persistence
+ * This will ONLY work in a *nix like mountable system - sorry, no windows
  */
 public class VersionedFileStorage extends FileBackedStorage
         implements StorageWrapper.VersionedStorage<String> {
