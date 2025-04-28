@@ -381,7 +381,7 @@ public interface TypeSystem {
      */
     default EitherMonad<Object> json(String schemaPath, String potentialJsonBody) {
         try {
-            final String jsonSchemaPath = definitionsDir() + "/"+  schemaPath;
+            final String jsonSchemaPath = definitionsDir() + File.separator +  schemaPath;
             SchemaValidator validator = loadSchema(jsonSchemaPath);
             JsonParser unvalidatedParser =
                     OBJECT_MAPPER.getFactory().createParser(potentialJsonBody);

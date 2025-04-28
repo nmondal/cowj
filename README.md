@@ -330,9 +330,12 @@ x;// return
 
 The context is defined as:
 
-https://sparkjava.com/documentation#request
+https://javadoc.io/doc/com.sparkjava/spark-core/2.6.0/spark/Request.html
 
-https://sparkjava.com/documentation#response
+
+https://javadoc.io/doc/com.sparkjava/spark-core/2.6.0/spark/Response.html
+
+
 
 A good read about why we try to avoid type systems inside can be found here:
 

@@ -19,6 +19,11 @@ import java.util.stream.Stream;
 
 /**
  * A Versioned (journaled) file system backed key value Storage for persistence
+ * This will ONLY work in a FileSystems capable of non admin soft linking ln -s
+ * <a href="https://stackoverflow.com/questions/19230535/create-windows-symbolic-link-with-java-equivalent-to-mklink">...</a>
+ * For Windows - please enable Developer Mode - for Non Admin Soft Link
+ * <a href="https://learn.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development">...</a>
+ *
  */
 public class VersionedFileStorage extends FileBackedStorage
         implements StorageWrapper.VersionedStorage<String> {
