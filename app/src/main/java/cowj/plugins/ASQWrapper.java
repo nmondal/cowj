@@ -71,7 +71,7 @@ public interface ASQWrapper extends MessageQueue<QueueMessageItem, SendMessageRe
 
     @Override
     default EitherMonad<QueueMessageItem> get() {
-        return getAll(1).then(List::getFirst);
+        return getAll(1).then(x -> x.get(0));
     }
 
     /**
