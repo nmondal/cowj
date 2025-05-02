@@ -106,7 +106,7 @@ public class RedisWrapperTest {
         SecretManager mockSecretManager = Collections::emptyMap;
 
         try {
-            DataSource.registerDataSource(RedisWrapper.SECRET_MANAGER, mockSecretManager);
+            DataSource.registerDataSource(SecretManager.SECRET_MANAGER, mockSecretManager);
             /// we are setting urls to string but the secret manager
             /// does not contain the key. Also, default implementation
             /// uses environment variable which is not defined either.
@@ -116,7 +116,7 @@ public class RedisWrapperTest {
                 RedisWrapper.REDIS.create("foo", config, model);
             });
         } finally {
-            DataSource.unregisterDataSource(RedisWrapper.SECRET_MANAGER);
+            DataSource.unregisterDataSource(SecretManager.SECRET_MANAGER);
         }
     }
 }

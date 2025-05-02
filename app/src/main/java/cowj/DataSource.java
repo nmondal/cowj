@@ -1,5 +1,6 @@
 package cowj;
 
+import cowj.plugins.SecretManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -170,4 +171,21 @@ public interface DataSource {
     static <T> T unregisterDataSource(String dsName){
         return (T) DATA_SOURCES.remove(dsName);
     }
+
+    static <T> T  getTyped( Map<String,Object> config , Model parent, String keyName, Class<T> type, T defaultValue){
+        final Object myValue = config.getOrDefault( keyName, defaultValue);
+        if ( type.isInstance( myValue) ) return (T) myValue;
+        if ( myValue instanceof String ) return SecretManager.getFromConfig(config, parent, myValue.toString(), defaultValue);
+        final String msg = String.format("%s - value is neither string or %s", keyName, type.getSimpleName());
+        throw new IllegalArgumentException(msg);
+    }
+
+    static  <K,V> Map<K,V>  map( Map<String,Object> config , Model parent, String keyName){
+        return getTyped(config, parent, keyName, Map.class, Collections.emptyMap()) ;
+    }
+
+    static  <V> List<V>  list( Map<String,Object> config , Model parent, String keyName){
+        return getTyped(config, parent, keyName, List.class, Collections.emptyList()) ;
+    }
+
 }

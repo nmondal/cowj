@@ -1,19 +1,14 @@
 package cowj.plugins;
 
 import cowj.DataSource;
-import cowj.Scriptable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.JedisCluster;
-import redis.clients.jedis.JedisPooled;
-import redis.clients.jedis.UnifiedJedis;
+import redis.clients.jedis.*;
 import zoomba.lang.core.types.ZNumber;
-import zoomba.lang.core.types.ZTypes;
-
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -26,10 +21,6 @@ public interface RedisWrapper {
      */
     Logger logger = LoggerFactory.getLogger(RedisWrapper.class);
 
-    /**
-     * Key for the SecretManager to be used
-     */
-    String SECRET_MANAGER = "secrets";
 
     /**
      * Key for the hosted REDIS urls to be used
@@ -37,42 +28,87 @@ public interface RedisWrapper {
      */
     String URLS = "urls";
 
+
+    /**
+     * Key for the REDIS client configuration to be used
+     * This key should point to a json object type
+     */
+    String CLIENT_CONFIG = "client-config";
+
+    final class Config{
+
+        static final String CONNECTION_TIME_OUT = "connection-timeout" ;
+
+        static final String SOCKET_TIME_OUT = "socket-timeout" ;
+
+        static final String BLOCKING_SOCKET_TIME_OUT = "blocking-socket-timeout" ;
+
+        static final String USER = "usr" ;
+
+        static final String PASSWORD = "pwd" ;
+
+        static final String DATABASE = "db" ;
+
+        static JedisClientConfig fromConfig( Map<String, Object> clientConfig ){
+            DefaultJedisClientConfig.Builder builder = DefaultJedisClientConfig.builder();
+            // use this as default
+            DefaultJedisClientConfig def = DefaultJedisClientConfig.builder().build();
+            BiFunction<Object, Integer,  Integer> intConverter =
+                    (val,valDefault) -> ZNumber.integer( val, valDefault).intValue() ;
+
+            clientConfig.computeIfPresent( CONNECTION_TIME_OUT, (k,v) ->
+                    builder.connectionTimeoutMillis(intConverter.apply(v, def.getConnectionTimeoutMillis())  ) );
+
+            clientConfig.computeIfPresent( SOCKET_TIME_OUT, (k,v) ->
+                    builder.socketTimeoutMillis(intConverter.apply(v, def.getSocketTimeoutMillis())  ) );
+
+            clientConfig.computeIfPresent( BLOCKING_SOCKET_TIME_OUT, (k,v) ->
+                    builder.blockingSocketTimeoutMillis(intConverter.apply(v, def.getBlockingSocketTimeoutMillis())  ) );
+
+            clientConfig.computeIfPresent( DATABASE, (k,v) ->
+                    builder.database(intConverter.apply(v, def.getDatabase()) ) );
+
+            clientConfig.computeIfPresent( USER, (k,v) -> builder.user( v.toString() ) );
+            clientConfig.computeIfPresent( PASSWORD, (k,v) -> builder.password( v.toString() ) );
+
+            return builder.build();
+
+        }
+
+        static UnifiedJedis jedis( Set<HostAndPort> jedisClusterNodes , Map<String, Object> clientConfig){
+            if ( clientConfig.isEmpty() ){
+                if ( jedisClusterNodes.size() > 1 ){
+                    return  new JedisCluster(jedisClusterNodes);
+                }
+                final HostAndPort hp = jedisClusterNodes.iterator().next();
+                return new JedisPooled(hp);
+            }
+            // here is some useful work
+            JedisClientConfig jedisClientConfig = fromConfig( clientConfig );
+            if ( jedisClusterNodes.size() > 1 ){
+                return  new JedisCluster(jedisClusterNodes, jedisClientConfig );
+            }
+            final HostAndPort hp = jedisClusterNodes.iterator().next();
+            return new JedisPooled(hp, jedisClientConfig );
+        }
+
+    }
+
     /**
      * A DataSource.Creator which returns proxy() as redis.clients.jedis.UnifiedJedis
      */
     DataSource.Creator REDIS = (name, config, parent) -> {
-        Object urlObject = config.getOrDefault(URLS, "");
-        List<String> urls;
-        if (urlObject instanceof List) {
-            urls = (List<String>) urlObject;
-        } else if (urlObject instanceof String) {
-            final String mySecretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
-            SecretManager sm =  DataSource.dataSourceOrElse(mySecretManagerName, SecretManager.DEFAULT);
-            String urlJson = parent.template(urlObject.toString(), sm.env());
-            try {
-                urls = (List<String>) ZTypes.json(urlJson);
-            }catch (Throwable t){
-                logger.error("There was an error loading redis 'urls' from secret manager : " + t.getMessage());
-                urls = Collections.emptyList();
-            }
-
-        } else {
-            throw new IllegalArgumentException("urls - value is neither string or list!");
-        }
-
+        List<String> urls = DataSource.list( config, parent, URLS);
         if (urls.isEmpty()) throw new IllegalArgumentException("url list is empty!");
+
+        Map<String, Object> clientConfigMap = DataSource.map( config, parent, CLIENT_CONFIG );
+
         Set<HostAndPort> jedisClusterNodes =
                 urls.stream().map(s -> {
                     String[] arr = s.split(":");
                     return new HostAndPort(arr[0], ZNumber.integer(arr[1], 6379).intValue());
                 }).collect(Collectors.toSet());
-        final UnifiedJedis jedis;
-        if ( jedisClusterNodes.size() > 1 ){
-            jedis =  new JedisCluster(jedisClusterNodes);
-        } else {
-            HostAndPort hp = jedisClusterNodes.iterator().next();
-            jedis = new JedisPooled(hp.getHost(), hp.getPort());
-        }
+        final UnifiedJedis jedis = Config.jedis( jedisClusterNodes, clientConfigMap );
         return DataSource.dataSource(name, jedis);
     };
 }

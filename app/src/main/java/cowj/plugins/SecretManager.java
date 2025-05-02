@@ -33,6 +33,24 @@ public interface SecretManager {
 
 
     /**
+     * Key for the SecretManager to be used
+     */
+    String SECRET_MANAGER = "secrets";
+
+    static  <T> T  getFromConfig(Map<String,Object> config , Model parent, String myValue, T defaultValue){
+        final String mySecretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
+        SecretManager sm =  DataSource.dataSourceOrElse(mySecretManagerName, SecretManager.DEFAULT);
+        String urlJson = parent.template(myValue, sm.env());
+        try {
+            return (T) ZTypes.json(urlJson);
+        }catch (Throwable t){
+            logger.error("There was an error loading '{}' from secret manager : {}" , myValue, t.getMessage() );
+            return defaultValue;
+        }
+    }
+
+
+    /**
      * Underlying Environment
      * @return a map
      */
