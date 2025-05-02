@@ -8,9 +8,9 @@ import zoomba.lang.core.types.ZNumber;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static cowj.DataSource.*;
 
 /**
  * Abstraction for REDIS via JEDIS
@@ -71,23 +71,6 @@ public interface RedisWrapper {
          */
         public static final String DATABASE = "db" ;
 
-        static <K,V,T> void  computeIfPresent(Map<K, V> config,
-                                          K key,
-                                          BiFunction<V,T, T> typeConverter,
-                                          T defaultValue,
-                                          Consumer<T> builderConsumer ){
-            V v = config.getOrDefault(key , null);
-            if ( v == null ) return;
-            final T val = typeConverter.apply( v, defaultValue );
-            builderConsumer.accept(val);
-        }
-
-
-        // a typical integer converter
-        static final BiFunction<Object, Integer,  Integer> intConverter =
-                (val,valDefault) -> ZNumber.integer( val, valDefault).intValue() ;
-        // a typical string converter
-        static final BiFunction<Object,String,String> stringConverter = (o,def) -> String.valueOf(o) ;
 
         static JedisClientConfig fromConfig( Map<String, Object> clientConfig ){
             DefaultJedisClientConfig.Builder builder = DefaultJedisClientConfig.builder();
@@ -95,20 +78,20 @@ public interface RedisWrapper {
             DefaultJedisClientConfig def = DefaultJedisClientConfig.builder().build();
 
             computeIfPresent( clientConfig, CONNECTION_TIME_OUT,
-                    intConverter, def.getConnectionTimeoutMillis(), builder::connectionTimeoutMillis );
+                    INTEGER_CONVERTER, def.getConnectionTimeoutMillis(), builder::connectionTimeoutMillis );
 
             computeIfPresent( clientConfig, SOCKET_TIME_OUT,
-                    intConverter, def.getSocketTimeoutMillis(), builder::socketTimeoutMillis);
+                    INTEGER_CONVERTER, def.getSocketTimeoutMillis(), builder::socketTimeoutMillis);
 
             computeIfPresent( clientConfig, BLOCKING_SOCKET_TIME_OUT,
-                    intConverter, def.getBlockingSocketTimeoutMillis(), builder::blockingSocketTimeoutMillis );
+                    INTEGER_CONVERTER, def.getBlockingSocketTimeoutMillis(), builder::blockingSocketTimeoutMillis );
 
             computeIfPresent(clientConfig, DATABASE,
-                    intConverter, def.getDatabase(), builder::database );
+                    INTEGER_CONVERTER, def.getDatabase(), builder::database );
 
-            computeIfPresent(clientConfig, USER, stringConverter, "",  builder::user );
+            computeIfPresent(clientConfig, USER, STRING_CONVERTER, "",  builder::user );
 
-            computeIfPresent(clientConfig, PASSWORD, stringConverter, "", builder::password );
+            computeIfPresent(clientConfig, PASSWORD, STRING_CONVERTER, "", builder::password );
 
             return builder.build();
 

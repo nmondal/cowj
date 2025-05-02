@@ -3,9 +3,12 @@ package cowj;
 import cowj.plugins.SecretManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import zoomba.lang.core.types.ZNumber;
 
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 /**
  * Cowj abstraction for anything which deals with data
@@ -214,4 +217,52 @@ public interface DataSource {
     static  <V> List<V>  list( Map<String,Object> config , Model parent, String keyName){
         return typed(config, parent, keyName, List.class, Collections.emptyList()) ;
     }
+
+    /**
+     * Compute and Consume a key from a config
+     * @param config a Map
+     * @param key name of the key
+     * @param typeConverter a BiFunction which takes value and default and convert to a type for consumer
+     * @param defaultValue default value to be passed while conversation
+     * @param builderConsumer a consumer which will consume the converted type
+     * @param <K> type of the key of the Map
+     * @param <V> type of the value of the Map
+     * @param <T> type of the Consumer
+     */
+    static <K,V,T> void  computeIfPresent(Map<K, V> config,
+                                          K key,
+                                          BiFunction<V,T, T> typeConverter,
+                                          T defaultValue,
+                                          Consumer<T> builderConsumer ){
+        V v = config.getOrDefault(key , null);
+        if ( v == null ) return;
+        final T val = typeConverter.apply( v, defaultValue );
+        builderConsumer.accept(val);
+    }
+
+    /**
+     * Compute and Consume a key from a config while converting the value as String
+     * @param config a Map
+     * @param key name of the key
+     * @param builderConsumer a Consumer of String
+     * @param <K> type of the key of the Map
+     * @param <V> type of the value of the Map
+     */
+    static <K,V> void  computeIfPresent(Map<K, V> config,
+                                          K key,
+                                          Consumer<String> builderConsumer ){
+        computeIfPresent( config, key, (x,d) -> String.valueOf(x), "", builderConsumer);
+    }
+
+    /**
+     * a typical integer converter
+     */
+    BiFunction<Object, Integer,  Integer> INTEGER_CONVERTER =
+            (val,valDefault) -> ZNumber.integer( val, valDefault).intValue() ;
+
+    /**
+     * a typical string converter
+     */
+    BiFunction<Object,String,String> STRING_CONVERTER = (o, def) -> String.valueOf(o) ;
+
 }

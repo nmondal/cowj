@@ -55,12 +55,21 @@ public class RedisWrapperTest {
     public void bootSingleTest() {
         UnifiedJedis jedis = boot(List.of("localhost:4242"));
         Assert.assertTrue(jedis instanceof JedisPooled);
+        jedis = RedisWrapper.Config.jedis(
+                Set.of( new HostAndPort("localhost" , 4242) ),
+                Map.of("foobar", "foo-bar" ) );
+        Assert.assertTrue(jedis instanceof JedisPooled);
     }
 
     @Test
     public void bootMultipleTest(){
         MockedConstruction<JedisCluster> mock = mockConstruction(JedisCluster.class);
         UnifiedJedis jedis = boot(List.of("localhost:4242", "localhost:5555" ));
+        Assert.assertTrue(jedis instanceof JedisCluster);
+
+        jedis =   RedisWrapper.Config.jedis(
+                Set.of(new HostAndPort("localhost", 4242), new HostAndPort("localhost", 5555)),
+                Map.of("foobar", "foo-bar"));
         Assert.assertTrue(jedis instanceof JedisCluster);
     }
 
@@ -128,30 +137,14 @@ public class RedisWrapperTest {
 
     @Test
     public void utilFunctionsTest(){
-        assertEquals( 42, (int)RedisWrapper.Config.intConverter.apply( "42", 0 ) );
-        assertEquals( 0, (int)RedisWrapper.Config.intConverter.apply( "xxxx", 0 ) );
-        assertEquals( "x", RedisWrapper.Config.stringConverter.apply( "x", "" ) );
-        assertEquals( "null", RedisWrapper.Config.stringConverter.apply( null, "" ) );
+        assertEquals( 42, (int)DataSource.INTEGER_CONVERTER.apply( "42", 0 ) );
+        assertEquals( 0, (int)DataSource.INTEGER_CONVERTER.apply( "xxxx", 0 ) );
+        assertEquals( "x", DataSource.STRING_CONVERTER.apply( "x", "" ) );
+        assertEquals( "null", DataSource.STRING_CONVERTER.apply( null, "" ) );
         final String[] vars = new String[] { null } ;
         Consumer<String> consumer = (s) -> vars[0] = s ;
         assertNull(vars[0]);
-        RedisWrapper.Config.computeIfPresent( Map.of("f", 42),
-                "f",  RedisWrapper.Config.stringConverter, "", consumer );
+        DataSource.computeIfPresent( Map.of("f", 42), "f", consumer );
         assertEquals("42", vars[0] );
-
-    }
-
-    @Test
-    public void redisConfigTest(){
-
-        UnifiedJedis uj = RedisWrapper.Config.jedis(
-                Set.of( new HostAndPort("localhost" , 4242) ),
-                Map.of("foobar", "foo-bar" ) );
-        assertNotNull( uj );
-        assertThrows( JedisClusterOperationException.class, () -> {
-            RedisWrapper.Config.jedis(
-                    Set.of(new HostAndPort("localhost", 4242), new HostAndPort("foo-bar", 4242)),
-                    Map.of("foobar", "foo-bar"));
-        } );
     }
 }
