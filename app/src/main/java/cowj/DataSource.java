@@ -172,20 +172,46 @@ public interface DataSource {
         return (T) DATA_SOURCES.remove(dsName);
     }
 
-    static <T> T  getTyped( Map<String,Object> config , Model parent, String keyName, Class<T> type, T defaultValue){
+    /**
+     * Get Typed data from a configuration using Secret Manager configuration
+     * @param config a Map of String,Object
+     * @param parent a Model
+     * @param keyName name of the key whose value needs to be retrieved as type
+     * @param type Class of the type
+     * @param defaultValue default value in case processing fails
+     * @return value pointed by the key, cast as proper Type
+     * @param <T> Type of the data
+     */
+    static <T> T typed(Map<String,Object> config , Model parent, String keyName, Class<T> type, T defaultValue){
         final Object myValue = config.getOrDefault( keyName, defaultValue);
         if ( type.isInstance( myValue) ) return (T) myValue;
-        if ( myValue instanceof String ) return SecretManager.getFromConfig(config, parent, myValue.toString(), defaultValue);
+        if ( myValue instanceof String ) return SecretManager.value(config, parent, myValue.toString(), defaultValue);
         final String msg = String.format("%s - value is neither string or %s", keyName, type.getSimpleName());
         throw new IllegalArgumentException(msg);
     }
 
+    /**
+     * Extracts a Map from the configuration using Secret Manager
+     * @param config a Map of String,Object
+     * @param parent a Model
+     * @param keyName name of the key whose value needs to be retrieved as Map
+     * @return a Map of key type K and value type V
+     * @param <K> Type of the key
+     * @param <V> Type of the value
+     */
     static  <K,V> Map<K,V>  map( Map<String,Object> config , Model parent, String keyName){
-        return getTyped(config, parent, keyName, Map.class, Collections.emptyMap()) ;
+        return typed(config, parent, keyName, Map.class, Collections.emptyMap()) ;
     }
 
+    /**
+     * Extracts a List from the configuration using Secret Manager
+     * @param config a Map of String,Object
+     * @param parent a Model
+     * @param keyName name of the key whose value needs to be retrieved as Map
+     * @return a List of value type V
+     * @param <V> Type of the value
+     */
     static  <V> List<V>  list( Map<String,Object> config , Model parent, String keyName){
-        return getTyped(config, parent, keyName, List.class, Collections.emptyList()) ;
+        return typed(config, parent, keyName, List.class, Collections.emptyList()) ;
     }
-
 }

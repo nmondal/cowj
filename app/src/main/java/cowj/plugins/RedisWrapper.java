@@ -35,19 +35,40 @@ public interface RedisWrapper {
      */
     String CLIENT_CONFIG = "client-config";
 
+    /**
+     * A Configuration Class to read from JSON/Map and create a  JedisClientConfig
+     */
     final class Config{
 
-        static final String CONNECTION_TIME_OUT = "connection-timeout" ;
+        /**
+         * Connection Timeout  in ms
+         */
+        public static final String CONNECTION_TIME_OUT = "connection-timeout" ;
 
-        static final String SOCKET_TIME_OUT = "socket-timeout" ;
+        /**
+         * Socket Timeout  in ms
+         */
+        public static final String SOCKET_TIME_OUT = "socket-timeout" ;
 
-        static final String BLOCKING_SOCKET_TIME_OUT = "blocking-socket-timeout" ;
+        /**
+         * Booking Socket Timeout  in ms
+         */
+        public static final String BLOCKING_SOCKET_TIME_OUT = "blocking-socket-timeout" ;
 
-        static final String USER = "usr" ;
+        /**
+         * Username for the connection
+         */
+        public static final String USER = "usr" ;
 
-        static final String PASSWORD = "pwd" ;
+        /**
+         * Password for the connection
+         */
+        public static final String PASSWORD = "pwd" ;
 
-        static final String DATABASE = "db" ;
+        /**
+         * Database for the connection
+         */
+        public static final String DATABASE = "db" ;
 
         static JedisClientConfig fromConfig( Map<String, Object> clientConfig ){
             DefaultJedisClientConfig.Builder builder = DefaultJedisClientConfig.builder();

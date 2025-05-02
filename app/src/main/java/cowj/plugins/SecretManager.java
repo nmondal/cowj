@@ -31,13 +31,21 @@ public interface SecretManager {
      */
     Logger logger = LoggerFactory.getLogger(SecretManager.class);
 
-
     /**
      * Key for the SecretManager to be used
      */
     String SECRET_MANAGER = "secrets";
 
-    static  <T> T  getFromConfig(Map<String,Object> config , Model parent, String myValue, T defaultValue){
+    /**
+     * Extracts a Typed Value from the configuration using Secret Manager
+     * @param config a Map of String,Object
+     * @param parent a Model
+     * @param myValue value which needs to be searched and replaced by Secret Manager
+     * @param defaultValue default value in case processing fails
+     * @return a value converted to a type, or returns defaultValue
+     * @param <T> Type of the value
+     */
+    static  <T> T value(Map<String,Object> config , Model parent, String myValue, T defaultValue){
         final String mySecretManagerName = config.getOrDefault(SECRET_MANAGER, "").toString();
         SecretManager sm =  DataSource.dataSourceOrElse(mySecretManagerName, SecretManager.DEFAULT);
         String urlJson = parent.template(myValue, sm.env());
