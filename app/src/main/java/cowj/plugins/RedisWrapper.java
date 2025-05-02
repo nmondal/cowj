@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -70,27 +71,44 @@ public interface RedisWrapper {
          */
         public static final String DATABASE = "db" ;
 
+        static <K,V,T> void  computeIfPresent(Map<K, V> config,
+                                          K key,
+                                          BiFunction<V,T, T> typeConverter,
+                                          T defaultValue,
+                                          Consumer<T> builderConsumer ){
+            V v = config.getOrDefault(key , null);
+            if ( v == null ) return;
+            final T val = typeConverter.apply( v, defaultValue );
+            builderConsumer.accept(val);
+        }
+
+
+        // a typical integer converter
+        static final BiFunction<Object, Integer,  Integer> intConverter =
+                (val,valDefault) -> ZNumber.integer( val, valDefault).intValue() ;
+        // a typical string converter
+        static final BiFunction<Object,String,String> stringConverter = (o,def) -> String.valueOf(o) ;
+
         static JedisClientConfig fromConfig( Map<String, Object> clientConfig ){
             DefaultJedisClientConfig.Builder builder = DefaultJedisClientConfig.builder();
-            // use this as default
+            // use this as default basis
             DefaultJedisClientConfig def = DefaultJedisClientConfig.builder().build();
-            BiFunction<Object, Integer,  Integer> intConverter =
-                    (val,valDefault) -> ZNumber.integer( val, valDefault).intValue() ;
 
-            clientConfig.computeIfPresent( CONNECTION_TIME_OUT, (k,v) ->
-                    builder.connectionTimeoutMillis(intConverter.apply(v, def.getConnectionTimeoutMillis())  ) );
+            computeIfPresent( clientConfig, CONNECTION_TIME_OUT,
+                    intConverter, def.getConnectionTimeoutMillis(), builder::connectionTimeoutMillis );
 
-            clientConfig.computeIfPresent( SOCKET_TIME_OUT, (k,v) ->
-                    builder.socketTimeoutMillis(intConverter.apply(v, def.getSocketTimeoutMillis())  ) );
+            computeIfPresent( clientConfig, SOCKET_TIME_OUT,
+                    intConverter, def.getSocketTimeoutMillis(), builder::socketTimeoutMillis);
 
-            clientConfig.computeIfPresent( BLOCKING_SOCKET_TIME_OUT, (k,v) ->
-                    builder.blockingSocketTimeoutMillis(intConverter.apply(v, def.getBlockingSocketTimeoutMillis())  ) );
+            computeIfPresent( clientConfig, BLOCKING_SOCKET_TIME_OUT,
+                    intConverter, def.getBlockingSocketTimeoutMillis(), builder::blockingSocketTimeoutMillis );
 
-            clientConfig.computeIfPresent( DATABASE, (k,v) ->
-                    builder.database(intConverter.apply(v, def.getDatabase()) ) );
+            computeIfPresent(clientConfig, DATABASE,
+                    intConverter, def.getDatabase(), builder::database );
 
-            clientConfig.computeIfPresent( USER, (k,v) -> builder.user( v.toString() ) );
-            clientConfig.computeIfPresent( PASSWORD, (k,v) -> builder.password( v.toString() ) );
+            computeIfPresent(clientConfig, USER, stringConverter, "",  builder::user );
+
+            computeIfPresent(clientConfig, PASSWORD, stringConverter, "", builder::password );
 
             return builder.build();
 
@@ -112,7 +130,6 @@ public interface RedisWrapper {
             final HostAndPort hp = jedisClusterNodes.iterator().next();
             return new JedisPooled(hp, jedisClientConfig );
         }
-
     }
 
     /**

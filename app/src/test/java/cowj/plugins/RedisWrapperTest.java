@@ -5,19 +5,21 @@ import cowj.Model;
 import cowj.Scriptable;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockedConstruction;
+import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.UnifiedJedis;
+import redis.clients.jedis.exceptions.JedisClusterOperationException;
 import redis.embedded.RedisServer;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Consumer;
 
-import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mockConstruction;
 
 
@@ -26,8 +28,12 @@ public class RedisWrapperTest {
     private final Model model = () -> ".";
     private RedisServer redisServer;
 
-    public UnifiedJedis boot(Object urls) {
+    @Before
+    public void bootServer(){
         redisServer = new RedisServer(4242);
+    }
+
+    public UnifiedJedis boot(Object urls) {
         Map<String, Object> config = Map.of("urls", urls, "secrets", "__bar");
         SecretManager sm = () -> Map.of("redis-urls", "[ \"localhost:4242\" ]");
         DataSource.registerDataSource("__bar", sm );
@@ -118,5 +124,34 @@ public class RedisWrapperTest {
         } finally {
             DataSource.unregisterDataSource(SecretManager.SECRET_MANAGER);
         }
+    }
+
+    @Test
+    public void utilFunctionsTest(){
+        assertEquals( 42, (int)RedisWrapper.Config.intConverter.apply( "42", 0 ) );
+        assertEquals( 0, (int)RedisWrapper.Config.intConverter.apply( "xxxx", 0 ) );
+        assertEquals( "x", RedisWrapper.Config.stringConverter.apply( "x", "" ) );
+        assertEquals( "null", RedisWrapper.Config.stringConverter.apply( null, "" ) );
+        final String[] vars = new String[] { null } ;
+        Consumer<String> consumer = (s) -> vars[0] = s ;
+        assertNull(vars[0]);
+        RedisWrapper.Config.computeIfPresent( Map.of("f", 42),
+                "f",  RedisWrapper.Config.stringConverter, "", consumer );
+        assertEquals("42", vars[0] );
+
+    }
+
+    @Test
+    public void redisConfigTest(){
+
+        UnifiedJedis uj = RedisWrapper.Config.jedis(
+                Set.of( new HostAndPort("localhost" , 4242) ),
+                Map.of("foobar", "foo-bar" ) );
+        assertNotNull( uj );
+        assertThrows( JedisClusterOperationException.class, () -> {
+            RedisWrapper.Config.jedis(
+                    Set.of(new HostAndPort("localhost", 4242), new HostAndPort("foo-bar", 4242)),
+                    Map.of("foobar", "foo-bar"));
+        } );
     }
 }
