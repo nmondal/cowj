@@ -628,6 +628,38 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
     };
 
     /**
+     * Underlying Cache for Scala Scriptable
+     */
+    Map<String, Scriptable> scala3Instances = new HashMap<>(); // TODO ? Should be LRU? What?
+
+    /**
+     * A ThreadLocal for Scale Engine
+     */
+    ThreadLocal<ScriptEngine> scalaEngineThreadLocal = ThreadLocal.withInitial(dotty.tools.repl.ScriptEngine::new);
+
+    static Scriptable scala3(String handler){
+        Scriptable sc = scala3Instances.get(handler);
+        if( sc != null ) return sc;
+        final String allText = EitherMonad.runUnsafe( ( ) -> new String(Files.readAllBytes(Paths.get(handler))) );
+        sc = bindings -> {
+            final ScriptEngine scalaEngine = scalaEngineThreadLocal.get() ;
+            final ScriptContext context = scalaEngine.getContext();
+            context.setBindings(bindings, ScriptContext.ENGINE_SCOPE );
+            return scalaEngine.eval(allText, context );
+        };
+        scala3Instances.put(handler, sc);
+        return sc;
+    }
+    /**
+     * Binary - class based creator
+     */
+    Creator SCALA3 = (path, handler) -> (bindings) -> {
+        prepareBinding(bindings, handler);
+        Scriptable scriptable = scala3(handler);
+        return scriptable.exec(bindings);
+    };
+
+    /**
      * Universal Scriptable Creator
      * Merging 3 different types
      * ZoomBA, JSR, Binary
@@ -638,6 +670,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
             case "zmb", "zm" -> ZMB;
             case "js", "groovy", "py", "kt", "kts" -> JSR;
             case "class" -> BINARY;
+            case "scala" -> SCALA3;
             default -> {
                 logger.error("No pattern matched for path '{}' -> For handler '{}' Using NOP!", path, handler);
                 yield NOP;

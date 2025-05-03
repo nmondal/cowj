@@ -102,6 +102,9 @@ public class ModelRunnerTest {
 
         // routes returning null
         Assert.assertEquals( "", get("http://localhost:5003", "/null"));
+        // Scala - which fails FIXING IS TODO
+        Assert.assertEquals( expected, get("http://localhost:5003", "/hello/s"));
+
     }
 
     @Test
