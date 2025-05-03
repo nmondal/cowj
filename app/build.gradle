@@ -32,6 +32,7 @@ ext {
     groovy_version     = '5.0.0-alpha-12'
     jython_version     = '2.7.4'
     kotlin_version     = '2.2.0-Beta1'
+    scala3_version     = '3.7.1-RC1-bin-20250430-c4531d4-NIGHTLY'
     quartz_version     = '2.5.0'
     jackson_version    = '2.19.0'
     jcasbin_version    = '1.81.0'
@@ -83,6 +84,8 @@ dependencies {
     // Kotlin - hold all libs to same version, as long as it works
     implementation "org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlin_version"
     implementation "org.jetbrains.kotlin:kotlin-scripting-jsr223:$kotlin_version"
+    // scala 3 version
+    implementation "org.scala-lang:scala3-compiler_3:$scala3_version"
 
     // Cron
     // https://mvnrepository.com/artifact/org.quartz-scheduler/quartz
