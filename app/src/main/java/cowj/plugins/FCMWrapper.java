@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import static cowj.DataSource.computeIfPresent;
+
 /**
  * Abstraction for Googles Notification Service Firebase Messaging
  */
@@ -69,19 +71,6 @@ public interface FCMWrapper {
     String SECRET_MANAGER = "secrets";
 
     /**
-     * Method to call for a method to be executed if a map has a key
-     * @param map - the map
-     * @param key - the key
-     * @param function the function we should trigger of the map has the key
-     */
-    static void computeIfPresent(Map<String, Object> map, String key, BiConsumer<String, String> function) {
-        // trick to reduce branching at a performance cost
-        Object v = map.get(key);
-        if (v == null) return;
-        function.accept(key, v.toString());
-    }
-
-    /**
      * From configuration creates a Message
      * @param message the configuration
      * @return a Message
@@ -89,11 +78,11 @@ public interface FCMWrapper {
     static Message message(Map<String, Object> message) {
 
         Message.Builder builder = Message.builder();
-        computeIfPresent(message, TOKEN, (k, v) -> builder.setToken(v));
+        computeIfPresent(message, TOKEN, builder::setToken );
         Notification.Builder b = Notification.builder();
-        computeIfPresent(message, TITLE, (k, v) -> b.setTitle(v));
-        computeIfPresent(message, BODY, (k, v) -> b.setBody(v));
-        computeIfPresent(message, IMAGE, (k, v) -> b.setImage(v));
+        computeIfPresent(message, TITLE, b::setTitle );
+        computeIfPresent(message, BODY, b::setBody );
+        computeIfPresent(message, IMAGE, b::setImage );
         // other properties gets added like as is...
         Map<String, Object> data = (Map<String, Object>) message.getOrDefault(DATUM, Collections.emptyMap());
         data.forEach((key, value) -> builder.putData(key, value.toString()));
@@ -110,9 +99,9 @@ public interface FCMWrapper {
         List<String> tokens = (List) message.getOrDefault(TOKENS, Collections.emptyList());
         builder.addAllTokens(tokens);
         Notification.Builder b = Notification.builder();
-        computeIfPresent(message, TITLE, (k, v) -> b.setTitle(v));
-        computeIfPresent(message, BODY, (k, v) -> b.setBody(v));
-        computeIfPresent(message, IMAGE, (k, v) -> b.setImage(v));
+        computeIfPresent(message, TITLE,  b::setTitle );
+        computeIfPresent(message, BODY, b::setBody );
+        computeIfPresent(message, IMAGE, b::setImage );
         // other properties gets added like as is...
         Map<String, Object> data = (Map<String, Object>) message.getOrDefault(DATUM, Collections.emptyMap());
         data.forEach((key, value) -> builder.putData(key, value.toString()));

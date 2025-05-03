@@ -48,16 +48,6 @@ public class FCMWrapperTest {
     }
 
     @Test
-    public void computeIfTest(){
-        Map<String,Object> map = Map.of("a","b");
-        final boolean[] arr = { false, false };
-        FCMWrapper.computeIfPresent(map, "a", (k,v) -> { arr[0] = true; }  );
-        FCMWrapper.computeIfPresent(map, "b", (k,v) -> { arr[1] = true; }  );
-        Assert.assertTrue( arr[0] );
-        Assert.assertFalse( arr[1] );
-    }
-
-    @Test
     public void singleMessageTest()  {
         Map<String,Object> payload = Map.of(
                 TITLE, "boom",
