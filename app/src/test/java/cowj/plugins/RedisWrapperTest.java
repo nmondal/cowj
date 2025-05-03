@@ -2,17 +2,12 @@ package cowj.plugins;
 
 import cowj.DataSource;
 import cowj.Model;
-import cowj.Scriptable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockedConstruction;
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.JedisCluster;
-import redis.clients.jedis.JedisPooled;
-import redis.clients.jedis.UnifiedJedis;
-import redis.clients.jedis.exceptions.JedisClusterOperationException;
+import redis.clients.jedis.*;
 import redis.embedded.RedisServer;
 
 import java.util.*;
@@ -146,5 +141,20 @@ public class RedisWrapperTest {
         assertNull(vars[0]);
         DataSource.computeIfPresent( Map.of("f", 42), "f", consumer );
         assertEquals("42", vars[0] );
+    }
+
+    @Test
+    public void configMappingTest(){
+        JedisClientConfig cfg =
+                RedisWrapper.Config.fromConfig( Map.of(
+                        "db", "42",
+                        "usr" ,
+                        "my-user",
+                        "pwd", "my-pwd"
+                ) ) ;
+        assertEquals( 42, cfg.getDatabase() );
+        assertEquals( "my-user", cfg.getUser() );
+        assertEquals( "my-pwd", cfg.getPassword() );
+
     }
 }
