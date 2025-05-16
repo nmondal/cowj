@@ -57,9 +57,11 @@ repositories {
     // mavenLocal() // local repo
     // Use Maven Central for resolving dependencies.
     mavenCentral()
-    // add sonatype repository
+    // add central sonatype snapshot repository for all org.zoomba-lang artifacts
+    // especially zoomba core
     maven {
-        url 'https://oss.sonatype.org/content/repositories/snapshots/'
+        name = 'Central Portal Snapshots'
+        url = 'https://central.sonatype.com/repository/maven-snapshots/'
     }
     gradlePluginPortal()
 }
