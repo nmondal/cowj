@@ -22,7 +22,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 
 import static cowj.AsyncHandler.ASYNC_ROUTE_PREFIX;
 
@@ -629,15 +628,25 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
 
     /**
      * Universal Scriptable Creator
+     * Preloads scripts and then caches scripts before returning
      * Merging 3 different types
      * ZoomBA, JSR, Binary
      */
     Creator UNIVERSAL = (path, handler) -> {
         String extension = extension(handler);
         Creator r = switch (extension) {
-            case "zmb", "zm" -> ZMB;
-            case "js", "groovy", "py", "kt", "kts" -> JSR;
-            case "class" -> BINARY;
+            case "zmb", "zm" -> {
+                loadZScript("Preload", handler);
+                yield ZMB;
+            }
+            case "js", "groovy", "py", "kt", "kts" -> {
+                EitherMonad.run( () -> loadScript("Preload", handler));
+                yield JSR;
+            }
+            case "class" -> {
+                loadClass(handler);
+                yield BINARY;
+            }
             default -> {
                 logger.error("No pattern matched for path '{}' -> For handler '{}' Using NOP!", path, handler);
                 yield NOP;

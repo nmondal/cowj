@@ -54,7 +54,6 @@ base{
 }
 
 repositories {
-    // mavenLocal() // local repo
     // Use Maven Central for resolving dependencies.
     mavenCentral()
     // add central sonatype snapshot repository for all org.zoomba-lang artifacts
