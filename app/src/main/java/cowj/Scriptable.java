@@ -504,12 +504,16 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
 
     abstract class ReloadableScriptable<T> implements Scriptable{
 
-        static Map<String,ReloadableScriptable<?>> CACHE = new HashMap<>();
+        static Map<String,Set<ReloadableScriptable>> CACHE = new HashMap<>();
 
-        static ReloadableScriptable reload(String scriptPath){
-            ReloadableScriptable rs = CACHE.get(scriptPath);
-            rs.script = rs.loadScript();
-            return rs;
+        static Set<ReloadableScriptable> reload(String scriptPath){
+            Set<ReloadableScriptable> rset = CACHE.get(scriptPath);
+            rset.forEach( rs -> {
+                rs.script = rs.loadScript();
+                logger.info("Reloading route '{}'", rs.route );
+            });
+            logger.info("File '{}' is reloaded for {} routes", scriptPath, rset.size());
+            return rset;
         }
 
         static {
@@ -527,7 +531,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
 
         protected String scriptPath;
 
-        protected T script;
+        protected volatile T script;
 
         abstract T loadScript();
 
@@ -535,7 +539,9 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
             this.route = route;
             this.scriptPath = scriptPath;
             this.script = loadScript();
-            CACHE.put(this.scriptPath, this);
+            Set<ReloadableScriptable> items = CACHE.getOrDefault( this.scriptPath, new HashSet<>());
+            items.add(this);
+            CACHE.put(this.scriptPath, items);
         }
 
         static final class JSRScriptable extends ReloadableScriptable<CompiledScript>{

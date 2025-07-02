@@ -99,7 +99,6 @@ interface FileWatcher extends Consumer<String>, Predicate<String> {
             @Override
             public void accept(String s) {
                 try {
-                    cache.remove(s);
                     T resource = load.load(s);
                     cache.put(s,resource);
                     logger.info("File was reloaded : " + s);
