@@ -452,7 +452,8 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
     static CompiledScript loadScript(String directive, String path) throws IOException {
         // this now becomes a hack ... expression will be used with "2 + 2 //.js"
         // and this will load the engine
-        if (scripts.containsKey(path)) return scripts.get(path);
+        CompiledScript cs = scripts.get(path);
+        if ( cs != null ) return cs;
         String content = INLINE.equals(directive) ? path : new String(Files.readAllBytes(Paths.get(path)));
         final ScriptEngine engine = getEngine(path);
         try {
@@ -475,7 +476,8 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      * @see <a href="https://gitlab.com/non.est.sacra/zoomba/-/blob/master/src/main/java/zoomba/lang/core/interpreter/ZScript.java">ZScript</a>
      */
     static ZScript loadZScript(String directive, String path) {
-        if (zScripts.containsKey(path)) return zScripts.get(path);
+        ZScript zs = zScripts.get(path);
+        if ( zs != null ) return zs;
         try {
             final ZScript zScript = INLINE.equals(directive) ? new ZScript(path) : new ZScript(path, null); // no parent
             zScripts.put(path, zScript);
@@ -601,7 +603,8 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      * @return an instance of the class casted as Scriptable
      */
     static Scriptable loadClass(String path) {
-        if (binaryInstances.containsKey(path)) return binaryInstances.get(path);
+        Scriptable sc = binaryInstances.get(path);
+        if ( sc != null ) return sc;
         try {
             int inx = path.lastIndexOf(".class");
             String className = path.substring(0, inx);
@@ -633,25 +636,27 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      * ZoomBA, JSR, Binary
      */
     Creator UNIVERSAL = (path, handler) -> {
-        String extension = extension(handler);
-        Creator r = switch (extension) {
-            case "zmb", "zm" -> {
-                loadZScript("Preload", handler);
-                yield ZMB;
-            }
-            case "js", "groovy", "py", "kt", "kts" -> {
-                EitherMonad.run( () -> loadScript("Preload", handler));
-                yield JSR;
-            }
-            case "class" -> {
-                loadClass(handler);
-                yield BINARY;
-            }
-            default -> {
-                logger.error("No pattern matched for path '{}' -> For handler '{}' Using NOP!", path, handler);
-                yield NOP;
-            }
-        };
-        return r.create(path, handler);
+        synchronized (ENGINES) {
+            String extension = extension(handler);
+            Creator r = switch (extension) {
+                case "zmb", "zm" -> {
+                    loadZScript("Preload", handler);
+                    yield ZMB;
+                }
+                case "js", "groovy", "py", "kt", "kts" -> {
+                    EitherMonad.run(() -> loadScript("Preload", handler));
+                    yield JSR;
+                }
+                case "class" -> {
+                    loadClass(handler);
+                    yield BINARY;
+                }
+                default -> {
+                    logger.error("No pattern matched for path '{}' -> For handler '{}' Using NOP!", path, handler);
+                    yield NOP;
+                }
+            };
+            return r.create(path, handler);
+        }
     };
 }
