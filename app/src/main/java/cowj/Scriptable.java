@@ -467,7 +467,8 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      * @return a proxy prefixed Logger
      */
     static Logger prefixedLogger(Logger underlying, String prefix){
-        if ( prefixedLoggers.containsKey(prefix) ) return prefixedLoggers.get(prefix);
+        final Logger logger = prefixedLoggers.get(prefix);
+        if ( logger != null ) return logger;
         final Logger _logger =  (Logger) Proxy.newProxyInstance(
                 Logger.class.getClassLoader(),
                 new Class[] { Logger.class },
@@ -502,16 +503,25 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         bindings.put(LOGGER, _logger);
     }
 
+    /**
+     * A reloadable script implementation for non prod use case
+     * @param <T> Type of the Script
+     */
     abstract class ReloadableScriptable<T> implements Scriptable{
 
         static Map<String,Set<ReloadableScriptable>> CACHE = new HashMap<>();
 
         static Set<ReloadableScriptable> reload(String scriptPath){
             Set<ReloadableScriptable> rset = CACHE.get(scriptPath);
-            rset.forEach( rs -> {
-                rs.script = rs.loadScript();
-                logger.info("Reloading route '{}'", rs.route );
-            });
+            Iterator<ReloadableScriptable> iterator = rset.iterator();
+            ReloadableScriptable rs = iterator.next();
+            final Object script = (rs.script = rs.loadScript());
+            logger.info("Reloaded route '{}'", rs.route );
+            while ( iterator.hasNext() ){
+                rs = iterator.next();
+                rs.script = script;
+                logger.info("Reloaded route '{}'", rs.route );
+            }
             logger.info("File '{}' is reloaded for {} routes", scriptPath, rset.size());
             return rset;
         }
@@ -527,15 +537,15 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
             FileWatcher.ofCacheAndRegister(CACHE, (path) -> reload( path));
         }
 
-        protected String route;
+        String route;
 
-        protected String scriptPath;
+        String scriptPath;
 
-        protected volatile T script;
+        volatile T script;
 
         abstract T loadScript();
 
-        protected ReloadableScriptable(String route, String scriptPath){
+        ReloadableScriptable(String route, String scriptPath){
             this.route = route;
             this.scriptPath = scriptPath;
             this.script = loadScript();
