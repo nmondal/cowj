@@ -389,41 +389,6 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
     ScriptEngineManager MANAGER = new ScriptEngineManager();
 
     /**
-     * Cached map of all CompiledScript
-     *
-     * @see <a href="https://docs.oracle.com/javase/9/docs/api/javax/script/CompiledScript.html">CompiledScript</a>
-     * Key - location of the scripts
-     * Value - CompiledScript
-     */
-    Map<String, CompiledScript> scripts = new HashMap<>(); // TODO ? Should be LRU? What?
-
-    /**
-     * Cached map of all ZScript
-     *
-     * @see <a href="https://gitlab.com/non.est.sacra/zoomba/-/blob/master/src/main/java/zoomba/lang/core/interpreter/ZScript.java">ZScript</a>
-     * Key - location of the scripts
-     * Value - ZScript
-     */
-    Map<String, ZScript> zScripts = new HashMap<>(); // TODO ? Should be LRU? What?
-
-    /**
-     * Basal hack to load Jython and other Engines
-     */
-    Serializable JythonLoad = new Serializable() { // simplest hack to load Jython ...
-        // https://stackoverflow.com/questions/52825426/jython-listed-by-getenginefactories-but-getenginebynamejython-is-null
-        static {
-            Options.importSite = false;
-            // force load engines for fat-jar issues...
-            MANAGER.registerEngineName("JavaScript", new RhinoScriptEngineFactory());
-            MANAGER.registerEngineName("groovy", new GroovyScriptEngineFactory());
-            MANAGER.registerEngineName("python", new PyScriptEngineFactory());
-            MANAGER.registerEngineName("kotlin", new KotlinJsr223DefaultScriptEngineFactory());
-            FileWatcher.ofCacheAndRegister(zScripts, (path) -> loadZScript("reload", path));
-            FileWatcher.ofCacheAndRegister(scripts, (path) -> loadScript("reload", path));
-        }
-    };
-
-    /**
      * Get engine from path
      *
      * @param path file location
@@ -452,20 +417,16 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
     static CompiledScript loadScript(String directive, String path) throws IOException {
         // this now becomes a hack ... expression will be used with "2 + 2 //.js"
         // and this will load the engine
-        CompiledScript cs = scripts.get(path);
-        if ( cs != null ) return cs;
         String content = INLINE.equals(directive) ? path : new String(Files.readAllBytes(Paths.get(path)));
         final ScriptEngine engine = getEngine(path);
         try {
             CompiledScript compiled = ((Compilable) engine).compile(content);
-            scripts.put(path, compiled);
             return compiled;
         } catch (ScriptException sc) {
             logger.error("Script Load Error: {} ==> {}", sc.getMessage(), path);
             throw new RuntimeException("Script Loading Failed!");
         }
     }
-
 
     /**
      * Loads a script for ZoomBA Engine
@@ -476,11 +437,8 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      * @see <a href="https://gitlab.com/non.est.sacra/zoomba/-/blob/master/src/main/java/zoomba/lang/core/interpreter/ZScript.java">ZScript</a>
      */
     static ZScript loadZScript(String directive, String path) {
-        ZScript zs = zScripts.get(path);
-        if ( zs != null ) return zs;
         try {
             final ZScript zScript = INLINE.equals(directive) ? new ZScript(path) : new ZScript(path, null); // no parent
-            zScripts.put(path, zScript);
             return zScript;
         } catch (RuntimeException rt) {
             // zmb has support for detecting script path
@@ -544,57 +502,117 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         bindings.put(LOGGER, _logger);
     }
 
+    abstract class ReloadableScriptable<T> implements Scriptable{
+
+        static Map<String,ReloadableScriptable<?>> CACHE = new HashMap<>();
+
+        static ReloadableScriptable reload(String scriptPath){
+            ReloadableScriptable rs = CACHE.get(scriptPath);
+            rs.script = rs.loadScript();
+            return rs;
+        }
+
+        static {
+            // Jython loads issue
+            Options.importSite = false;
+            // force load engines for fat-jar issues...
+            MANAGER.registerEngineName("JavaScript", new RhinoScriptEngineFactory());
+            MANAGER.registerEngineName("groovy", new GroovyScriptEngineFactory());
+            MANAGER.registerEngineName("python", new PyScriptEngineFactory());
+            MANAGER.registerEngineName("kotlin", new KotlinJsr223DefaultScriptEngineFactory());
+            FileWatcher.ofCacheAndRegister(CACHE, (path) -> reload( path));
+        }
+
+        protected String route;
+
+        protected String scriptPath;
+
+        protected T script;
+
+        abstract T loadScript();
+
+        protected ReloadableScriptable(String route, String scriptPath){
+            this.route = route;
+            this.scriptPath = scriptPath;
+            this.script = loadScript();
+            CACHE.put(this.scriptPath, this);
+        }
+
+        static final class JSRScriptable extends ReloadableScriptable<CompiledScript>{
+
+            JSRScriptable(String route, String scriptPath) {
+                super(route, scriptPath);
+            }
+
+            @Override
+            CompiledScript loadScript() {
+                return EitherMonad.runUnsafe( () -> Scriptable.loadScript(route,scriptPath ));
+            }
+
+            @Override
+            public Object exec(Bindings bindings) throws Exception {
+                prepareBinding(bindings, scriptPath );
+                ModuleManager.UNIVERSAL.updateModuleBindings(script, bindings);
+                Object r = script.eval(bindings);
+                if (r != null) return r;
+                // Jython issue...
+                if (bindings.containsKey(RESULT)) {
+                    return bindings.get(RESULT);
+                }
+                return "";
+            }
+        }
+
+        static final class ZMBScriptable extends ReloadableScriptable<ZScript>{
+
+            ZMBScriptable(String route, String scriptPath) {
+                super(route, scriptPath);
+            }
+
+            @Override
+            ZScript loadScript() {
+                return loadZScript(route,scriptPath);
+            }
+
+            @Override
+            public Object exec(Bindings bindings) throws Exception {
+                prepareBinding(bindings, scriptPath);
+                // This ensures things are pure function
+                Function.MonadicContainer mc = script.eval(bindings);
+                // when there is an error ...
+                if (mc.value() instanceof Throwable th) {
+                    final Exception ex;
+                    if (th instanceof ZException.ZRuntimeAssertion) {
+                        Object[] args = ((ZException.ZRuntimeAssertion) th).args;
+                        String message = th.toString();
+                        int status = 500;
+                        if (args.length > 0) {
+                            message = ((Throwable) args[0]).getMessage();
+                            if (args.length > 1) {
+                                status = ZNumber.integer(args[1], 500).intValue();
+                            }
+                        }
+                        ex = new TestAsserter.HaltException(message, status);
+                        bindings.put(HALT_ERROR, ex);
+                    } else {
+                        ex = new RuntimeException(th);
+                    }
+                    throw ex;
+                }
+                return mc.value();
+            }
+        }
+    }
+
     /**
      * JSR-223 Scriptable creator
      */
-    Creator JSR = (path, handler) -> (bindings) -> {
-        CompiledScript cs = loadScript(path, handler);
-        prepareBinding(bindings, handler );
-        ModuleManager.UNIVERSAL.updateModuleBindings(cs, bindings);
-        Object r = cs.eval(bindings);
-        if (r != null) return r;
-        // Jython issue...
-        if (bindings.containsKey(RESULT)) {
-            return bindings.get(RESULT);
-        }
-        return "";
-    };
+    Creator JSR = ReloadableScriptable.JSRScriptable::new;
 
     /**
      * ZoomBA Scriptable creator
      */
-    Creator ZMB = (path, handler) -> (bindings) -> {
-        ZScript zs = loadZScript(path, handler);
-        prepareBinding(bindings, handler);
-        // This ensures things are pure function
-        Function.MonadicContainer mc = zs.eval(bindings);
-        // when there is an error ...
-        if (mc.value() instanceof Throwable th) {
-            final Exception ex;
-            if (th instanceof ZException.ZRuntimeAssertion) {
-                Object[] args = ((ZException.ZRuntimeAssertion) th).args;
-                String message = th.toString();
-                int status = 500;
-                if (args.length > 0) {
-                    message = ((Throwable) args[0]).getMessage();
-                    if (args.length > 1) {
-                        status = ZNumber.integer(args[1], 500).intValue();
-                    }
-                }
-                ex = new TestAsserter.HaltException(message, status);
-                bindings.put(HALT_ERROR, ex);
-            } else {
-                ex = new RuntimeException(th);
-            }
-            throw ex;
-        }
-        return mc.value();
-    };
-
-    /**
-     * Underlying Cache for Binary Scriptable
-     */
-    Map<String, Scriptable> binaryInstances = new HashMap<>(); // TODO ? Should be LRU? What?
+    Creator ZMB = ReloadableScriptable.ZMBScriptable::new;
 
     /**
      * Loading a class as scriptable
@@ -603,8 +621,6 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      * @return an instance of the class casted as Scriptable
      */
     static Scriptable loadClass(String path) {
-        Scriptable sc = binaryInstances.get(path);
-        if ( sc != null ) return sc;
         try {
             int inx = path.lastIndexOf(".class");
             String className = path.substring(0, inx);
@@ -612,7 +628,6 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
             Object instance = clazz.getDeclaredConstructor().newInstance();
             if (!(instance instanceof Scriptable))
                 throw new RuntimeException("Not A Scriptable Implementation! " + clazz);
-            binaryInstances.put(path, (Scriptable) instance);
             return (Scriptable) instance;
         } catch (Throwable t) {
             logger.error("Error registering type for Scriptable... : " + t);
@@ -631,32 +646,20 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
 
     /**
      * Universal Scriptable Creator
-     * Preloads scripts and then caches scripts before returning
      * Merging 3 different types
      * ZoomBA, JSR, Binary
      */
     Creator UNIVERSAL = (path, handler) -> {
-        synchronized (ENGINES) {
-            String extension = extension(handler);
-            Creator r = switch (extension) {
-                case "zmb", "zm" -> {
-                    loadZScript("Preload", handler);
-                    yield ZMB;
-                }
-                case "js", "groovy", "py", "kt", "kts" -> {
-                    EitherMonad.run(() -> loadScript("Preload", handler));
-                    yield JSR;
-                }
-                case "class" -> {
-                    loadClass(handler);
-                    yield BINARY;
-                }
-                default -> {
-                    logger.error("No pattern matched for path '{}' -> For handler '{}' Using NOP!", path, handler);
-                    yield NOP;
-                }
-            };
-            return r.create(path, handler);
-        }
+        String extension = extension(handler);
+        Creator r = switch (extension) {
+            case "zmb", "zm" -> ZMB;
+            case "js", "groovy", "py", "kt", "kts" -> JSR;
+            case "class" -> BINARY;
+            default -> {
+                logger.error("No pattern matched for path '{}' -> For handler '{}' Using NOP!", path, handler);
+                yield NOP;
+            }
+        };
+        return r.create(path, handler);
     };
 }

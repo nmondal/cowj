@@ -207,45 +207,4 @@ public class ScriptableTest {
         l.info(m, "this is a test marker");
         Assert.assertTrue(true);
     }
-
-    @Test
-    public void uniqueScriptGenerationTest() throws Exception {
-        /*
-        tests if the creator can generate almost thread safe way to unique script
-        this is wrong test to be honest, to the point that this is NOT the use case, actual use case is pre load
-        but preload actually makes thread issues extremely rare
-        The real use case was tested via wrk and custom modifying the Scriptable to see under load
-        If it is creating multiple instances of ZScript
-        */
-        final Map<Integer,Integer> sync = new ConcurrentHashMap<>();
-        final String path = "samples/test_scripts/ret_script.zm" ;
-        Runnable r = () -> {
-            for ( int i=0; i < 3; i++ ) {
-                try {
-                    Scriptable s = Scriptable.UNIVERSAL.create("xx", path);
-                    Object o = s.exec(new SimpleBindings());
-                    int hash = System.identityHashCode(o);
-                    sync.put(hash, 1);
-                } catch (Throwable ex) {
-                    System.err.println(ex);
-                }
-            }
-        };
-        Thread t1 = new Thread(r);
-        Thread t2 = new Thread(r);
-        Thread t3 = new Thread(r);
-        Thread t4 = new Thread(r);
-
-        t1.start();
-        t2.start();
-        t3.start();
-        t4.start();
-
-        t1.join();
-        t2.join();
-        t3.join();
-        t4.join();
-
-        assertEquals(1, sync.size() );
-    }
 }
