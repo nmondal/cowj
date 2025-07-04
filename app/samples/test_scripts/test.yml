@@ -4,5 +4,5 @@ port: 5234
 routes:
   # use relative path, not base relative path
   get:
-   /call : "samples/error_1_arg.zm"
+   /call : "samples/test_scripts/error_1_arg.zm"
 

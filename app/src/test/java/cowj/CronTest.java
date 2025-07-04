@@ -131,7 +131,7 @@ public class CronTest {
 
     public static class Dummy implements  Scriptable{
         static int counter = 0;
-        public Dummy(){ counter = 0 ;}
+        public Dummy(){}
         @Override
         public Object exec(Bindings bindings) throws Exception {
             if ( counter <= 0 ){

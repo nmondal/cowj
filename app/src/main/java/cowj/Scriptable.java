@@ -629,20 +629,33 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
 
     /**
      * Universal Scriptable Creator
-     * Merging 3 different types
+     * Merging 3 different types - and script loading is atomic
+     * So if one creates script via this, no extra scripts will be loaded
+     * Pre-Loads the scripts to ensure only one instance is ever created
      * ZoomBA, JSR, Binary
      */
     Creator UNIVERSAL = (path, handler) -> {
         String extension = extension(handler);
-        Creator r = switch (extension) {
-            case "zmb", "zm" -> ZMB;
-            case "js", "groovy", "py", "kt", "kts" -> JSR;
-            case "class" -> BINARY;
-            default -> {
-                logger.error("No pattern matched for path '{}' -> For handler '{}' Using NOP!", path, handler);
-                yield NOP;
-            }
-        };
-        return r.create(path, handler);
+        synchronized (JythonLoad) {
+            Creator r = switch (extension) {
+                case "zmb", "zm" -> {
+                    loadZScript(path, handler);
+                    yield ZMB;
+                }
+                case "js", "groovy", "py", "kt", "kts" -> {
+                    EitherMonad.runUnsafe(() -> loadScript(path, handler));
+                    yield JSR;
+                }
+                case "class" -> {
+                    loadClass(handler);
+                    yield BINARY;
+                }
+                default -> {
+                    logger.error("No pattern matched for path '{}' -> For handler '{}' Using NOP!", path, handler);
+                    yield NOP;
+                }
+            };
+            return r.create(path, handler);
+        }
     };
 }
