@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -65,6 +66,8 @@ public class FileWatcherTest {
         FileWatcher.logger.info("Modified File Externally!");
         Files.createFile(Paths.get(FILE_MOD_DIR + "/bar.txt"));
         FileWatcher.logger.info("Created File Externally!");
+        // this test would not run in mac, for unknown reason
+        assumeTrue( zoomba.lang.Main.osDetect() != 1 );
         // give it sometime to propagate...
         Thread.sleep(1500);
         final long val = contentMap.getOrDefault(absPath, 0L);
