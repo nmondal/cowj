@@ -39,7 +39,7 @@ ext {
 
     // now cloud providers client dependencies
     // amazon aws is really good at keeping versions together
-    aws_client_version = '2.34.8'
+    aws_client_version = '2.34.9'
     // google cloud and microsoft azure are terrible at keeping versioning
     // test binary
     mockito_version    = '5.20.0'
