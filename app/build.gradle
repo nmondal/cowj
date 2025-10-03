@@ -17,7 +17,7 @@ plugins {
     // code coverage jacoco
     id 'jacoco'
     // dependencies update check :: gradle dependencyUpdates
-    id "com.github.ben-manes.versions" version "0.52.0"
+    id "com.github.ben-manes.versions" version "0.53.0"
     // maven publish
     id 'maven-publish'
 }
@@ -29,20 +29,20 @@ ext {
 
     // now fast changing versions
     spark_version      = '3.0.2'
-    groovy_version     = '5.0.0-rc-1'
+    groovy_version     = '5.0.1'
     jython_version     = '2.7.4'
-    kotlin_version     = '2.2.20-RC'
+    kotlin_version     = '2.2.20'
     quartz_version     = '2.5.0'
-    jackson_version    = '2.20.0-rc1'
+    jackson_version    = '2.20.0'
     jcasbin_version    = '1.84.0'
-    jedis_version      = '6.1.0'
+    jedis_version      = '6.2.0'
 
     // now cloud providers client dependencies
     // amazon aws is really good at keeping versions together
-    aws_client_version = '2.32.28'
+    aws_client_version = '2.34.8'
     // google cloud and microsoft azure are terrible at keeping versioning
     // test binary
-    mockito_version    = '5.19.0'
+    mockito_version    = '5.20.0'
 }
 
 // the maven identifiers
@@ -98,7 +98,7 @@ dependencies {
     implementation "org.casbin:jcasbin:$jcasbin_version"
 
     // Identity
-    implementation 'com.azure:azure-identity:1.17.0'
+    implementation 'com.azure:azure-identity:1.18.0'
 
     // File Watching ....
     implementation 'io.methvin:directory-watcher:0.19.1'
@@ -110,7 +110,7 @@ dependencies {
 
     // Storage...
     implementation "redis.clients:jedis:$jedis_version"
-    implementation 'com.google.cloud:google-cloud-storage:2.55.0'
+    implementation 'com.google.cloud:google-cloud-storage:2.58.0'
     implementation "software.amazon.awssdk:s3:$aws_client_version"
     implementation "software.amazon.awssdk:apache-client:$aws_client_version"
     implementation 'com.azure:azure-storage-blob:12.32.0-beta.1'
@@ -119,19 +119,19 @@ dependencies {
     // Message Queueing
     implementation "software.amazon.awssdk:sqs:$aws_client_version"
     implementation 'com.azure:azure-storage-queue:12.27.0-beta.1'
-    implementation 'com.google.cloud:google-cloud-pubsub:1.141.3'
+    implementation 'com.google.cloud:google-cloud-pubsub:1.141.5'
 
 
     // fcm - close to Messaging, but not close enough
-    implementation 'com.google.firebase:firebase-admin:9.5.0'
+    implementation 'com.google.firebase:firebase-admin:9.7.0'
 
     // mysql connector ( DO NOT MIGRATE To 9.*, protobuf upgrade destroyed peoples happiness )
     implementation 'com.mysql:mysql-connector-j:8.4.0'
 
     /// secret manager
-    implementation 'com.google.cloud:google-cloud-secretmanager:2.72.0'
+    implementation 'com.google.cloud:google-cloud-secretmanager:2.75.0'
     implementation "software.amazon.awssdk:secretsmanager:$aws_client_version"
-    implementation 'com.azure:azure-security-keyvault-secrets:4.10.2'
+    implementation 'com.azure:azure-security-keyvault-secrets:4.10.3'
 
     ///// test stuff
     testImplementation 'junit:junit:4.13.2'
