@@ -27,9 +27,9 @@ data-sources:
     type: js-ssr
     context:
       - "https://unpkg.com/react@18/umd/react.development.js"
-      - "https://cdnjs.cloudflare.com/ajax/libs/create-react-class/15.7.0/create-react-class.js"
+      - "https://unpkg.com/create-react-class@15.7.0/create-react-class.js"
       - "https://unpkg.com/react-dom@18/umd/react-dom.development.js"
-      - "https://unpkg.com/react-dom@18.1.0/umd/react-dom-server-legacy.browser.development.js"
+      - "https://unpkg.com/react-dom@18/umd/react-dom-server-legacy.browser.development.js"
       - "js/app.js"
 
 
