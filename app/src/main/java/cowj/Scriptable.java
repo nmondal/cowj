@@ -1,8 +1,9 @@
 package cowj;
 
+import com.oracle.truffle.js.scriptengine.GraalJSScriptEngine;
 import kotlin.script.experimental.jsr223.KotlinJsr223DefaultScriptEngineFactory;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
-import org.mozilla.javascript.engine.RhinoScriptEngineFactory;
+import org.graalvm.polyglot.Context;
 import org.python.core.Options;
 import org.python.jsr223.PyScriptEngineFactory;
 import org.slf4j.Logger;
@@ -22,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 
 import static cowj.AsyncHandler.ASYNC_ROUTE_PREFIX;
 
@@ -40,12 +40,13 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
 
     /**
      * Uses this Scriptable as a CheckedFunctional.Consumer
+     *
      * @param payloadVar variable name for the param
+     * @param <T>        type of the consumer
      * @return a CheckedFunctional.Consumer
-     * @param <T> type of the consumer
      */
-    default <T> CheckedFunctional.Consumer<T, Exception >  checkedConsumer(String payloadVar){
-        return (m) ->{
+    default <T> CheckedFunctional.Consumer<T, Exception> checkedConsumer(String payloadVar) {
+        return (m) -> {
             final Bindings bindings = new SimpleBindings(Map.of(payloadVar, m));
             exec(bindings);
         };
@@ -86,10 +87,10 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         sb.put(RESPONSE, response);
         try {
             final Object ret = exec(sb);
-            if ( ret == null ){
+            if (ret == null) {
                 // Patch for issues/92
                 logger.error("{} @ {} produced null, returning empty string", request.requestMethod(), request.uri());
-                return "" ;
+                return "";
             }
             return ret;
         } catch (Throwable t) {
@@ -415,7 +416,6 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         static {
             Options.importSite = false;
             // force load engines for fat-jar issues...
-            MANAGER.registerEngineName("JavaScript", new RhinoScriptEngineFactory());
             MANAGER.registerEngineName("groovy", new GroovyScriptEngineFactory());
             MANAGER.registerEngineName("python", new PyScriptEngineFactory());
             MANAGER.registerEngineName("kotlin", new KotlinJsr223DefaultScriptEngineFactory());
@@ -435,7 +435,19 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         String extension = extension(path);
         if (!ENGINES.containsKey(extension)) throw new IllegalArgumentException("script type not registered : " + path);
         String engineName = ENGINES.get(extension);
-        final ScriptEngine engine = MANAGER.getEngineByName(engineName);
+        final ScriptEngine engine;
+        if ("JavaScript".equals(engineName)) { // graal.js works in mysterious ways
+            // https://docs.oracle.com/en/graalvm/jdk/22/docs/reference-manual/js/ScriptEngine/#setting-options-via-system-properties
+            engine =  GraalJSScriptEngine.create(null,
+                    Context.newBuilder("js")
+                            .allowExperimentalOptions(true)
+                            .allowAllAccess(true)
+                            .option("js.commonjs-require", "true")
+                            .option("js.commonjs-require-cwd", ModuleManager.JS_MOD_MGR.modulePath())
+            );
+        } else {
+            engine = MANAGER.getEngineByName(engineName);
+        }
         ModuleManager.UNIVERSAL.enable(engine);
         return engine;
     }
@@ -502,20 +514,21 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
 
     /**
      * Creates a prefixed Logger from underlying Logger
-     * @see <a href="https://www.baeldung.com/java-dynamic-proxies"></a>
+     *
      * @param underlying a Logger to be used
-     * @param prefix a String that will be prefixed on each call
+     * @param prefix     a String that will be prefixed on each call
      * @return a proxy prefixed Logger
+     * @see <a href="https://www.baeldung.com/java-dynamic-proxies"></a>
      */
-    static Logger prefixedLogger(Logger underlying, String prefix){
-        if ( prefixedLoggers.containsKey(prefix) ) return prefixedLoggers.get(prefix);
-        final Logger _logger =  (Logger) Proxy.newProxyInstance(
+    static Logger prefixedLogger(Logger underlying, String prefix) {
+        if (prefixedLoggers.containsKey(prefix)) return prefixedLoggers.get(prefix);
+        final Logger _logger = (Logger) Proxy.newProxyInstance(
                 Logger.class.getClassLoader(),
-                new Class[] { Logger.class },
+                new Class[]{Logger.class},
                 (proxy, method, methodArgs) -> {
-                    switch (method.getName()){
+                    switch (method.getName()) {
                         case "debug", "trace", "info", "warn", "error" -> {
-                            if ( methodArgs.length > 0 && methodArgs[0] instanceof String ){
+                            if (methodArgs.length > 0 && methodArgs[0] instanceof String) {
                                 final String fmt = prefix + methodArgs[0];
                                 methodArgs[0] = fmt;
                                 return method.invoke(underlying, methodArgs);
@@ -524,17 +537,17 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
                     }
                     return method.invoke(underlying, methodArgs);
                 });
-        prefixedLoggers.put(prefix,_logger);
+        prefixedLoggers.put(prefix, _logger);
         return _logger;
     }
 
     /**
      * Adds some parameters to the Bindings passed
      *
-     * @param bindings a binding which is being prepared
+     * @param bindings   a binding which is being prepared
      * @param scriptPath full path of the script
      */
-    static void prepareBinding(Bindings bindings, String scriptPath ) {
+    static void prepareBinding(Bindings bindings, String scriptPath) {
         bindings.put(DATA_SOURCE, DataSource.DATA_SOURCES);
         bindings.put(TestAsserter.ASSERTER, (TestAsserter) () -> bindings);
         bindings.put(ENVIRON, System.getenv());
@@ -548,7 +561,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      */
     Creator JSR = (path, handler) -> (bindings) -> {
         CompiledScript cs = loadScript(path, handler);
-        prepareBinding(bindings, handler );
+        prepareBinding(bindings, handler);
         ModuleManager.UNIVERSAL.updateModuleBindings(cs, bindings);
         Object r = cs.eval(bindings);
         if (r != null) return r;

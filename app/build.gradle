@@ -36,7 +36,7 @@ ext {
     jackson_version    = '2.20.0'
     jcasbin_version    = '1.84.0'
     jedis_version      = '6.2.0'
-
+    graal_version      = '23.1.4'
     // now cloud providers client dependencies
     // amazon aws is really good at keeping versions together
     aws_client_version = '2.34.9'
@@ -73,9 +73,12 @@ dependencies {
     implementation ( "org.zoomba-lang:spark-core:$spark_version" ) { changing = true }
     // end of local libraries
     implementation 'org.slf4j:slf4j-jdk14:2.1.0-alpha1'
+
     // Scripting Engines JSR-223
-    implementation 'org.mozilla:rhino-engine:1.7.15' //js -- https://github.com/nmondal/cowj/issues/136
-    implementation 'com.github.a-langer:jsr223-commonjs-modules:1.0.1'
+
+    // graal-js
+    implementation "org.graalvm.polyglot:js:$graal_version"
+    implementation "org.graalvm.js:js-scriptengine:$graal_version"
 
     // groovy
     implementation "org.apache.groovy:groovy:$groovy_version"
