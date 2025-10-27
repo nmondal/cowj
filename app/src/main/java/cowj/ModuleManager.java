@@ -53,7 +53,7 @@ interface ModuleManager{
 
         @Override
         public void modulePath(String rootPath) {
-            this.modulePath = rootPath + "/js";
+            this.modulePath = rootPath + "/common-js";
         }
 
         @Override

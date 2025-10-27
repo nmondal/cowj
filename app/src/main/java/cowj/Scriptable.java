@@ -424,6 +424,24 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         }
     };
 
+
+    /**
+     * Gets a Context builder which finds out if there are commonjs modules or not and enables it
+     * @param possibleCommonJSPath the path of the modules
+     * @return a Context Builder
+     */
+    static Context.Builder graalContextBuilderWithCommonJSPath(String possibleCommonJSPath){
+        Context.Builder builder = Context.newBuilder("js").allowAllAccess(true);
+        // https://docs.oracle.com/en/graalvm/jdk/22/docs/reference-manual/js/ScriptEngine/#setting-options-via-system-properties
+        final boolean commonJSModule = Files.exists( Paths.get( possibleCommonJSPath ) );
+        if ( commonJSModule ){
+            builder.allowExperimentalOptions(true)
+                    .option("js.commonjs-require", "true")
+                    .option("js.commonjs-require-cwd", ModuleManager.JS_MOD_MGR.modulePath());
+        }
+        return builder;
+    }
+
     /**
      * Get engine from path
      *
@@ -437,14 +455,8 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         String engineName = ENGINES.get(extension);
         final ScriptEngine engine;
         if ("JavaScript".equals(engineName)) { // graal.js works in mysterious ways
-            // https://docs.oracle.com/en/graalvm/jdk/22/docs/reference-manual/js/ScriptEngine/#setting-options-via-system-properties
             engine =  GraalJSScriptEngine.create(null,
-                    Context.newBuilder("js")
-                            .allowExperimentalOptions(true)
-                            .allowAllAccess(true)
-                            .option("js.commonjs-require", "true")
-                            .option("js.commonjs-require-cwd", ModuleManager.JS_MOD_MGR.modulePath())
-            );
+                    graalContextBuilderWithCommonJSPath( ModuleManager.JS_MOD_MGR.modulePath()) );
         } else {
             engine = MANAGER.getEngineByName(engineName);
         }
