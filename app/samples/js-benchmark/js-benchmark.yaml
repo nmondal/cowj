@@ -1,0 +1,21 @@
+# This is the sample routes file
+# basic support are given
+
+# port in which to connect
+port: 5123
+
+# to load all external jars which are not part of the distribution
+# for loading common-js module, create a directory common-js inside it
+# and then put all modules under it
+lib: _/lib
+
+# threading related stuff
+threading:
+  min: 4
+  max : 8
+  timeout: 30000
+
+# path mapping
+routes:
+  get:
+    /hello: _/hello.js
