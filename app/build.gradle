@@ -36,7 +36,7 @@ ext {
     jackson_version    = '2.20.0'
     jcasbin_version    = '1.84.0'
     jedis_version      = '6.2.0'
-    graal_version      = '23.1.2' // https://github.com/oracle/graal/issues/7651 for JDK 21
+    graal_version      = '23.1.9' // https://github.com/oracle/graal/issues/7651 for JDK 21
     // now cloud providers client dependencies
     // amazon aws is really good at keeping versions together
     aws_client_version = '2.34.9'
