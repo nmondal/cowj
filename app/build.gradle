@@ -36,7 +36,7 @@ ext {
     jackson_version    = '2.20.0'
     jcasbin_version    = '1.84.0'
     jedis_version      = '6.2.0'
-    graal_version      = '23.1.4'
+    graal_version      = '23.1.2' // https://github.com/oracle/graal/issues/7651 for JDK 21
     // now cloud providers client dependencies
     // amazon aws is really good at keeping versions together
     aws_client_version = '2.34.9'
@@ -66,6 +66,11 @@ repositories {
     gradlePluginPortal()
 }
 
+
+configurations {
+    /* https://discuss.gradle.org/t/how-to-choose-only-some-dependencies-to-copy-to-a-folder/19629/2  */
+    graalJSCompileModule
+}
 
 dependencies {
 
@@ -136,6 +141,16 @@ dependencies {
     implementation "software.amazon.awssdk:secretsmanager:$aws_client_version"
     implementation 'com.azure:azure-security-keyvault-secrets:4.10.3'
 
+    ///// Graal JS Compilation - these needs to be upgraded module path
+    graalJSCompileModule "org.graalvm.compiler:compiler:$graal_version"
+    graalJSCompileModule "org.graalvm.compiler:compiler-management:$graal_version"
+    graalJSCompileModule "org.graalvm.truffle:truffle-api:$graal_version"
+    graalJSCompileModule "org.graalvm.truffle:truffle-compiler:$graal_version"
+    graalJSCompileModule "org.graalvm.polyglot:polyglot:$graal_version"
+    graalJSCompileModule "org.graalvm.sdk:graal-sdk:$graal_version"
+    graalJSCompileModule "org.graalvm.sdk:collections:$graal_version"
+
+
     ///// test stuff
     testImplementation 'junit:junit:4.13.2'
     // JDBC
@@ -196,10 +211,31 @@ application {
 }
 
 tasks.register('copyAllDependencies', Copy) {
-    from configurations.runtimeClasspath
     into "${rootDir}/app/build/libs/deps"
+    // regular dependencies gets into deps folder
+    from configurations.runtimeClasspath
 }
+
+tasks.register('copyGraalCompiler', Copy as Class<Task>) {
+
+    into "${rootDir}/app/build/libs/graal"
+    /*
+     graal vm modules gets into graal folder
+     Where they should be added to the running JVM module as follows
+     to ensure graal languages gets compiled to JVM and run fast, really fast:
+
+     -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI \
+     --add-exports=java.base/jdk.internal.misc=jdk.graal.compiler \
+     --upgrade-module-path="${rootDir}/app/build/libs/graal"
+
+     */
+    from configurations.graalJSCompileModule
+}
+
+
 build.dependsOn(copyAllDependencies)
+build.dependsOn(copyGraalCompiler)
+
 
 jar {
     // Keep jar clean:
