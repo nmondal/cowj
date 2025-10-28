@@ -29,17 +29,17 @@ ext {
 
     // now fast changing versions
     spark_version      = '3.0.2'
-    groovy_version     = '5.0.1'
+    groovy_version     = '5.0.2'
     jython_version     = '2.7.4'
-    kotlin_version     = '2.2.20'
-    quartz_version     = '2.5.0'
+    kotlin_version     = '2.3.0-Beta2'
+    quartz_version     = '2.5.1'
     jackson_version    = '2.20.0'
-    jcasbin_version    = '1.84.0'
-    jedis_version      = '6.2.0'
-
+    jcasbin_version    = '1.85.1'
+    jedis_version      = '7.0.0'
+    graal_version      = '23.1.9' // https://github.com/oracle/graal/issues/7651 for JDK 21
     // now cloud providers client dependencies
     // amazon aws is really good at keeping versions together
-    aws_client_version = '2.34.9'
+    aws_client_version = '2.36.3'
     // google cloud and microsoft azure are terrible at keeping versioning
     // test binary
     mockito_version    = '5.20.0'
@@ -67,15 +67,23 @@ repositories {
 }
 
 
+configurations {
+    /* https://discuss.gradle.org/t/how-to-choose-only-some-dependencies-to-copy-to-a-folder/19629/2  */
+    graalJSCompileModule
+}
+
 dependencies {
 
     implementation ( zmbBinary ) { changing = true }
     implementation ( "org.zoomba-lang:spark-core:$spark_version" ) { changing = true }
     // end of local libraries
     implementation 'org.slf4j:slf4j-jdk14:2.1.0-alpha1'
+
     // Scripting Engines JSR-223
-    implementation 'org.mozilla:rhino-engine:1.7.15' //js -- https://github.com/nmondal/cowj/issues/136
-    implementation 'com.github.a-langer:jsr223-commonjs-modules:1.0.1'
+
+    // graal-js
+    implementation "org.graalvm.polyglot:js:$graal_version"
+    implementation "org.graalvm.js:js-scriptengine:$graal_version"
 
     // groovy
     implementation "org.apache.groovy:groovy:$groovy_version"
@@ -98,7 +106,7 @@ dependencies {
     implementation "org.casbin:jcasbin:$jcasbin_version"
 
     // Identity
-    implementation 'com.azure:azure-identity:1.18.0'
+    implementation 'com.azure:azure-identity:1.18.1'
 
     // File Watching ....
     implementation 'io.methvin:directory-watcher:0.19.1'
@@ -110,16 +118,16 @@ dependencies {
 
     // Storage...
     implementation "redis.clients:jedis:$jedis_version"
-    implementation 'com.google.cloud:google-cloud-storage:2.58.0'
+    implementation 'com.google.cloud:google-cloud-storage:2.59.0'
     implementation "software.amazon.awssdk:s3:$aws_client_version"
     implementation "software.amazon.awssdk:apache-client:$aws_client_version"
-    implementation 'com.azure:azure-storage-blob:12.32.0-beta.1'
+    implementation 'com.azure:azure-storage-blob:12.32.0'
 
 
     // Message Queueing
     implementation "software.amazon.awssdk:sqs:$aws_client_version"
-    implementation 'com.azure:azure-storage-queue:12.27.0-beta.1'
-    implementation 'com.google.cloud:google-cloud-pubsub:1.141.5'
+    implementation 'com.azure:azure-storage-queue:12.27.0'
+    implementation 'com.google.cloud:google-cloud-pubsub:1.143.0'
 
 
     // fcm - close to Messaging, but not close enough
@@ -129,9 +137,19 @@ dependencies {
     implementation 'com.mysql:mysql-connector-j:8.4.0'
 
     /// secret manager
-    implementation 'com.google.cloud:google-cloud-secretmanager:2.75.0'
+    implementation 'com.google.cloud:google-cloud-secretmanager:2.78.0'
     implementation "software.amazon.awssdk:secretsmanager:$aws_client_version"
-    implementation 'com.azure:azure-security-keyvault-secrets:4.10.3'
+    implementation 'com.azure:azure-security-keyvault-secrets:4.10.4'
+
+    ///// Graal JS Compilation - these needs to be upgraded module path
+    graalJSCompileModule "org.graalvm.compiler:compiler:$graal_version"
+    graalJSCompileModule "org.graalvm.compiler:compiler-management:$graal_version"
+    graalJSCompileModule "org.graalvm.truffle:truffle-api:$graal_version"
+    graalJSCompileModule "org.graalvm.truffle:truffle-compiler:$graal_version"
+    graalJSCompileModule "org.graalvm.polyglot:polyglot:$graal_version"
+    graalJSCompileModule "org.graalvm.sdk:graal-sdk:$graal_version"
+    graalJSCompileModule "org.graalvm.sdk:collections:$graal_version"
+
 
     ///// test stuff
     testImplementation 'junit:junit:4.13.2'
@@ -193,10 +211,31 @@ application {
 }
 
 tasks.register('copyAllDependencies', Copy) {
-    from configurations.runtimeClasspath
     into "${rootDir}/app/build/libs/deps"
+    // regular dependencies gets into deps folder
+    from configurations.runtimeClasspath
 }
+
+tasks.register('copyGraalCompiler', Copy) {
+
+    into "${rootDir}/app/build/libs/graal"
+    /*
+     graal vm modules gets into graal folder
+     Where they should be added to the running JVM module as follows
+     to ensure graal languages gets compiled to JVM and run fast, really fast:
+
+     -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI \
+     --add-exports=java.base/jdk.internal.misc=jdk.graal.compiler \
+     --upgrade-module-path="${rootDir}/app/build/libs/graal"
+
+     */
+    from configurations.graalJSCompileModule
+}
+
+
 build.dependsOn(copyAllDependencies)
+build.dependsOn(copyGraalCompiler)
+
 
 jar {
     // Keep jar clean:
