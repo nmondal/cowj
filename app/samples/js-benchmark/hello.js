@@ -1,2 +1,3 @@
-let primesMain = require('./primes.js') // import common js
-primesMain() // just call
+let factorial = require('./factorial.js') // import common js
+factorial(170,1) // just call
+true

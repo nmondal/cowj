@@ -18,4 +18,4 @@ threading:
 # path mapping
 routes:
   get:
-    /hello: _/hello.js
+    /j: _/hello.js
