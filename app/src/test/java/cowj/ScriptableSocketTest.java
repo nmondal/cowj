@@ -9,6 +9,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,6 +77,9 @@ public class ScriptableSocketTest {
         ScriptableSocket ss = ScriptableSocket.socket( "/err", "samples/test_scripts/error_1_arg.zm" );
         Session session = mock(Session.class);
         ss.connected(session); // load it up
+        final ByteBuffer buffer = ByteBuffer.allocate(10);
+        ss.ping(session, buffer);
+        ss.pong(session, buffer);
         final RuntimeException th = new RuntimeException("Boom!");
         ss.error(session, th );
         doThrow( th ).when( session).sendText( any(), any());

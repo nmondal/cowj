@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.script.Bindings;
 import javax.script.SimpleBindings;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -14,6 +15,10 @@ import java.util.concurrent.TimeUnit;
 /**
  * Template jetty based WebSocket implementation
  * This wraps around a Scriptable
+ * On the basis of this issue here <a href="https://github.com/nmondal/cowj/issues/147">...</a>
+ * This design does not support frames anymore
+ * If and when frames becomes a crucial requirement ( possibly never ) we shall redesign the system
+ * Right now, we simply add rest of the events
  * Default timeout is 2 minutes
  */
 @WebSocket
@@ -141,8 +146,19 @@ public final class ScriptableSocket {
 
     /**
      * Connect Event
+     *
      */
     public static final String EVENT_CONNECT = "connect" ;
+
+    /**
+     * Ping Event
+     */
+    public static final String EVENT_PING = "ping" ;
+
+    /**
+     * Pong Event
+     */
+    public static final String EVENT_PONG = "pong" ;
 
     /**
      * Closed Event
@@ -159,10 +175,6 @@ public final class ScriptableSocket {
      */
     public static final String EVENT_ERROR = "error" ;
 
-    /**
-     * Frame Event
-     */
-    public static final String EVENT_FRAME = "frame" ;
 
     private void handleEvent( SocketEvent event){
         Bindings bindings = new SimpleBindings();
@@ -186,29 +198,38 @@ public final class ScriptableSocket {
     }
 
     /**
+     * Template method to handle ping
+     * @param session jetty WebSocket Session
+     * @param payload the actual payload
+     */
+    @OnWebSocketPing
+    public void ping(Session session, ByteBuffer payload){
+        logger.debug("ping - {}", session);
+        handleEvent( new SocketEvent(EVENT_PING, session, payload, -1));
+    }
+
+    /**
+     * Template method to handle ping
+     * @param session jetty WebSocket Session
+     * @param payload the actual payload
+     */
+    @OnWebSocketPong
+    public void pong(Session session, ByteBuffer payload){
+        logger.debug("pong - {}", session);
+        handleEvent( new SocketEvent(EVENT_PONG, session, payload, -1));
+    }
+
+    /**
      * Template method for passing 'closed' event to Scriptable
      * @param session jetty WebSocket Session
      * @param statusCode code for why connection was closed
      * @param reason String - human description for why connection was closed
      */
-
     @OnWebSocketClose
     public void closed(Session session, int statusCode, String reason) {
         logger.debug("closed - {} , code {}, reason {}", session, statusCode, reason );
         handleEvent( new SocketEvent(EVENT_CLOSED, session, reason, statusCode));
         SESSIONS.get(path).remove(session);
-    }
-
-    /**
-     * Template method for passing 'frame' event to Scriptable
-     * @param session jetty WebSocket Session
-     * @param frame a jetty Frame
-     * @param callback  a jetty Callback
-     */
-    @OnWebSocketFrame
-    public void frame(Session session, Frame frame, Callback callback){
-        logger.debug("frame - {} , frame {}", session, frame);
-        handleEvent( new SocketEvent(EVENT_FRAME, session, frame, -1));
     }
 
     /**
