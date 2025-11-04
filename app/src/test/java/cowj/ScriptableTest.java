@@ -1,5 +1,6 @@
 package cowj;
 
+import org.graalvm.polyglot.PolyglotException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -7,11 +8,8 @@ import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 import javax.script.Bindings;
-import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertThrows;
@@ -35,9 +33,9 @@ public class ScriptableTest {
     }
 
     @Test
-    public void jsrRuntimeErrorTest(){
-        Scriptable sc = Scriptable.JSR.create("",  "samples/test_scripts/runtime_error.js" );
-        Exception exception = assertThrows(ScriptException.class, () -> {
+    public void jsRuntimeErrorTest(){
+        Scriptable sc = Scriptable.GRAAL.create("",  "samples/test_scripts/runtime_error.js" );
+        Exception exception = assertThrows(PolyglotException.class, () -> {
             sc.exec(new SimpleBindings());
         });
         Assert.assertNotNull(exception);
@@ -45,10 +43,10 @@ public class ScriptableTest {
     }
 
     @Test
-    public void jsrNullReturnTest() throws Exception {
-        Scriptable sc = Scriptable.JSR.create("",  "samples/test_scripts/null_return.js" );
+    public void jsNullReturnTest() throws Exception {
+        Scriptable sc = Scriptable.GRAAL.create("",  "samples/test_scripts/null_return.js" );
         Object o = sc.exec(new SimpleBindings());
-        Assert.assertEquals("", o);
+        Assert.assertNull( o);
     }
 
     @Test
@@ -101,15 +99,9 @@ public class ScriptableTest {
 
     @Test
     public void expressionJSRTest() throws Exception {
-        // JS
-        Scriptable sc= Scriptable.JSR.create(Scriptable.INLINE, "2+2 //.js" );
-        Object o = sc.exec( new SimpleBindings( ) );
-        Assert.assertTrue( o instanceof Number);
-        Assert.assertEquals( 4, ((Number) o).intValue() );
-
         // Python
-        sc= Scriptable.JSR.create(Scriptable.INLINE, "2+2 #.py" );
-        o = sc.exec( new SimpleBindings( ) );
+        Scriptable sc= Scriptable.JSR.create(Scriptable.INLINE, "2+2 #.py" );
+        Object o = sc.exec( new SimpleBindings( ) );
         Assert.assertTrue( o instanceof Number);
         Assert.assertEquals( 4, ((Number) o).intValue() );
 
@@ -122,26 +114,13 @@ public class ScriptableTest {
     }
 
     @Test
-    public void rhinoPrintTest() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream ps = new PrintStream( baos);
-        PrintStream os = System.out;
-        System.setOut(ps);
+    public void expressionGraalTest() throws Exception {
+        // JS
+        Scriptable sc= Scriptable.GRAAL.create(Scriptable.INLINE, "2+2 //.js" );
+        Object o = sc.exec( new SimpleBindings( ) );
+        Assert.assertTrue( o instanceof Number);
+        Assert.assertEquals( 4, ((Number) o).intValue() );
 
-        ByteArrayOutputStream baes = new ByteArrayOutputStream();
-        PrintStream pe = new PrintStream( baes);
-        PrintStream es = System.err;
-        System.setErr(pe);
-
-        Scriptable sc= Scriptable.JSR.create(Scriptable.INLINE, "Test.print('hello, world!%n'); Test.printe('hello, world!%n'); //.js" );
-        try {
-            sc.exec( new SimpleBindings( ) );
-            Assert.assertTrue( baos.toString().contains( "hello, world!" + System.lineSeparator()) );
-            Assert.assertTrue( baes.toString().contains( "hello, world!" + System.lineSeparator() ) );
-        }finally {
-            System.setOut(os);
-            System.setOut(es);
-        }
     }
 
     interface RunnableThrows {

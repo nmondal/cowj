@@ -1,9 +1,7 @@
 package cowj;
 
-import com.oracle.truffle.js.scriptengine.GraalJSScriptEngine;
 import kotlin.script.experimental.jsr223.KotlinJsr223DefaultScriptEngineFactory;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
-import org.graalvm.polyglot.Context;
 import org.python.core.Options;
 import org.python.jsr223.PyScriptEngineFactory;
 import org.slf4j.Logger;
@@ -424,24 +422,6 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         }
     };
 
-
-    /**
-     * Gets a Context builder which finds out if there are commonjs modules or not and enables it
-     * @param possibleCommonJSPath the path of the modules
-     * @return a Context Builder
-     */
-    static Context.Builder graalContextBuilderWithCommonJSPath(String possibleCommonJSPath){
-        Context.Builder builder = Context.newBuilder("js").allowAllAccess(true);
-        // https://docs.oracle.com/en/graalvm/jdk/22/docs/reference-manual/js/ScriptEngine/#setting-options-via-system-properties
-        final boolean commonJSModule = Files.exists( Paths.get( possibleCommonJSPath ) );
-        if ( commonJSModule ){
-            builder.allowExperimentalOptions(true)
-                    .option("js.commonjs-require", "true")
-                    .option("js.commonjs-require-cwd", ModuleManager.JS_MOD_MGR.modulePath());
-        }
-        return builder;
-    }
-
     /**
      * Get engine from path
      *
@@ -453,13 +433,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         String extension = extension(path);
         if (!ENGINES.containsKey(extension)) throw new IllegalArgumentException("script type not registered : " + path);
         String engineName = ENGINES.get(extension);
-        final ScriptEngine engine;
-        if ("JavaScript".equals(engineName)) { // graal.js works in mysterious ways
-            engine =  GraalJSScriptEngine.create(null,
-                    graalContextBuilderWithCommonJSPath( ModuleManager.JS_MOD_MGR.modulePath()) );
-        } else {
-            engine = MANAGER.getEngineByName(engineName);
-        }
+        final ScriptEngine engine = MANAGER.getEngineByName(engineName);
         ModuleManager.UNIVERSAL.enable(engine);
         return engine;
     }
@@ -576,12 +550,11 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         prepareBinding(bindings, handler);
         ModuleManager.UNIVERSAL.updateModuleBindings(cs, bindings);
         Object r = cs.eval(bindings);
-        if (r != null) return r;
         // Jython issue...
         if (bindings.containsKey(RESULT)) {
             return bindings.get(RESULT);
         }
-        return "";
+        return r;
     };
 
     /**
@@ -653,6 +626,15 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
     };
 
     /**
+     * Graal Polyglot - Graal Engine Powered  creator
+     */
+    Creator GRAAL = (path, handler) -> (bindings) -> {
+        prepareBinding(bindings, handler);
+        Scriptable scriptable = GraalPolyglot.loadPolyglot(path, handler);
+        return scriptable.exec(bindings);
+    };
+
+    /**
      * Universal Scriptable Creator
      * Merging 3 different types - and script loading is atomic
      * So if one creates script via this, no extra scripts will be loaded
@@ -667,7 +649,12 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
                     loadZScript(path, handler);
                     yield ZMB;
                 }
-                case "js", "groovy", "py", "kt", "kts" -> {
+                case "js" -> {
+                    EitherMonad.runUnsafe(() -> GraalPolyglot.loadPolyglot(path, handler));
+                    yield GRAAL;
+                }
+
+                case "groovy", "py", "kt", "kts" -> {
                     EitherMonad.runUnsafe(() -> loadScript(path, handler));
                     yield JSR;
                 }

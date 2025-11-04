@@ -31,7 +31,7 @@ ext {
     spark_version      = '3.0.3'
     groovy_version     = '5.0.2'
     jython_version     = '2.7.4'
-    kotlin_version     = '2.3.0-Beta2'
+    kotlin_version     = '2.2.21' // newer version - Beta messes up
     quartz_version     = '2.5.1'
     jackson_version    = '2.20.0'
     jcasbin_version    = '1.85.1'
@@ -82,8 +82,9 @@ dependencies {
     // Scripting Engines JSR-223
 
     // graal-js
+    // implementation "org.graalvm.polyglot:polyglot:$graal_version" TODO this should be added
     implementation "org.graalvm.polyglot:js:$graal_version"
-    implementation "org.graalvm.js:js-scriptengine:$graal_version"
+    implementation "org.graalvm.js:js-scriptengine:$graal_version" // TODO to be removed, for now, for React SSR support
 
     // groovy
     implementation "org.apache.groovy:groovy:$groovy_version"

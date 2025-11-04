@@ -1,6 +1,5 @@
 package cowj;
 
-import com.oracle.truffle.js.scriptengine.GraalJSScriptEngine;
 import org.python.jsr223.PyScriptEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,8 +83,6 @@ interface ModuleManager{
                 logger.error("Jython custom package installation will not be available : ", t );
             }
         }
-        @Override
-        public void updateModuleBindings(CompiledScript cs, Bindings bindings) {}
     };
 
     /**
@@ -104,12 +101,6 @@ interface ModuleManager{
         public void enable( ScriptEngine engine) {
             if (  engine instanceof PyScriptEngine ){
                 PY_MOD_MGR.enable(engine);
-            }
-        }
-        @Override
-        public void updateModuleBindings(CompiledScript cs, Bindings bindings) {
-            if ( cs.getEngine() instanceof  GraalJSScriptEngine ){
-                JS_MOD_MGR.updateModuleBindings(cs, bindings );
             }
         }
     };
