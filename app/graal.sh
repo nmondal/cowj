@@ -13,4 +13,4 @@ java -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI \
    --add-exports java.base/jdk.internal.misc=jdk.graal.compiler \
    --add-opens org.graalvm.truffle/com.oracle.truffle.polyglot=ALL-UNNAMED \
    --upgrade-module-path="graal" \
-   -jar cowj-0.1-SNAPSHOT.jar ../../samples/js-benchmark/js-benchmark.yaml
+   -jar cowj-0.1-SNAPSHOT.jar ../../samples/graal-benchmark/graal-benchmark.yaml
