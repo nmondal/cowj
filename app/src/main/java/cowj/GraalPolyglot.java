@@ -35,15 +35,23 @@ public interface GraalPolyglot extends Scriptable{
      */
     Source source();
 
+    /**
+     * Given every script runs within its own Context
+     * This gets the Cached builder associated with the Context
+     * @return gets a Cached Builder for the Context
+     */
+    Context.Builder contextBuilder();
+
     @Override
     default Object exec(Bindings bindings) throws Exception {
         final Source src = source();
         final String lang = src.getLanguage() ;
-        final Context ctx = languageContext( lang );
-        final Value langBindings = ctx.getBindings( lang );
-        bindings.forEach(langBindings::putMember);
-        final Value res = ctx.eval(src);
-        return res.as(Object.class);
+        try( final Context ctx = contextBuilder().engine( threadedEngine.get() ).build() ) {
+            final Value langBindings = ctx.getBindings(lang);
+            bindings.forEach(langBindings::putMember);
+            final Value res = ctx.eval(src);
+            return res.as(Object.class);
+        }
     }
 
     /**
@@ -73,18 +81,6 @@ public interface GraalPolyglot extends Scriptable{
     ThreadLocal<Engine> threadedEngine = ThreadLocal.withInitial(Engine::create);
 
     /**
-     * Gets the language Context for current thread
-     * @param language the language for which the Context needs to be created
-     * @return a Context for the current thread
-     */
-    static Context languageContext(String language){
-        if ( !"js".equals( language ) ){ // find if we support or not
-            throw new UnsupportedOperationException("Language not supported: " + language );
-        }
-        return graalContextBuilderWithCommonJSPath().engine( threadedEngine.get() ).build();
-    }
-
-    /**
      * A map of path to GraalPolyglot map for each script sources
      */
     Map<String, GraalPolyglot> polyglotsMap = new HashMap<>();
@@ -104,9 +100,24 @@ public interface GraalPolyglot extends Scriptable{
         final String content = INLINE.equals(directive) ? path : new String(Files.readAllBytes(Paths.get(path)));
         final String extension = Scriptable.extension(path);
         final String lang =  extension ; // TODO if mapping is indeed required
+        if ( !"js".equals( lang ) ){ // find if we support or not
+            throw new UnsupportedOperationException("Language not supported: " + lang );
+        }
+        // TODO this should be replaced with a factory - based on language
+        final Context.Builder contextBuilder = graalContextBuilderWithCommonJSPath();
         try {
             final Source source = Source.newBuilder( lang, content, path ).build();
-            final GraalPolyglot polyglot = () -> source;
+            logger.info("Polyglot Engine Language : {} ==> {}", path, lang);
+            final GraalPolyglot polyglot = new GraalPolyglot() {
+                @Override
+                public Source source() {
+                    return source;
+                }
+                @Override
+                public Context.Builder contextBuilder() {
+                    return contextBuilder;
+                }
+            };
             polyglotsMap.put(path,polyglot);
             return polyglot;
         } catch (Throwable th) {
