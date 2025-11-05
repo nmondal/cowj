@@ -85,6 +85,7 @@ dependencies {
     // implementation "org.graalvm.polyglot:polyglot:$graal_version" TODO this should be added
     implementation "org.graalvm.polyglot:js:$graal_version"
     implementation "org.graalvm.js:js-scriptengine:$graal_version" // TODO to be removed, for now, for React SSR support
+    implementation "org.graalvm.polyglot:python:$graal_version"
 
     // groovy
     implementation "org.apache.groovy:groovy:$groovy_version"

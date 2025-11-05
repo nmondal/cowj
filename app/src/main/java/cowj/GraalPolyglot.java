@@ -99,12 +99,18 @@ public interface GraalPolyglot extends Scriptable{
         // this now becomes a hack ... expression will be used with "2 + 2 //.js"
         final String content = INLINE.equals(directive) ? path : new String(Files.readAllBytes(Paths.get(path)));
         final String extension = Scriptable.extension(path);
-        final String lang =  extension ; // TODO if mapping is indeed required
-        if ( !"js".equals( lang ) ){ // find if we support or not
-            throw new UnsupportedOperationException("Language not supported: " + lang );
+        final String lang;
+        final Context.Builder contextBuilder;
+        if ( "py3".equals( extension ) ){
+            lang = "python" ;
+            contextBuilder = Context.newBuilder("python").allowAllAccess(true);
+        } else if ( "js".equals( extension ) ){
+            lang = extension ;
+            contextBuilder = graalContextBuilderWithCommonJSPath();
         }
-        // TODO this should be replaced with a factory - based on language
-        final Context.Builder contextBuilder = graalContextBuilderWithCommonJSPath();
+        else { // find if we support or not
+            throw new UnsupportedOperationException("Language not identified by extension : " + extension );
+        }
         try {
             final Source source = Source.newBuilder( lang, content, path ).build();
             logger.info("Polyglot Engine Language : {} ==> {}", path, lang);

@@ -18,4 +18,8 @@ threading:
 # path mapping
 routes:
   get:
-    /j: _/hello.js
+    /j: _/hello.js # default now - GraalJS
+    /p2: _/hello.py # Jython entry point - default
+    /p3: _/hello.py3 # experimental graal - special extension
+    /z: _/hello.zm
+

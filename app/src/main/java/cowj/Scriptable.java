@@ -649,7 +649,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
                     loadZScript(path, handler);
                     yield ZMB;
                 }
-                case "js" -> {
+                case "js" , "py3" -> {
                     EitherMonad.runUnsafe(() -> GraalPolyglot.loadPolyglot(path, handler));
                     yield GRAAL;
                 }
