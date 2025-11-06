@@ -13,4 +13,4 @@ routes:
     /python: _/python.py
 
   get:
-    /req: _/req_demo.py3 # Only functional if one installed requests module
+    /req: _/req_demo.py # Only functional if one installed requests module
