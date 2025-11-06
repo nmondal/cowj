@@ -58,7 +58,7 @@ public interface GraalPolyglot extends Scriptable{
      * Gets a JS Context along with  commonjs modules or not and enables it
      * @return a Context Builder
      */
-    static Context.Builder graalContextBuilderWithCommonJSPath(){
+    static Context.Builder javaScriptWithCommonJSPath(){
         final String possibleCommonJSPath = ModuleManager.JS_MOD_MGR.modulePath() ;
         Context.Builder builder = Context.newBuilder("js").allowAllAccess(true);
         // https://docs.oracle.com/en/graalvm/jdk/22/docs/reference-manual/js/ScriptEngine/#setting-options-via-system-properties
@@ -69,6 +69,23 @@ public interface GraalPolyglot extends Scriptable{
                     .option("js.commonjs-require-cwd", ModuleManager.JS_MOD_MGR.modulePath());
         }
         logger.info("Polyglot JavaScript CommonJS Module Enabled : {}", commonJSModule );
+        return builder ;
+    }
+
+    /**
+     * Gets a Python3 Context along with  site packages or not and enables it
+     * @return a Context Builder
+     */
+    static Context.Builder python(){
+        final String possiblePythonSitePath = ModuleManager.PY3_MOD_MGR.modulePath();
+        Context.Builder builder = Context.newBuilder("python").allowAllAccess(true);
+        // https://docs.oracle.com/en/graalvm/jdk/22/docs/reference-manual/js/ScriptEngine/#setting-options-via-system-properties
+        final boolean sitePackage = Files.exists( Paths.get( possiblePythonSitePath ) );
+        if ( sitePackage ){
+            builder.option("python.ForceImportSite", "true")
+                    .option("python.PythonPath", possiblePythonSitePath);
+        }
+        logger.info("Polyglot Python Site Package Module Enabled : {}", sitePackage );
         return builder ;
     }
 
@@ -103,10 +120,10 @@ public interface GraalPolyglot extends Scriptable{
         final Context.Builder contextBuilder;
         if ( "py3".equals( extension ) ){
             lang = "python" ;
-            contextBuilder = Context.newBuilder("python").allowAllAccess(true);
+            contextBuilder = python();
         } else if ( "js".equals( extension ) ){
             lang = extension ;
-            contextBuilder = graalContextBuilderWithCommonJSPath();
+            contextBuilder = javaScriptWithCommonJSPath();
         }
         else { // find if we support or not
             throw new UnsupportedOperationException("Language not identified by extension : " + extension );

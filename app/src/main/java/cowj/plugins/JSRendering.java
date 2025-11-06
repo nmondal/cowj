@@ -108,7 +108,7 @@ public interface JSRendering {
     DataSource.Creator SSR = (name, config, parent) -> {
         try {
             final GraalJSScriptEngine engine = GraalJSScriptEngine.create( null,
-                    GraalPolyglot.graalContextBuilderWithCommonJSPath() );
+                    GraalPolyglot.javaScriptWithCommonJSPath() );
             List<String> scripts = (List<String>)config.getOrDefault( CONTEXT , Collections.emptyList());
             for ( String path : scripts ){
                EitherMonad<Object> em = evalScript(engine, path, parent.staticPath() );
