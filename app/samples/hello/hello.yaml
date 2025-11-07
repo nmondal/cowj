@@ -49,7 +49,6 @@ routes:
 
   post:
     /hello: _/hello.zm
-    /identity: _/identity.zm
     /_async_/compute: _/async.zm
 
 proxies:
