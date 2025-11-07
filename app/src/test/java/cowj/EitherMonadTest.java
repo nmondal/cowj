@@ -1,12 +1,12 @@
 package cowj;
 
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-
-import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.*;
 
 public class EitherMonadTest {
 
@@ -75,5 +75,20 @@ public class EitherMonadTest {
         Assert.assertTrue( EitherMonad.run( () -> {
             int i = 1 / 0;
         }).inError() );
+    }
+
+    @Test
+    public void whenSuccessTest(){
+        final String[] arr = new String[]{ null } ;
+        CheckedFunctional.Consumer<String,?> c = (x) -> {  arr[0] = x ; };
+        EitherMonad<String> em = EitherMonad.error(new Throwable());
+        assertSame( em, em.whenSuccess(c) );
+        assertNull(arr[0]);
+
+        em = EitherMonad.value("Hello!");
+        assertSame( em, em.whenSuccess(c) );
+        assertEquals("Hello!", arr[0] );
+
+
     }
 }

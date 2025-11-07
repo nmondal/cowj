@@ -109,10 +109,15 @@ public class ModelRunnerTest {
         mr = runModel(jython);
         final String expected = "Hello :42!" ;
         final String body = ZTypes.jsonString( Map.of("name", "42"));
+        // jython
         Assert.assertEquals( expected, post("http://localhost:5009", "/python", body ));
         Assert.assertEquals( expected, post("http://localhost:5009", "/zmb", body ));
         Assert.assertEquals( expected, post("http://localhost:5009", "/jackson", body ));
+        // Graal Python
+        Assert.assertEquals( expected, post("http://localhost:5009", "/python3", body ));
+
     }
+
     @Test
     public void multiThreadedPostTest() throws Exception{
         mr = runModel(hello);

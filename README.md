@@ -293,17 +293,20 @@ cron:
 ```
 
 It simply defines the routes - as well the handler script for such a route.
-In this way it is very similar to PHP doctrine, as well as DJango or Play.
+In this way it is very similar to PHP doctrine, as well as DJango or Play of even FastApi.
+
+Under the hood it uses Jetty12 and also support websockets!
 
 ### Scripting
 
 Is Polyglot.  We support JSR-223 languages - in built support is provided right now for:
 
 1. Groovy ( Optionally Typed )
-2. JavaScript ( via Rhino Engine )
+2. JavaScript ( via GraalJS  )
 3. Kotlin Scripting ( Fully Typed )
 4. Python 2.7 ( Jython ) 
-5. ZoomBA  ( Duck Typed )
+5. Python 3.10 ( Graal Python )
+6. ZoomBA  ( Duck Typed )
 
 And obviously any pre-existing class files just work!
 
@@ -336,8 +339,8 @@ https://javadoc.io/doc/com.sparkjava/spark-core/2.6.0/spark/Request.html
 https://javadoc.io/doc/com.sparkjava/spark-core/2.6.0/spark/Response.html
 
 
-
-A good read about why we try to avoid type systems inside can be found here:
+A good read about why we try to avoid type systems ( for business app development) 
+can be found here:
 
 [Clojure vs. The Static Typing World](https://ericnormand.me/article/clojure-and-types)
 
@@ -641,7 +644,7 @@ To read more see [Embedding Auth](manual/auth.md)
 ### Building 
 
 1. Clone the repo to a local directory  
-2. Install / Download java 17 from adoptium ( https://adoptium.net ) 
+2. Install / Download java 17 (minimum) from adoptium ( https://adoptium.net ) 
 3. If you do no have `gradle` install/download gradle  ( https://gradle.org/install ) 
 4. Open command promt and run `gradle`, if it runs you are good.
 5. Go to the local directory where cowj is cloned and issue the command `gradle build`

@@ -126,26 +126,21 @@ public interface GraalPolyglot extends Scriptable{
             contextBuilder = javaScriptWithCommonJSPath();
         }
         else { // find if we support or not
-            throw new UnsupportedOperationException("Language not identified by extension : " + extension );
+            throw new UnsupportedOperationException("Graal Language not identified by extension : " + extension );
         }
-        try {
-            final Source source = Source.newBuilder( lang, content, path ).build();
-            logger.info("Polyglot Engine Language : {} ==> {}", path, lang);
-            final GraalPolyglot polyglot = new GraalPolyglot() {
-                @Override
-                public Source source() {
-                    return source;
-                }
-                @Override
-                public Context.Builder contextBuilder() {
-                    return contextBuilder;
-                }
-            };
-            polyglotsMap.put(path,polyglot);
-            return polyglot;
-        } catch (Throwable th) {
-            logger.error("Polyglot Script Load Error: {} ==> {}", th.getMessage(), path);
-            throw new RuntimeException("Polyglot Script Loading Failed!");
-        }
+        final Source source = Source.newBuilder( lang, content, path ).build();
+        logger.info("Polyglot Engine Language : {} ==> {}", path, lang);
+        final GraalPolyglot polyglot = new GraalPolyglot() {
+            @Override
+            public Source source() {
+                return source;
+            }
+            @Override
+            public Context.Builder contextBuilder() {
+                return contextBuilder;
+            }
+        };
+        polyglotsMap.put(path,polyglot);
+        return polyglot;
     }
 }
