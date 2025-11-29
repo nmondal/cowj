@@ -390,12 +390,18 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
 
     /**
      * Cached map of all CompiledScript
-     *
+     * A very detailed discussion points to the direction that we MUST have thread local compiled scripts
+     * See the entire discussion here - <a href="https://github.com/jython/jython/issues/401">...</a>
+     * This is why we must migrate to thread local
      * @see <a href="https://docs.oracle.com/javase/9/docs/api/javax/script/CompiledScript.html">CompiledScript</a>
      * Key - location of the scripts
      * Value - CompiledScript
      */
-    Map<String, CompiledScript> scripts = new HashMap<>(); // TODO ? Should be LRU? What?
+    ThreadLocal<Map<String, CompiledScript>> scriptsThreadLocal = ThreadLocal.withInitial( () -> {
+        final Map<String, CompiledScript> scripts = new HashMap<>();
+        FileWatcher.ofCacheAndRegister(scripts, (path) -> loadScript("reload", path));
+        return scripts ;
+    } );
 
     /**
      * Cached map of all ZScript
@@ -418,7 +424,6 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
             MANAGER.registerEngineName("python", new PyScriptEngineFactory());
             MANAGER.registerEngineName("kotlin", new KotlinJsr223DefaultScriptEngineFactory());
             FileWatcher.ofCacheAndRegister(zScripts, (path) -> loadZScript("reload", path));
-            FileWatcher.ofCacheAndRegister(scripts, (path) -> loadScript("reload", path));
         }
     };
 
@@ -440,7 +445,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
 
     /**
      * Loads a script for JSR-223 Engine
-     *
+     * Every thread gets its own CompiledScript
      * @param directive ignored unless it is INLINE, then use the path as executable string
      * @param path      file location from which script needs to be created, if INLINE then comment the extension in the end
      *                  example: "2+2; //.js" will load js engine
@@ -449,13 +454,15 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      * @see <a href="https://docs.oracle.com/javase/9/docs/api/javax/script/CompiledScript.html">CompiledScript</a>
      */
     static CompiledScript loadScript(String directive, String path) throws IOException {
+        final Map<String, CompiledScript> scripts = scriptsThreadLocal.get();
+        CompiledScript compiled = scripts.get(path);
+        if ( compiled != null ) return compiled ;
         // this now becomes a hack ... expression will be used with "2 + 2 //.js"
         // and this will load the engine
-        if (scripts.containsKey(path)) return scripts.get(path);
         String content = INLINE.equals(directive) ? path : new String(Files.readAllBytes(Paths.get(path)));
         final ScriptEngine engine = getEngine(path);
         try {
-            CompiledScript compiled = ((Compilable) engine).compile(content);
+            compiled = ((Compilable) engine).compile(content);
             scripts.put(path, compiled);
             return compiled;
         } catch (ScriptException sc) {
@@ -496,7 +503,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      * Key - location of the scripts, e.g. prefix
      * Value - A Proxy Prefixed Logger
      */
-    Map<String, Logger> prefixedLoggers = new HashMap<>(); // TODO ? Should be LRU? What?
+    Map<String, Logger> prefixedLoggers = new HashMap<>();
 
     /**
      * Creates a prefixed Logger from underlying Logger
@@ -507,8 +514,10 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      * @see <a href="https://www.baeldung.com/java-dynamic-proxies"></a>
      */
     static Logger prefixedLogger(Logger underlying, String prefix) {
-        if (prefixedLoggers.containsKey(prefix)) return prefixedLoggers.get(prefix);
-        final Logger _logger = (Logger) Proxy.newProxyInstance(
+        Logger _logger = prefixedLoggers.get(prefix);
+        if (_logger != null ) return _logger ;
+        // otherwise
+        _logger = (Logger) Proxy.newProxyInstance(
                 Logger.class.getClassLoader(),
                 new Class[]{Logger.class},
                 (proxy, method, methodArgs) -> {
