@@ -17,11 +17,10 @@ import java.util.Map;
 /**
  * Graal Polyglot Scripting Abstraction for Cowj
  * We start supporting
- *  - JS first - which conforms to the latest version of the ECMAScript
- *
+ *  - JS  - which conforms to the latest version of the ECMAScript - this is default JS engine
+ *  - Python - which conforms to the latest version of Python 3 - to use this, use extension py3
  * @see  <a href="https://www.graalvm.org/jdk25/reference-manual/polyglot-programming"></a>
  */
-
 public interface GraalPolyglot extends Scriptable{
 
     /**
@@ -82,16 +81,24 @@ public interface GraalPolyglot extends Scriptable{
         return builder ;
     }
 
+    /**
+     * Build a JavaScript GraalPolyglot
+     * @param content of this character content
+     * @param filePath using this as name - the file path of the content
+     * @return a GraalPolyglot
+     * @throws IOException in case source building fails
+     */
     static GraalPolyglot js( CharSequence content, String filePath) throws IOException {
         final Source source = Source.newBuilder( "js", content, filePath ).build();
         return new GraalPolyglot() {
+            final Context.Builder builder = javaScriptWithCommonJSPath();
             @Override
             public Source source() {
                 return source;
             }
             @Override
             public Context.Builder contextBuilder() {
-                return javaScriptWithCommonJSPath();
+                return builder;
             }
         };
     }
@@ -113,6 +120,13 @@ public interface GraalPolyglot extends Scriptable{
         return builder ;
     }
 
+    /**
+     * Build a Python GraalPolyglot
+     * @param content of this character content
+     * @param filePath using this as name - the file path of the content
+     * @return a GraalPolyglot
+     * @throws IOException in case source building fails
+     */
     static GraalPolyglot python( CharSequence content, String filePath) throws IOException {
         final Source source = Source.newBuilder( "python", content, filePath ).build();
         return new GraalPolyglot() {
@@ -141,7 +155,6 @@ public interface GraalPolyglot extends Scriptable{
      * @see <a href="https://stackoverflow.com/questions/63451148/graalvm-polyglot-thread-issue-in-java-spring-boot-application"></a>
      * @see <a href="https://github.com/oracle/graalpython/issues/564"></a>
      */
-
     ThreadLocal<Context> threadedPythonContext = ThreadLocal.withInitial(() -> python().engine( threadedEngine.get() ).build());
 
     /**

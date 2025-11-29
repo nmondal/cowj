@@ -21,5 +21,7 @@ routes:
     /j:  _/hello.js # default now - GraalJS
     /p2: _/hello.py # Jython entry point - default
     /p3: _/hello.py3 # experimental graal - special extension
-    /z:  _/hello.zm
+    /z:  _/hello.zm # zoomba
+    /g:  _/hello.groovy # groovy scripting
+    /k:  _/hello.kt # kotlin scripting
     /it: _/req_demo.py3 # graal py import
