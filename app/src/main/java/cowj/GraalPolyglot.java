@@ -40,18 +40,28 @@ public interface GraalPolyglot extends Scriptable{
      * This gets the Cached builder associated with the Context
      * @return gets a Cached Builder for the Context
      */
-    Context.Builder contextBuilder();
+    default Context.Builder contextBuilder(){
+        return Context.newBuilder();
+    }
+
+    /**
+     * Given every script runs within its own Context
+     * This gets the Cached Context or new Context
+     * @return gets a Context
+     */
+    default Context context(){
+        return contextBuilder().engine( threadedEngine.get() ).build() ;
+    }
 
     @Override
     default Object exec(Bindings bindings) throws Exception {
         final Source src = source();
         final String lang = src.getLanguage() ;
-        try( final Context ctx = contextBuilder().engine( threadedEngine.get() ).build() ) {
-            final Value langBindings = ctx.getBindings(lang);
-            bindings.forEach(langBindings::putMember);
-            final Value res = ctx.eval(src);
-            return res.as(Object.class);
-        }
+        final Context ctx = context() ;
+        final Value langBindings = ctx.getBindings(lang);
+        bindings.forEach(langBindings::putMember);
+        final Value res = ctx.eval(src);
+        return res.as(Object.class);
     }
 
     /**
@@ -72,6 +82,20 @@ public interface GraalPolyglot extends Scriptable{
         return builder ;
     }
 
+    static GraalPolyglot js( CharSequence content, String filePath) throws IOException {
+        final Source source = Source.newBuilder( "js", content, filePath ).build();
+        return new GraalPolyglot() {
+            @Override
+            public Source source() {
+                return source;
+            }
+            @Override
+            public Context.Builder contextBuilder() {
+                return javaScriptWithCommonJSPath();
+            }
+        };
+    }
+
     /**
      * Gets a Python3 Context along with  site packages or not and enables it
      * @return a Context Builder
@@ -89,6 +113,20 @@ public interface GraalPolyglot extends Scriptable{
         return builder ;
     }
 
+    static GraalPolyglot python( CharSequence content, String filePath) throws IOException {
+        final Source source = Source.newBuilder( "python", content, filePath ).build();
+        return new GraalPolyglot() {
+            @Override
+            public Source source() {
+                return source;
+            }
+            @Override
+            public Context context() {
+                return threadedPythonContext.get();
+            }
+        };
+    }
+
     /**
      * ThreadLocal Engine
      *
@@ -96,6 +134,15 @@ public interface GraalPolyglot extends Scriptable{
      * @see <a href="https://stackoverflow.com/questions/55893836/is-it-possible-to-store-and-load-precompiled-js-to-org-graalvm-polyglot-context"></a>
      */
     ThreadLocal<Engine> threadedEngine = ThreadLocal.withInitial(Engine::create);
+
+    /**
+     * ThreadLocal Graal Python Context
+     * This improves the speed by at least 40% as we have tested it - still a far cry from Jython
+     * @see <a href="https://stackoverflow.com/questions/63451148/graalvm-polyglot-thread-issue-in-java-spring-boot-application"></a>
+     * @see <a href="https://github.com/oracle/graalpython/issues/564"></a>
+     */
+
+    ThreadLocal<Context> threadedPythonContext = ThreadLocal.withInitial(() -> python().engine( threadedEngine.get() ).build());
 
     /**
      * A map of path to GraalPolyglot map for each script sources
@@ -111,35 +158,23 @@ public interface GraalPolyglot extends Scriptable{
      */
     static GraalPolyglot loadPolyglot(String directive, String path) throws IOException {
 
-        if (polyglotsMap.containsKey(path)) return polyglotsMap.get(path);
+        GraalPolyglot polyglot =  polyglotsMap.get(path);
+        if (  polyglot != null ) return polyglot;
 
         // this now becomes a hack ... expression will be used with "2 + 2 //.js"
         final String content = INLINE.equals(directive) ? path : new String(Files.readAllBytes(Paths.get(path)));
         final String extension = Scriptable.extension(path);
-        final String lang;
-        final Context.Builder contextBuilder;
+
         if ( "py3".equals( extension ) ){
-            lang = "python" ;
-            contextBuilder = python();
+            polyglot = python(content,path);
         } else if ( "js".equals( extension ) ){
-            lang = extension ;
-            contextBuilder = javaScriptWithCommonJSPath();
+            polyglot = js(content,path);
         }
         else { // find if we support or not
             throw new UnsupportedOperationException("Graal Language not identified by extension : " + extension );
         }
-        final Source source = Source.newBuilder( lang, content, path ).build();
-        logger.info("Polyglot Engine Language : {} ==> {}", path, lang);
-        final GraalPolyglot polyglot = new GraalPolyglot() {
-            @Override
-            public Source source() {
-                return source;
-            }
-            @Override
-            public Context.Builder contextBuilder() {
-                return contextBuilder;
-            }
-        };
+        logger.info("Polyglot Engine Language : {} ==> {}", path, extension );
+        // put it up
         polyglotsMap.put(path,polyglot);
         return polyglot;
     }
