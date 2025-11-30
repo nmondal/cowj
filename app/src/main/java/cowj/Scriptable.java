@@ -1,9 +1,7 @@
 package cowj;
 
-import com.oracle.truffle.js.scriptengine.GraalJSScriptEngine;
 import kotlin.script.experimental.jsr223.KotlinJsr223DefaultScriptEngineFactory;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
-import org.graalvm.polyglot.Context;
 import org.python.core.Options;
 import org.python.jsr223.PyScriptEngineFactory;
 import org.slf4j.Logger;
@@ -392,12 +390,18 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
 
     /**
      * Cached map of all CompiledScript
-     *
+     * A very detailed discussion points to the direction that we MUST have thread local compiled scripts
+     * See the entire discussion here - <a href="https://github.com/jython/jython/issues/401">...</a>
+     * This is why we must migrate to thread local
      * @see <a href="https://docs.oracle.com/javase/9/docs/api/javax/script/CompiledScript.html">CompiledScript</a>
      * Key - location of the scripts
      * Value - CompiledScript
      */
-    Map<String, CompiledScript> scripts = new HashMap<>(); // TODO ? Should be LRU? What?
+    ThreadLocal<Map<String, CompiledScript>> scriptsThreadLocal = ThreadLocal.withInitial( () -> {
+        final Map<String, CompiledScript> scripts = new HashMap<>();
+        FileWatcher.ofCacheAndRegister(scripts, (path) -> loadScript("reload", path));
+        return scripts ;
+    } );
 
     /**
      * Cached map of all ZScript
@@ -420,27 +424,8 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
             MANAGER.registerEngineName("python", new PyScriptEngineFactory());
             MANAGER.registerEngineName("kotlin", new KotlinJsr223DefaultScriptEngineFactory());
             FileWatcher.ofCacheAndRegister(zScripts, (path) -> loadZScript("reload", path));
-            FileWatcher.ofCacheAndRegister(scripts, (path) -> loadScript("reload", path));
         }
     };
-
-
-    /**
-     * Gets a Context builder which finds out if there are commonjs modules or not and enables it
-     * @param possibleCommonJSPath the path of the modules
-     * @return a Context Builder
-     */
-    static Context.Builder graalContextBuilderWithCommonJSPath(String possibleCommonJSPath){
-        Context.Builder builder = Context.newBuilder("js").allowAllAccess(true);
-        // https://docs.oracle.com/en/graalvm/jdk/22/docs/reference-manual/js/ScriptEngine/#setting-options-via-system-properties
-        final boolean commonJSModule = Files.exists( Paths.get( possibleCommonJSPath ) );
-        if ( commonJSModule ){
-            builder.allowExperimentalOptions(true)
-                    .option("js.commonjs-require", "true")
-                    .option("js.commonjs-require-cwd", ModuleManager.JS_MOD_MGR.modulePath());
-        }
-        return builder;
-    }
 
     /**
      * Get engine from path
@@ -453,20 +438,14 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         String extension = extension(path);
         if (!ENGINES.containsKey(extension)) throw new IllegalArgumentException("script type not registered : " + path);
         String engineName = ENGINES.get(extension);
-        final ScriptEngine engine;
-        if ("JavaScript".equals(engineName)) { // graal.js works in mysterious ways
-            engine =  GraalJSScriptEngine.create(null,
-                    graalContextBuilderWithCommonJSPath( ModuleManager.JS_MOD_MGR.modulePath()) );
-        } else {
-            engine = MANAGER.getEngineByName(engineName);
-        }
+        final ScriptEngine engine = MANAGER.getEngineByName(engineName);
         ModuleManager.UNIVERSAL.enable(engine);
         return engine;
     }
 
     /**
      * Loads a script for JSR-223 Engine
-     *
+     * Every thread gets its own CompiledScript
      * @param directive ignored unless it is INLINE, then use the path as executable string
      * @param path      file location from which script needs to be created, if INLINE then comment the extension in the end
      *                  example: "2+2; //.js" will load js engine
@@ -475,13 +454,15 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      * @see <a href="https://docs.oracle.com/javase/9/docs/api/javax/script/CompiledScript.html">CompiledScript</a>
      */
     static CompiledScript loadScript(String directive, String path) throws IOException {
+        final Map<String, CompiledScript> scripts = scriptsThreadLocal.get();
+        CompiledScript compiled = scripts.get(path);
+        if ( compiled != null ) return compiled ;
         // this now becomes a hack ... expression will be used with "2 + 2 //.js"
         // and this will load the engine
-        if (scripts.containsKey(path)) return scripts.get(path);
         String content = INLINE.equals(directive) ? path : new String(Files.readAllBytes(Paths.get(path)));
         final ScriptEngine engine = getEngine(path);
         try {
-            CompiledScript compiled = ((Compilable) engine).compile(content);
+            compiled = ((Compilable) engine).compile(content);
             scripts.put(path, compiled);
             return compiled;
         } catch (ScriptException sc) {
@@ -522,7 +503,7 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      * Key - location of the scripts, e.g. prefix
      * Value - A Proxy Prefixed Logger
      */
-    Map<String, Logger> prefixedLoggers = new HashMap<>(); // TODO ? Should be LRU? What?
+    Map<String, Logger> prefixedLoggers = new HashMap<>();
 
     /**
      * Creates a prefixed Logger from underlying Logger
@@ -533,8 +514,10 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
      * @see <a href="https://www.baeldung.com/java-dynamic-proxies"></a>
      */
     static Logger prefixedLogger(Logger underlying, String prefix) {
-        if (prefixedLoggers.containsKey(prefix)) return prefixedLoggers.get(prefix);
-        final Logger _logger = (Logger) Proxy.newProxyInstance(
+        Logger _logger = prefixedLoggers.get(prefix);
+        if (_logger != null ) return _logger ;
+        // otherwise
+        _logger = (Logger) Proxy.newProxyInstance(
                 Logger.class.getClassLoader(),
                 new Class[]{Logger.class},
                 (proxy, method, methodArgs) -> {
@@ -576,12 +559,11 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
         prepareBinding(bindings, handler);
         ModuleManager.UNIVERSAL.updateModuleBindings(cs, bindings);
         Object r = cs.eval(bindings);
-        if (r != null) return r;
         // Jython issue...
         if (bindings.containsKey(RESULT)) {
             return bindings.get(RESULT);
         }
-        return "";
+        return r;
     };
 
     /**
@@ -653,6 +635,15 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
     };
 
     /**
+     * Graal Polyglot - Graal Engine Powered  creator
+     */
+    Creator GRAAL = (path, handler) -> (bindings) -> {
+        prepareBinding(bindings, handler);
+        Scriptable scriptable = GraalPolyglot.loadPolyglot(path, handler);
+        return scriptable.exec(bindings);
+    };
+
+    /**
      * Universal Scriptable Creator
      * Merging 3 different types - and script loading is atomic
      * So if one creates script via this, no extra scripts will be loaded
@@ -667,7 +658,12 @@ public interface Scriptable extends java.util.function.Function<Bindings, Object
                     loadZScript(path, handler);
                     yield ZMB;
                 }
-                case "js", "groovy", "py", "kt", "kts" -> {
+                case "js" , "py3" -> {
+                    EitherMonad.runUnsafe(() -> GraalPolyglot.loadPolyglot(path, handler));
+                    yield GRAAL;
+                }
+
+                case "groovy", "py", "kt", "kts" -> {
                     EitherMonad.runUnsafe(() -> loadScript(path, handler));
                     yield JSR;
                 }

@@ -109,45 +109,15 @@ public class ModelRunnerTest {
         mr = runModel(jython);
         final String expected = "Hello :42!" ;
         final String body = ZTypes.jsonString( Map.of("name", "42"));
+        // jython
         Assert.assertEquals( expected, post("http://localhost:5009", "/python", body ));
         Assert.assertEquals( expected, post("http://localhost:5009", "/zmb", body ));
         Assert.assertEquals( expected, post("http://localhost:5009", "/jackson", body ));
+        // Graal Python
+        Assert.assertEquals( expected, post("http://localhost:5009", "/python3", body ));
+
     }
-    @Test
-    public void multiThreadedPostTest() throws Exception{
-        mr = runModel(hello);
-        List<Throwable> errors = Collections.synchronizedList(new ArrayList<>());
-        final int times = 10;
-        final String payLoad1 = ZTypes.jsonString( Map.of("x", 42 ));
-        Thread t1 = new Thread( () ->{
-            for ( int i=0;  i < times; i++ ){
-                try {
-                    String res = post("http://localhost:5003", "/identity", payLoad1 );
-                    Assert.assertEquals(payLoad1, res);
-                }catch (Throwable t){
-                    System.err.println(t);
-                    errors.add(t);
-                }
-            }
-        });
-        final String payLoad2 = ZTypes.jsonString( Map.of("y", 42 ));
-        Thread t2 = new Thread( () ->{
-            for ( int i=0;  i < times; i++ ){
-                try {
-                    String res = post("http://localhost:5003", "/identity", payLoad2 );
-                    Assert.assertEquals(payLoad2, res);
-                }catch (Throwable t){
-                    System.err.println(t);
-                    errors.add(t);
-                }
-            }
-        });
-        t1.start();
-        t2.start();
-        Thread.sleep(1500);
-        // Nothing should be erring out...
-        Assert.assertTrue(errors.isEmpty());
-    }
+
 
     @Test
     public void errorCheckZMB() throws Exception {

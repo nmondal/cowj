@@ -1,9 +1,7 @@
 package cowj.plugins;
 
-import cowj.DataSource;
-import cowj.EitherMonad;
-import cowj.Model;
-import cowj.Scriptable;
+import com.oracle.truffle.js.scriptengine.GraalJSScriptEngine;
+import cowj.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,7 +107,8 @@ public interface JSRendering {
      */
     DataSource.Creator SSR = (name, config, parent) -> {
         try {
-            final ScriptEngine engine = Scriptable.getEngine("__.js");
+            final GraalJSScriptEngine engine = GraalJSScriptEngine.create( null,
+                    GraalPolyglot.javaScriptWithCommonJSPath() );
             List<String> scripts = (List<String>)config.getOrDefault( CONTEXT , Collections.emptyList());
             for ( String path : scripts ){
                EitherMonad<Object> em = evalScript(engine, path, parent.staticPath() );

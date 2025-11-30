@@ -1,0 +1,23 @@
+# This is the isolation test case
+# to test if the scripts are running as pure function
+
+# port in which to connect
+port: 5342
+
+
+# threading related stuff
+threading:
+  min: 4
+  max : 8
+  timeout: 30000
+
+# path mapping
+routes:
+  post:
+    /z:  _/identity.zm  # zoomba
+    /p2: _/identity.py  # jython 2
+    /j:  _/identity.js  # graal javascript
+    /k:  _/identity.kts # kotlin
+    /g:  _/identity.groovy # groovy
+    /p3: _/identity.py3 # graal python 3
+
