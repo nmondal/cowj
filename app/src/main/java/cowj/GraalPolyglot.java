@@ -72,17 +72,20 @@ public interface GraalPolyglot extends Scriptable{
         Context.Builder builder = Context.newBuilder("js").allowAllAccess(true);
         // https://docs.oracle.com/en/graalvm/jdk/22/docs/reference-manual/js/ScriptEngine/#setting-options-via-system-properties
         final boolean commonJSModule = Files.exists( Paths.get( possibleCommonJSPath ) );
+        logger.info("Polyglot JavaScript CommonJS Module Enabled : {}", commonJSModule );
         if ( commonJSModule ){
             builder.allowExperimentalOptions(true)
                     .option("js.commonjs-require", "true")
                     .option("js.commonjs-require-cwd", ModuleManager.JS_MOD_MGR.modulePath());
+            logger.info("Polyglot JavaScript CommonJS Module Location : {}", ModuleManager.JS_MOD_MGR.modulePath() );
+
         }
-        logger.info("Polyglot JavaScript CommonJS Module Enabled : {}", commonJSModule );
         return builder ;
     }
 
     /**
      * Build a JavaScript GraalPolyglot
+     * Per request a new context gets created
      * @param content of this character content
      * @param filePath using this as name - the file path of the content
      * @return a GraalPolyglot
@@ -112,16 +115,18 @@ public interface GraalPolyglot extends Scriptable{
         Context.Builder builder = Context.newBuilder("python").allowAllAccess(true);
         // https://docs.oracle.com/en/graalvm/jdk/22/docs/reference-manual/js/ScriptEngine/#setting-options-via-system-properties
         final boolean sitePackage = Files.exists( Paths.get( possiblePythonSitePath ) );
+        logger.info("Polyglot Python Site Package Module Enabled : {}", sitePackage );
         if ( sitePackage ){
             builder.option("python.ForceImportSite", "true")
                     .option("python.PythonPath", possiblePythonSitePath);
+            logger.info("Polyglot Python Site Package Module Location : {}", possiblePythonSitePath );
         }
-        logger.info("Polyglot Python Site Package Module Enabled : {}", sitePackage );
         return builder ;
     }
 
     /**
      * Build a Python GraalPolyglot
+     * Per thread a new Context is created
      * @param content of this character content
      * @param filePath using this as name - the file path of the content
      * @return a GraalPolyglot
