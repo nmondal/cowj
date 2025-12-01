@@ -10,7 +10,7 @@
 cd build/libs || exit 1
 
 java -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI \
-   --add-exports java.base/jdk.internal.misc=jdk.graal.compiler \
+   --add-exports java.base/jdk.internal.misc=jdk.internal.vm.compiler \
    --add-opens org.graalvm.truffle/com.oracle.truffle.polyglot=ALL-UNNAMED \
    --upgrade-module-path="graal" \
    -jar cowj-0.1-SNAPSHOT.jar ../../samples/script-benchmark/benchmark.yaml
