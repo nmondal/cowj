@@ -135,6 +135,16 @@ public interface GraalPolyglot extends Scriptable{
     static GraalPolyglot python( CharSequence content, String filePath) throws IOException {
         final Source source = Source.newBuilder( "python", content, filePath ).build();
         return new GraalPolyglot() {
+
+            final Context.Builder builder = python();
+            /**
+             * ThreadLocal Graal Python Context
+             * This improves the speed by at least 40% as we have tested it - still a far cry from Jython
+             * @see <a href="https://stackoverflow.com/questions/63451148/graalvm-polyglot-thread-issue-in-java-spring-boot-application"></a>
+             * @see <a href="https://github.com/oracle/graalpython/issues/564"></a>
+             */
+            final ThreadLocal<Context> threadedPythonContext = ThreadLocal.withInitial(() -> builder.engine( threadedEngine.get() ).build());
+
             @Override
             public Source source() {
                 return source;
@@ -154,13 +164,6 @@ public interface GraalPolyglot extends Scriptable{
      */
     ThreadLocal<Engine> threadedEngine = ThreadLocal.withInitial(Engine::create);
 
-    /**
-     * ThreadLocal Graal Python Context
-     * This improves the speed by at least 40% as we have tested it - still a far cry from Jython
-     * @see <a href="https://stackoverflow.com/questions/63451148/graalvm-polyglot-thread-issue-in-java-spring-boot-application"></a>
-     * @see <a href="https://github.com/oracle/graalpython/issues/564"></a>
-     */
-    ThreadLocal<Context> threadedPythonContext = ThreadLocal.withInitial(() -> python().engine( threadedEngine.get() ).build());
 
     /**
      * A map of path to GraalPolyglot map for each script sources
