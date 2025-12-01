@@ -61,8 +61,8 @@ public class RetryTest {
         Assert.assertEquals(3, retry.tries());
         Assert.assertEquals(3, exception.failures.size());
         List<Long> delays = delays(exception.failures);
-        long offset = 10L;
-        delays.forEach( d -> Assert.assertTrue( Math.abs( d - 100) <= offset ));
+        final long offset = ModelTest.isWindows ? 20L : 10L ;
+        delays.forEach( d -> Assert.assertTrue( String.format("delay = %d", d),  Math.abs( d - 100) <= offset ));
     }
 
     @Test
