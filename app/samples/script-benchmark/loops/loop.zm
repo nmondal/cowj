@@ -1,0 +1,7 @@
+tot = 0
+for ( i : [0:3000] ){
+  for ( j : [0:3000] ){
+    tot += 1
+  }
+}
+tot // return

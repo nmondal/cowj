@@ -21,11 +21,11 @@ routes:
     /it: _/req_demo.py3 # graal py import
     # nested loop
     /loop/j: _/loops/loop.js
-#    /loop/p2: _/loop/loop.py
-#    /loop/p3: _/loop/loop.py3
-#    /loop/g: _/loop/loop.groovy
-#    /loop/k: _/loop/loop.kt
-#    /loop/z: _/loop/loop.zm
+    /loop/p2: _/loops/loop.py
+    /loop/p3: _/loops/loop.py3
+    /loop/g: _/loops/loop.groovy
+    /loop/k: _/loops/loop.kt
+    /loop/z: _/loops/loop.zm
 
 
     # Bad factorial computation - the most useless benchmark
